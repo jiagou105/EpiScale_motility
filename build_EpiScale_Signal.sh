@@ -11,7 +11,6 @@ module load cmake
 module load cuda/9.1
 module load extra
 module load GCCcore/6.3.0
-module load matlab/R2018b
 
 rm -rf $BUILD_NAME
 mkdir -p $BUILD_NAME && cd $BUILD_NAME
@@ -20,7 +19,6 @@ cmake \
 -DCMAKE_C_COMPILER=$(which gcc)  \
 -DCMAKE_CXX_COMPILER=$(which g++)  \
 -DCUDA_INCLUDE_DIRS=${CUDA_HOME}/include \
--DMATLAB_DIR=$(dirname $(dirname $(which matlab))) \
 -DBUILD_TESTING=OFF \
 ENABLE_TESTS_COMPILATION=False \
 ../

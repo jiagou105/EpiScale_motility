@@ -1,5 +1,6 @@
 #include <fstream>
 #include <sstream>
+#include "Signal_Calculator.hpp"
 #include "Signal2D.h"
 #include <unistd.h>
 #include <time.h>  
@@ -9,8 +10,8 @@
 
 //#include "matlab_engine.hpp"
 //#include "engine_factory.hpp"
-#include "MatlabDataArray.hpp"
-#include "MatlabEngine.hpp"
+//#include "MatlabDataArray.hpp"
+//#include "MatlabEngine.hpp"
 
 namespace patch
 {
@@ -61,9 +62,16 @@ void Signal::updateSignal(double minX, double maxX, double minY, double maxY, do
 	//importSignalInfoCellLevel()	; 
 	processSignalInfoCellLevel()	; 
 
+	cout << "I am in update signal ended" << std::endl ;
 }
 
 void Signal::exportGeometryInfo() {
+
+	//ALIREZA CODE BEGIN
+
+
+
+
  	double Center_X=minX+0.5*(maxX-minX); 
  	int cellRank ; 
 	int totalNumActiveMembraneNodes=0 ; 
@@ -74,6 +82,8 @@ void Signal::exportGeometryInfo() {
 		}
 	}
 
+
+	/*
 	std::unique_ptr<matlab::engine::MATLABEngine> matlabPtr = matlab::engine::startMATLAB();
 
 	using namespace matlab::engine;
@@ -101,8 +111,7 @@ void Signal::exportGeometryInfo() {
 	double* data_node_pos_x_ptr = data_node_pos_x.get();
 	double* data_node_pos_y_ptr = data_node_pos_y.get();
 
-	//fill pointers 
-	//WARNING: INCREMENT ID via e+1 
+
 	for (int k = 0; k < numActiveCells; k++) {
 		*(data_cell_cell_index_ptr++) = k + 1;
 		*(data_cell_pos_x_ptr++) = cellCenterX[k];
@@ -167,51 +176,6 @@ void Signal::exportGeometryInfo() {
 
 		cout << "dpp level for node " << i << " is equal to " << dppLevelV.at(i) << endl ; 
 	} 
-	//main_signaling is the matlab funct ionto compute chemical signal for each cell. 
-	//input should be: 
-	//vector of cell index, node x,y positions
-	//vector of cell centroids, i.e. x,y postions
-
-	//output should be: 
-
-	//if (!(ep = engOpen(""))) {
-	//	fprintf(stderr, "\nCan't start MATLAB engine\n");
-	//	return EXIT_FAILURE;
-	//}
-
-
-
-	/*
-	srand(time(NULL));
-
- 	double max_Rx=max (maxX-Center_X,Center_X-minX) ; 
-	cout << "The information is read from "<< periodCount<<" data" <<endl ; 
-		
-		 
-
-	cout << "size of node is active in signal module is " << nodeIsActiveHost.size() << endl ; 
-	cout << "max total number of active nodes in signal module is " << maxTotalNumActiveNodes  << endl ; 
-	cout << "max of all nodes per cell in signal module is " << maxAllNodePerCell << endl ; 
-	std :: string  txtFileName="ExportCellProp_" + patch::to_string(periodCount)+".txt" ; 
-	ofstream ExportOut ; 
-	ExportOut.open(txtFileName.c_str()); 
-	for (int k=0; k<numActiveCells; k++){
-		ExportOut<<k<<","<<cellCenterX[k]<<","<<cellCenterY[k]<<endl   ;
-	}
-
-	for ( uint i=0 ; i< maxTotalNumActiveNodes ; i++) {
-
-		cellRank= i/maxAllNodePerCell ; 
-		if (nodeIsActiveHost[i] && (i%maxAllNodePerCell)<maxMembrNodePerCell) {
-			ExportOut<<cellRank<<","<<nodeLocXHost[i]<<","<<nodeLocYHost[i]<<endl   ;
-		}
-	}
-	int lastLineIndicator=123456789 ; 
-	ExportOut<<lastLineIndicator<<","<<lastLineIndicator<<","<<lastLineIndicator<<endl   ;
-	ExportOut.flush() ;
-	cout << "I exported  the data for signaling model"<< endl ; 
-	ExportOut.close() ;  
-	*/
 		
 }
 
@@ -261,6 +225,7 @@ void Signal::importSignalInfoCellLevel() {
 			dppLevelV.push_back(dppLevelTmp) ;  
 		}	
 		cout <<"first dpp value is"<< dppLevelV.at(0)<< endl ; 	
+		*/
 }
 
 
@@ -314,9 +279,11 @@ void Signal::importSignalInfoTissueLevel() {
 		cout <<"first dpp value is"<< dppLevelV.at(0)<< endl ; 	
 }
 
-
+//comment from Sam Britton
+//This function should be changed to use be more safe. 
+//If dppLevelV is empty, then it causes a memory error since the length of the vector is not checked. 
 void Signal::processSignalInfoTissueLevel() {
-
+	
 
 	vector<double> dppLevels_Cell ;
 	dppLevels_Cell.clear() ;

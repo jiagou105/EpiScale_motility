@@ -1,17 +1,19 @@
 #!/bin/csh
 
-#$ -M anematba@nd.edu	 # Email address for job notification
+#$ -M blank@nd.edu	 # Email address for job notification
 #$ -m  abe		 # Send mail when job begins, ends and aborts
 #$ -q  *@@acms_gpu 	 # Specify queue
 #s -pe smp 4 
-#$ -N  run_May12	 # Specify job name
+#$ -N  run_test	 # Specify job name
 
 
-module load matlab
-module load gcc/4.9.2
-module load cuda/7.0
-module load bertini 
-module load boost/1.58
+module load slurm/16.05.4
+module load openmpi/2.0.1-slurm-16.05.4
+module load cmake
+module load cuda/9.1
+module load extra
+module load GCCcore/6.3.0
+module load matlab/R2018b
 echo -n "It is currently: ";date
 echo -n "I am logged on as ";who am i
 echo -n "This computer is called ";hostname

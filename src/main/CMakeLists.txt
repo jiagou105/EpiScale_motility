@@ -28,13 +28,6 @@ if(NOT WIN32)
  #              ${GOOGLETEST_DIR}/libgtest_main.a
  #      )
 
-	target_link_libraries(${DISK_M_PROJECT_NAME}
-				${MATLAB_DIR}/bin/glnxa64/libeng.so
-				${MATLAB_DIR}/bin/glnxa64/libmx.so 
-				${MATLAB_DIR}/bin/glnxa64/libmex.so
-				${MATLAB_DIR}/bin/glnxa64/libmat.so
-				${MATLAB_DIR}/extern/bin/glnxa64/libMatlabDataArray.so
-				${MATLAB_DIR}/extern/bin/glnxa64/libMatlabEngine.so)
 							
 endif()
 
