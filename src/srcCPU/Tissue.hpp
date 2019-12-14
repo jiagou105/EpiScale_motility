@@ -1,8 +1,6 @@
 
 #include "Cell.hpp"
 
- #define index 7
-
 enum CellType
 {
     plant = 0 ,

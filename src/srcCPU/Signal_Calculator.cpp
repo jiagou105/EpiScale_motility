@@ -5,12 +5,13 @@
 //---------------------------------------------------------------------------------------------
 
 vector<double> Signal_Calculator ( vector< vector<double> > locX , vector< vector<double> > locY , vector<double > centX , vector<double > centY )
+
 {
  
     Tissue tissue ;
     tissue.cellType = wingDisc ;
     tissue.equationsType = simpeODE ;
-    tissue.readFileStatus = true ;
+    tissue.readFileStatus = false ;
     if (tissue.readFileStatus)
     {
         if (tissue.cellType == plant)
@@ -26,7 +27,7 @@ vector<double> Signal_Calculator ( vector< vector<double> > locX , vector< vecto
     }
     else
     {
-        tissue.Coupling(locX , locY , centX , centY ) ;
+       tissue.Coupling(locX , locY , centX , centY ) ;
     }
     
     

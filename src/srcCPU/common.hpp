@@ -10,10 +10,19 @@
 #include <stdio.h>
 #include <cstdlib>
 using namespace std ;
-
 #define pi 3.1415
 
-typedef tuple<vector<double>,double> VD ;
+
+#define thres_lateral 0.5 // 2.4 for plant cells and 0.5 for wing disc
+#define searchAreaForNghbr 10.0 * thres_lateral
+#define thres_corners 1.0 *thres_lateral    //to find a vertices for cells who does not have a comon neighbor
+#define thres_cyclic4  0.5 * thres_lateral
+#define thres_intersect 1.1 *thres_lateral
+#define thres_noBoundary 20
+#define thres_Production 20
+#define thres_layer 3             //CLV3 layer 3+
+#define index 7
+#define dt 0.001
 
 
 

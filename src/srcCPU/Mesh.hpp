@@ -1,7 +1,5 @@
 
 #include "common.hpp"
-#define dt 0.001
-
 class Mesh
 {
 public:
