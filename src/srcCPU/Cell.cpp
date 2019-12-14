@@ -434,3 +434,15 @@ void Cell:: FullModel_ProductionCell()
         meshes.at(j).productions = { productionW , 0, 0, productionC, productionCk, productionCk, 0 } ;
     }
 }
+//---------------------------------------------------------------------------------------------
+void Cell:: CellLevelConcentration()
+{
+    cellConcentration.clear() ;
+    cellU = 0 ;
+    cellConcentration.resize(meshes.at(0).concentrations.size() ) ;
+    for (int j=0 ; j< meshes.size() ; j++ )
+    {
+        transform(meshes.at(j).concentrations.begin(), meshes.at(j).concentrations.end() , cellConcentration.begin(), cellConcentration.begin() , linearConfig (1,1) ) ;
+        cellU += meshes.at(j).u1 ;
+    }
+}

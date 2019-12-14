@@ -1,7 +1,8 @@
-#ifndef SIGNAL_CALCULATOR_H_
-#define SIGNAL_CALCULATOR_H_
 
+#ifndef Signal_Calculator_h
+#define Signal_Calculator_h
+#include "Tissue.hpp"
 
-int Signal_Calculator ();
+int Signal_Calculator (vector< vector<double> > locX , vector< vector<double> > locY , vector<double > centX , vector<double > centY ) ;
 
-#endif
+#endif /* Signal_Calculator_h */

@@ -172,9 +172,9 @@ vector<Cell> Tissue::ReadFile3 ( )
         cout << "Error in file"<<endl ;
     }
     
-    while (nodeData  >> b >> c >> d)
+    while ( nodeData  >> b >> c >> d )
     {
-        if (static_cast<int>( tmpCell.end()-tmpCell.begin()) == b)
+        if (static_cast<int>( tmpCell.end() - tmpCell.begin() ) == b )
         {
             Cell cell ;
             tmpCell.push_back(cell) ;
@@ -194,6 +194,29 @@ vector<Cell> Tissue::ReadFile3 ( )
 }
 //---------------------------------------------------------------------------------------------
 
+void Tissue::Coupling (vector< vector<double> > locX , vector< vector<double> > locY , vector<double > centX , vector<double > centY )
+{
+    int cellSize = static_cast<int>( locX.size() ) ;
+    for (int i =0 ; i< cellSize ; i++)
+    {
+        Cell tmpCell ;
+        tmpCell.nodesX = locX.at(i) ;
+        tmpCell.nodesXNew = locX.at(i) ;
+        tmpCell.noNeighboringNodesX = locX.at(i) ;
+        
+        tmpCell.nodesY = locY.at(i) ;
+        tmpCell.nodesYNew = locY.at(i) ;
+        tmpCell.noNeighboringNodesY = locY.at(i) ;
+        
+        tmpCell.centroid.at(0) = centX.at(i) ;
+        tmpCell.centroid.at(1) = centY.at(i) ;
+        
+        cells.push_back( tmpCell ) ;
+    }
+ 
+}
+
+//---------------------------------------------------------------------------------------------
 
 void Tissue::Find_AllCellNeighbors()
 {
@@ -1193,6 +1216,7 @@ void Tissue::EulerMethod()
         
         l++ ;
     }
+     ParaViewMesh(index) ;
     double value = 0 ;
     for (int j =0 ; j < cells.size();j++)
     {
@@ -1232,12 +1256,15 @@ void Tissue::EulerMethod2 ()
 //---------------------------------------------------------------------------------------------
 void Tissue::Find_SecretingCell()
 {
+    
     double minDis = Dist2D(25, 25, cells.at(0).centroid.at(0), cells.at(0).centroid.at(1)) ;
+ //   double minDis = Dist2D(0, 0, cells.at(0).centroid.at(0), cells.at(0).centroid.at(1)) ;
     int cellID = 0 ;
     double dis ;
     for (int i = 1; i< cells.size(); i++)
     {
         dis = Dist2D(25, 25, cells.at(i).centroid.at(0), cells.at(i).centroid.at(1)) ;
+     //   dis = Dist2D(0, 0, cells.at(i).centroid.at(0), cells.at(i).centroid.at(1)) ;
         if (dis < minDis)
         {
             minDis = dis ;
@@ -1468,8 +1495,8 @@ void Tissue::FullModelEulerMethod()
            )
     {
         FullModel_Diffusion() ;
-        if (l%1000==0) cout<<l/1000<<endl ;
-        if (l%1000==0) ParaViewMesh(l/1000) ;
+   //     if (l%1000==0) cout<<l/1000<<endl ;
+   //     if (l%1000==0) ParaViewMesh(l/1000) ;
         for (int i = 0; i < cells.size(); i++)
         {
             for (int j =0; j < cells.at(i).meshes.size(); j++)
@@ -1504,8 +1531,10 @@ void Tissue::FullModelEulerMethod()
             }
         }
         
+        
         l++ ;
     }
+    ParaViewMesh(index) ;
     cout<<"l is equal to "<<l << endl ;
     /*
     double value = 0 ;
@@ -1519,4 +1548,21 @@ void Tissue::FullModelEulerMethod()
     cout<< "value is "<<value<<endl ;
     cout<< "number of steps needed is " << l <<endl ;
      */
+}
+//---------------------------------------------------------------------------------------------
+
+void Tissue::Cal_AllCellConcentration()
+{
+    for (int i =0; i<cells.size(); i++)
+    {
+        cells.at(i).CellLevelConcentration() ;
+        if (equationsType== simpeODE)
+        {
+            tissueLevelU.push_back(cells.at(i).cellU ) ;
+        }
+        else
+        {
+            tissueLevelConcentration.push_back(cells.at(i).cellConcentration ) ;
+        }
+    }
 }
