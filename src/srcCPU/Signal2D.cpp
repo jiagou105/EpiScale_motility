@@ -82,7 +82,7 @@ void Signal::exportGeometryInfo() {
 			totalNumActiveMembraneNodes++ ; 
 		}
 	}
-vector<double > cntX ;
+    vector<double > cntX ;
     vector<double > cntY ;
     for (int k = 0; k < numActiveCells; k++)
     {
