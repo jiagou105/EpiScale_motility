@@ -3,6 +3,6 @@
 #define Signal_Calculator_h
 #include "Tissue.hpp"
 
-int Signal_Calculator (vector< vector<double> > locX , vector< vector<double> > locY , vector<double > centX , vector<double > centY ) ;
+vector<double > Signal_Calculator (vector< vector<double> > locX , vector< vector<double> > locY , vector<double > centX , vector<double > centY ) ;
 
 #endif /* Signal_Calculator_h */
