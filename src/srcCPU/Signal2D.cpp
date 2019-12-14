@@ -1,6 +1,6 @@
 #include <fstream>
 #include <sstream>
-#include "Signal_Calculator.hpp"
+#include "Signal_Calculator.h"
 #include "Signal2D.h"
 #include <unistd.h>
 #include <time.h>  
