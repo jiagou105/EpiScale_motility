@@ -17,7 +17,7 @@ To build code on UCR HPCC clusters "cluster.hpcc.ucr.edu":
    (1) git clone https://github.com/AliNemat/EpiScale_Signal.git
    (2) login to an available gpu: srun -p gpu -c 4 --gres=gpu:1 --pty bash -l
    (3) cd into Episcale_Signal
-   (4) run build_EpiScale_Signal.sh to run cmake and put files in the 'build' folder using the command ./build_Episcale_Signal.sh build
+   (4) run build_EpiScale_Signal.sh to run cmake and put files in the 'build' folder using the command ./build_EpiScale_Signal.sh build
    
 To run the code:
    (0) Stay logged into the gpu.
