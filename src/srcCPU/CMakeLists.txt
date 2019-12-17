@@ -7,7 +7,7 @@ add_library(SceInit STATIC
         CellInitHelper.cpp
         Signal2D.h
 		Signal2D.cpp
-		Signal_Calculator.hpp
+		Signal_Calculator.h
 		Signal_Calculator.cpp
 		Tissue.hpp
 		Tissue.cpp
