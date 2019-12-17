@@ -1178,12 +1178,15 @@ void Tissue::EulerMethod()
 {
     bool state = false ;
     int l = 0 ;
+    cout<< "Signal_Calculator is running"<<endl ;
     while (state==false)
     {
         Cal_AllSelfDiffusion() ;
         IntercellularDiffusion() ;
-        if (l%1000==0) cout<<l/1000<<endl ;
-        if (l%1000==0) ParaViewMesh(l/1000) ;
+        
+   //     if (l%1000==0) cout<<l/1000<<endl ;
+   //     if (l%1000==0) ParaViewMesh(l/1000) ;
+        
         for (int i = 0; i < cells.size(); i++)
         {
             for (int j =0; j < cells.at(i).meshes.size(); j++)
@@ -1216,7 +1219,7 @@ void Tissue::EulerMethod()
         
         l++ ;
     }
-     ParaViewMesh(index) ;
+ //    ParaViewMesh(index) ;
     double value = 0 ;
     for (int j =0 ; j < cells.size();j++)
     {
@@ -1226,7 +1229,7 @@ void Tissue::EulerMethod()
         }
     }
     cout<< "value is "<<value<<endl ;
-    cout<< "number of steps needed is " << l <<endl ;
+//    cout<< "number of steps needed is " << l <<endl ;
 }
 //---------------------------------------------------------------------------------------------
 void Tissue::EulerMethod2 ()
