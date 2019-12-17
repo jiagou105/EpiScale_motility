@@ -109,7 +109,7 @@ void Signal::exportGeometryInfo() {
                 size += 1 ;
             }
              locX.back().push_back ( nodeLocXHost[i] ) ;
-             loxY.back().push_back ( nodeLocYHost[i] ) ;
+             locY.back().push_back ( nodeLocYHost[i] ) ;
         }
     }
     vector<double> tissueDppLevel ;
