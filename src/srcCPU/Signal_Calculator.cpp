@@ -44,7 +44,7 @@ vector<double> Signal_Calculator ( vector< vector<double> > locX , vector< vecto
     tissue.AllCell_RefineNoBoundary() ;
     tissue.Find_boundaries() ;
     tissue.Refine_VerticesInBoundaryCells() ;
-    tissue.ParaViewBoundary() ;
+//    tissue.ParaViewBoundary() ;
     tissue.Add_NewVerticesToBoundaryEdges() ;
     tissue.Refine_CurvedInterface() ;
     tissue.Find_Cyclic4() ;
@@ -52,9 +52,9 @@ vector<double> Signal_Calculator ( vector< vector<double> > locX , vector< vecto
     tissue.SortVertices() ;
     tissue.Cal_AllCellConnections() ;
  // tissue.Print_VeritcesSize() ;
-    tissue.ParaViewVertices() ;
-    tissue.ParaViewTissue () ;
-    tissue.ParaViewInitialConfiguration() ;
+ //   tissue.ParaViewVertices() ;
+ //   tissue.ParaViewTissue () ;
+ //   tissue.ParaViewInitialConfiguration() ;
     
     tissue.Find_AllMeshes () ;
     tissue.Find_IntercellularMeshConnection () ;
