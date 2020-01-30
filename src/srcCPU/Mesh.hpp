@@ -7,10 +7,11 @@ public:
     vector<double> triangleX ;
     vector<double> triangleY ;
     vector<double> center ;
-    vector<double> area ;
+    vector<double> channel ;
     vector<double> length ;
     pair<int , int> connection ;   //represent the connection to the <int cellID,int MeshID>
     vector<double> flux ;
+    double area ;
     
     double u1 = 0.0 ;        //protein concentration (old)
     double u2 = 0.0 ;         //protein concentration (new)
@@ -25,9 +26,11 @@ public:
     double cMax = 0 ;
     double kCK = 1 ;
     double kcw = 1 ;
+    double kP = 1 ;
+    double kLR = 1 ;
     vector< double> powers ;
     
-    //--------------------------------Full model constants and variables---------------------------
+    //--------------------------------Full model-Plant constants and variables---------------------------
     vector<double> concentrations ; //  < w , wc , wn , CLV , ck , ckr , CK >
     vector<double> concentrations2 ; 
     vector<double> diffusions ; // from 2nd to 5th, exclude 3rd
@@ -36,19 +39,25 @@ public:
     vector<double> rates ;          // <r_c, r_im, r_ex, 0 , k_on , k_on, k_off> //k_on sqrt for both or 1 for one of them
     vector<vector<double> > Flux ;
     
-    
-    
+    //--------------------------------Full model-WingDisc constants and variables---------------------------
+//    vector<double> dpp ;
+ //   vector<double> dpp2 ;
+ //   double diff ;
+ //   vector<double> degreDpp ;
+ //   vector<double> producDpp ;
     
     
     //---------------------------------------------------------------------------------------------
     
-    void Cal_Center() ;
+    void Cal_MeshCenter() ;
+    double Cal_MeshArea () ;
     void Cal_UStar () ;
     void Euler () ;
     void UpdateU () ;
     
-    void FullModel_Euler () ;
-    vector<double> UpdateDegradation () ;
-    vector<double> UpdateRates () ;
+    void FullModel_Euler (bool type, double radius ) ;
+    vector<double> UpdateDegradation (bool type , double radius) ;
+    vector<double> UpdateRates ( bool type ) ;
     double UpdateCp () ;
+    
 };

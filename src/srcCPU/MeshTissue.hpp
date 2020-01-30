@@ -1,5 +1,5 @@
 
-#include "Cell.hpp"
+#include "MeshCell.hpp"
 
 enum CellType
 {
@@ -11,16 +11,19 @@ enum Equation
     simpeODE = 0 ,
     fullModel = 1
 };
-class Tissue
+class MeshTissue
 {
 public:
     
-    vector<Cell> cells;
+    vector<MeshCell> cells;
     CellType cellType ;
     Equation equationsType ;
     bool readFileStatus ;
     vector<double> tissueLevelU ;
     vector<vector<double> > tissueLevelConcentration ;
+    double areaTissue ;
+    double radius ;
+    int frameIndex ;
     
     
     
@@ -29,9 +32,9 @@ public:
     void Find_AllCellNeighborCandidates () ;
     void Find_AllCellNeighbors () ;
     void FindInterfaceWithNeighbor() ;
-    vector<Cell> ReadFile ( ) ;
-    vector<Cell> ReadFile2 ( ) ;
-    vector<Cell> ReadFile3 ( ) ;
+    vector<MeshCell> ReadFile ( ) ;
+    vector<MeshCell> ReadFile2 ( ) ;
+    vector<MeshCell> ReadFile3 ( ) ;
     void Coupling (vector< vector<double> > locX , vector< vector<double> > locY , vector<double > centX , vector<double > centY ) ;
     void Find_AllCell_NeighborID_Cell () ;
     void Cal_AllCellNewEdge () ;
@@ -58,6 +61,7 @@ public:
     
  
     void Find_AllMeshes () ;
+    void Cal_AreaOfTissue () ;
     void Cal_AllSelfDiffusion () ;
     void Find_IntercellularMeshConnection () ;
     void IntercellularDiffusion () ;
@@ -68,7 +72,7 @@ public:
     
     void FullModel_Diffusion () ;
     void FullModel_AllCellProductions () ;      //Initialization
-    void FullModelEulerMethod () ;              //Main loop
+    void FullModelEulerMethod ( ) ;              //Main loop
     
     void Cal_AllCellConcentration () ;
     

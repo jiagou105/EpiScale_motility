@@ -1,23 +1,36 @@
 
-#include "Tissue.hpp"
- #include "Signal_Calculator.h"
+#include "MeshTissue.hpp"
+#include "Signal_Calculator.h"
 
 //---------------------------------------------------------------------------------------------
-
-vector<double> Signal_Calculator ( vector< vector<double> > locX , vector< vector<double> > locY , vector<double > centX , vector<double > centY )
-
+/*
+vector<double> Signal_Calculator(vector< vector<double> > locX , vector< vector<double> > locY , vector<double > centX , vector<double > centY ,int index)
 {
- 
-    Tissue tissue ;
+    vector<double > a ;
+    return a ;
+}
+
+int main ()
+ {
+     vector< vector<double> > locX ;
+     vector< vector<double> > locY ;
+     vector<double > centX ;
+     vector<double > centY ;
+     int index = 5 ;
+*/
+ vector<double> Signal_Calculator ( vector< vector<double> > locX , vector< vector<double> > locY , vector<double > centX , vector<double > centY, int index ){
+    
+    MeshTissue tissue ;
     tissue.cellType = wingDisc ;
     tissue.equationsType = simpeODE ;
     tissue.readFileStatus = false ;
+    tissue.frameIndex = index ;
     if (tissue.readFileStatus)
     {
         if (tissue.cellType == plant)
         {
-          //  tissue.cells = tissue.ReadFile( ) ;     //for old files
-            tissue.cells = tissue.ReadFile2( ) ;       // for new files
+            tissue.cells = tissue.ReadFile( ) ;     //for old files
+         //   tissue.cells = tissue.ReadFile2( ) ;       // for new files
         }
         else if (tissue.cellType == wingDisc)
         {
@@ -44,7 +57,7 @@ vector<double> Signal_Calculator ( vector< vector<double> > locX , vector< vecto
     tissue.AllCell_RefineNoBoundary() ;
     tissue.Find_boundaries() ;
     tissue.Refine_VerticesInBoundaryCells() ;
-//    tissue.ParaViewBoundary() ;
+    tissue.ParaViewBoundary() ;
     tissue.Add_NewVerticesToBoundaryEdges() ;
     tissue.Refine_CurvedInterface() ;
     tissue.Find_Cyclic4() ;
@@ -52,12 +65,13 @@ vector<double> Signal_Calculator ( vector< vector<double> > locX , vector< vecto
     tissue.SortVertices() ;
     tissue.Cal_AllCellConnections() ;
  // tissue.Print_VeritcesSize() ;
- //   tissue.ParaViewVertices() ;
- //   tissue.ParaViewTissue () ;
- //   tissue.ParaViewInitialConfiguration() ;
+    tissue.ParaViewVertices() ;
+    tissue.ParaViewTissue () ;
+    tissue.ParaViewInitialConfiguration() ;
     
     tissue.Find_AllMeshes () ;
     tissue.Find_IntercellularMeshConnection () ;
+    tissue.Cal_AreaOfTissue() ;
  //   tissue.ParaViewMesh(0) ;
     if (tissue.equationsType == simpeODE)
     {
@@ -70,12 +84,13 @@ vector<double> Signal_Calculator ( vector< vector<double> > locX , vector< vecto
         tissue.FullModelEulerMethod () ;
     }
     
-    tissue.Cal_AllCellConcentration() ;
+    tissue.Cal_AllCellConcentration() ; 
     
    return tissue.tissueLevelU ;
+ //    return 0 ;
 }
-
 
 // Adjust index and other global variables
 // be carefull about dt
+//free diffusion in the cell
 

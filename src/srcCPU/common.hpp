@@ -21,7 +21,6 @@ using namespace std ;
 #define thres_noBoundary 20
 #define thres_Production 20
 #define thres_layer 3             //CLV3 layer 3+
-#define index 7
 #define dt 0.001
 
 
@@ -36,6 +35,7 @@ vector<double> Dist_pointToVec1D ( double x1, vector<double> X2) ;
 double DotProduct (double x1 , double y1 , double x2 , double y2) ;
 double AngleOfTwoVectors (double x1 , double y1 , double x2 , double y2) ;
 double MagnitudeVec (double x , double y) ;
+double TriangleArea (double x1, double y1, double x2 , double y2) ;
 double sum_over_vec(const vector<vector<double> >& v, int a ) ;
 //---------------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------------------------

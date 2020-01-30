@@ -38,9 +38,9 @@ public:
 };
 
 
-class Cell
+class MeshCell
 {   public:
-    Cell() ;
+    MeshCell() ;
     vector<Mesh> meshes ;
     vector <Neighbor> neighbors ;
     int cellID ;
@@ -61,8 +61,10 @@ class Cell
     vector<int> cyclic4 ;
     
     double productionW ;
-    double productionCk ;
     double productionC ;
+    double productionCk ;
+    double productionCkR ;
+    double productionPMad ;
     
     vector <double> centroid ;
     vector<double> cntrToCntr ;
@@ -70,6 +72,7 @@ class Cell
     vector<vector<vector<double> > > nodeDistoNghbrsCandidate ;
     vector<double> cellConcentration ;
     double cellU ;
+    double areaCell ;
     
     void Cal_Centroid() ;
     vector <vector <double> > Cal_NodeToNodeDist (vector<double> , vector<double>) ;
@@ -89,9 +92,11 @@ class Cell
     void Self_Diffusion () ;
     void Refine_NoBoundary () ;
     void Refine_NodeXNew () ;
-    void FullModel_SelfDiffusion () ;
+    void FullModel_SelfDiffusion (bool type) ;
     void FullModel_ProductionCell () ;
-    void CellLevelConcentration () ;
+    void CellLevelConcentration (bool type) ;
+    
+    void FullModel_WingDisc_SelfDiffusion () ;
     
     
     

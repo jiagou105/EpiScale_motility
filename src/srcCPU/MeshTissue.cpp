@@ -1,7 +1,7 @@
 
-#include "Tissue.hpp"
+#include "MeshTissue.hpp"
 
-void Tissue::Cal_AllCellCenters()
+void MeshTissue::Cal_AllCellCenters()
 {
     for (int i = 0 ; i< cells.size(); i++)
     {
@@ -9,7 +9,7 @@ void Tissue::Cal_AllCellCenters()
     }
 }
 //---------------------------------------------------------------------------------------------
-void Tissue::Find_AllCellNeighborCandidates ()
+void MeshTissue::Find_AllCellNeighborCandidates ()
 {
     for (int i=0; i < cells.size(); i++)
     {
@@ -18,7 +18,7 @@ void Tissue::Find_AllCellNeighborCandidates ()
 }
 //---------------------------------------------------------------------------------------------
 
-void Tissue::Cal_AllCellCntrToCntr()
+void MeshTissue::Cal_AllCellCntrToCntr()
 {
     for (int i=0 ; i< cells.size() ; i++ )
     {
@@ -32,7 +32,7 @@ void Tissue::Cal_AllCellCntrToCntr()
 }
 
 //---------------------------------------------------------------------------------------------
-void Tissue::FindInterfaceWithNeighbor()
+void MeshTissue::FindInterfaceWithNeighbor()
 {
     for (int i=0; i < cells.size(); i++)
     {
@@ -75,12 +75,12 @@ void Tissue::FindInterfaceWithNeighbor()
 
 //---------------------------------------------------------------------------------------------
 
-vector<Cell> Tissue::ReadFile ( )
+vector<MeshCell> MeshTissue::ReadFile ( )
 {
     double a,b,c ;
     double d ;
-    vector<Cell> tmpCell ;
-    string number = to_string(index) ;
+    vector<MeshCell> tmpCell ;
+    string number = to_string(frameIndex) ;
     ifstream nodeData ("Locations_"+ number +".txt") ;
     if (nodeData.is_open())
     {
@@ -94,7 +94,7 @@ vector<Cell> Tissue::ReadFile ( )
     {
         if (a==b)
         {
-            Cell cell ;
+            MeshCell cell ;
             tmpCell.push_back(cell) ;
             tmpCell.back().cellID = a ;
             continue ;
@@ -118,13 +118,13 @@ vector<Cell> Tissue::ReadFile ( )
     return tmpCell ;
 }
 //---------------------------------------------------------------------------------------------
-vector<Cell> Tissue::ReadFile2 ( )
+vector<MeshCell> MeshTissue::ReadFile2 ( )
 {
     int cellLayer = 0 ;
     int a,b ;
     double c,d ;
-    vector<Cell> tmpCell ;
-    string number = to_string(index) ;
+    vector<MeshCell> tmpCell ;
+    string number = to_string(frameIndex) ;
     ifstream nodeData ("Locations_"+ number +".txt") ;
     if (nodeData.is_open())
     {
@@ -139,7 +139,7 @@ vector<Cell> Tissue::ReadFile2 ( )
         if (static_cast<int>( tmpCell.size() ) == b)
         {
             cellLayer = a ;
-            Cell cell ;
+            MeshCell cell ;
             tmpCell.push_back(cell) ;
         }
         
@@ -157,12 +157,12 @@ vector<Cell> Tissue::ReadFile2 ( )
     return tmpCell ;
 }
 //---------------------------------------------------------------------------------------------
-vector<Cell> Tissue::ReadFile3 ( )
+vector<MeshCell> MeshTissue::ReadFile3 ( )
 {
     int b ;
     double c,d ;
-    vector<Cell> tmpCell ;
-    string number = to_string(index) ;
+    vector<MeshCell> tmpCell ;
+    string number = to_string(frameIndex) ;
     ifstream nodeData ("ExportCellProp_"+ number +".txt") ;
     if (nodeData.is_open())
     {
@@ -176,7 +176,7 @@ vector<Cell> Tissue::ReadFile3 ( )
     {
         if (static_cast<int>( tmpCell.end() - tmpCell.begin() ) == b )
         {
-            Cell cell ;
+            MeshCell cell ;
             tmpCell.push_back(cell) ;
         }
         
@@ -194,12 +194,12 @@ vector<Cell> Tissue::ReadFile3 ( )
 }
 //---------------------------------------------------------------------------------------------
 
-void Tissue::Coupling (vector< vector<double> > locX , vector< vector<double> > locY , vector<double > centX , vector<double > centY )
+void MeshTissue::Coupling (vector< vector<double> > locX , vector< vector<double> > locY , vector<double > centX , vector<double > centY )
 {
     int cellSize = static_cast<int>( locX.size() ) ;
     for (int i =0 ; i< cellSize ; i++)
     {
-        Cell tmpCell ;
+        MeshCell tmpCell ;
         tmpCell.nodesX = locX.at(i) ;
         tmpCell.nodesXNew = locX.at(i) ;
         tmpCell.noNeighboringNodesX = locX.at(i) ;
@@ -218,7 +218,7 @@ void Tissue::Coupling (vector< vector<double> > locX , vector< vector<double> > 
 
 //---------------------------------------------------------------------------------------------
 
-void Tissue::Find_AllCellNeighbors()
+void MeshTissue::Find_AllCellNeighbors()
 {
     for (int i=0; i < cells.size(); i++)
     {
@@ -236,7 +236,7 @@ void Tissue::Find_AllCellNeighbors()
 }
 
 //---------------------------------------------------------------------------------------------
-void Tissue::Find_AllCell_NeighborID_Cell()
+void MeshTissue::Find_AllCell_NeighborID_Cell()
 {
     for (int i=0 ; i< cells.size(); i++)
     {
@@ -257,7 +257,7 @@ void Tissue::Find_AllCell_NeighborID_Cell()
 }
 //---------------------------------------------------------------------------------------------
 
-void Tissue::Cal_AllCellNewEdge()
+void MeshTissue::Cal_AllCellNewEdge()
 {
     for (int i=0 ; i < cells.size(); i++)
     {
@@ -267,7 +267,7 @@ void Tissue::Cal_AllCellNewEdge()
 }
 //---------------------------------------------------------------------------------------------
 
-void Tissue::Find_CommonNeighbors()
+void MeshTissue::Find_CommonNeighbors()
 {
     for (int i = 0; i < cells.size(); i++)
     {
@@ -347,7 +347,7 @@ void Tissue::Find_CommonNeighbors()
 
 }
 //---------------------------------------------------------------------------------------------
-void Tissue::Print_CommonNeighbors()
+void MeshTissue::Print_CommonNeighbors()
 {
     for (int i=0; i < cells.size(); i++)
     {
@@ -364,7 +364,7 @@ void Tissue::Print_CommonNeighbors()
 }
 //---------------------------------------------------------------------------------------------
 
-void Tissue::Cal_Intersect()
+void MeshTissue::Cal_Intersect()
 {
     for (int i=0; i < cells.size(); i++)
     {
@@ -461,7 +461,7 @@ void Tissue::Cal_Intersect()
     }
 }
 //---------------------------------------------------------------------------------------------
-void Tissue::Find_boundaries()
+void MeshTissue::Find_boundaries()
 {
     vector<double> allNodesX ;
     vector<double> allNodesY ;
@@ -518,7 +518,7 @@ void Tissue::Find_boundaries()
     }
 }
 //---------------------------------------------------------------------------------------------
-void Tissue::Count_IntersectPoints()
+void MeshTissue::Count_IntersectPoints()
 {
     for (int i = 0; i< cells.size(); i++)
     {
@@ -530,7 +530,7 @@ void Tissue::Count_IntersectPoints()
     
 }
 //---------------------------------------------------------------------------------------------
-void Tissue::Cal_AllCellVertices()
+void MeshTissue::Cal_AllCellVertices()
 {
     for (int i =0; i < cells.size(); i++)
     {
@@ -538,7 +538,7 @@ void Tissue::Cal_AllCellVertices()
     }
 }
 //---------------------------------------------------------------------------------------------
-void Tissue::ParaViewVertices ()
+void MeshTissue::ParaViewVertices ()
 {
     
     vector<double> allNodesX ;
@@ -566,7 +566,7 @@ void Tissue::ParaViewVertices ()
             links2.push_back(verticesSize + i ) ;
         }
     }
-    string vtkFileName = "Vertices"+ to_string(index)+ ".vtk" ;
+    string vtkFileName = "Vertices"+ to_string(frameIndex)+ ".vtk" ;
     ofstream ECMOut;
     ECMOut.open(vtkFileName.c_str());
     ECMOut<< "# vtk DataFile Version 3.0" << endl;
@@ -615,7 +615,7 @@ void Tissue::ParaViewVertices ()
 }
 //---------------------------------------------------------------------------------------------
 
-void Tissue::ParaViewTissue ()
+void MeshTissue::ParaViewTissue ()
 {
     vector<double> allNodesX ;
     vector<double> allNodesY ;
@@ -628,7 +628,7 @@ void Tissue::ParaViewTissue ()
         }
     }
     int size =static_cast<int> (allNodesX.size() );
-    string vtkFileName = "Tissue"+ to_string(index)+ ".vtk" ;
+    string vtkFileName = "Tissue"+ to_string(frameIndex)+ ".vtk" ;
     ofstream TissueOut;
     TissueOut.open(vtkFileName.c_str());
     TissueOut<< "# vtk DataFile Version 3.0" << endl;
@@ -672,7 +672,7 @@ void Tissue::ParaViewTissue ()
     TissueOut.close();
 }
 //---------------------------------------------------------------------------------------------
-void Tissue::Cal_AllCellConnections()
+void MeshTissue::Cal_AllCellConnections()
 {
      int tmpShift = 0 ;
     int counter = 0 ;
@@ -687,7 +687,7 @@ void Tissue::Cal_AllCellConnections()
     }
 }
 //---------------------------------------------------------------------------------------------
-void Tissue:: Test()
+void MeshTissue:: Test()
 {
     for (int i =0; i < cells.size(); i++)
     {
@@ -695,7 +695,7 @@ void Tissue:: Test()
     }
 }
 //---------------------------------------------------------------------------------------------
-void Tissue:: Add_NewVerticesToBoundaryEdges()
+void MeshTissue:: Add_NewVerticesToBoundaryEdges()
 {
     for (int i =0; i < cells.size(); i++)
     {
@@ -704,7 +704,7 @@ void Tissue:: Add_NewVerticesToBoundaryEdges()
 }
 
 //---------------------------------------------------------------------------------------------
-void Tissue:: Refine_VerticesInBoundaryCells ()
+void MeshTissue:: Refine_VerticesInBoundaryCells ()
 {
     // Add vertices for nodes that are shared only between two cells but not three.
     for (int i =0; i < cells.size(); i++)
@@ -772,7 +772,7 @@ void Tissue:: Refine_VerticesInBoundaryCells ()
 }
 //---------------------------------------------------------------------------------------------
 
-void Tissue::Cyclic4Correction()
+void MeshTissue::Cyclic4Correction()
 {
     for (int i =0 ; i< cells.size(); i++)
     {
@@ -831,7 +831,7 @@ void Tissue::Cyclic4Correction()
 }
 
 //---------------------------------------------------------------------------------------------
-void Tissue:: Find_Cyclic4()
+void MeshTissue:: Find_Cyclic4()
 {
     for (int i =0; i < cells.size(); i++)
     {
@@ -891,7 +891,7 @@ void Tissue:: Find_Cyclic4()
 
 //---------------------------------------------------------------------------------------------
 
-void Tissue::SortVertices()
+void MeshTissue::SortVertices()
 {
     for (int i =0; i < cells.size(); i++)
     {
@@ -899,7 +899,7 @@ void Tissue::SortVertices()
     }
 }
 //---------------------------------------------------------------------------------------------
-void Tissue::AllCell_RefineNoBoundary ()
+void MeshTissue::AllCell_RefineNoBoundary ()
 {
     for (int i=0; i< cells.size(); i++)
     {
@@ -908,7 +908,7 @@ void Tissue::AllCell_RefineNoBoundary ()
     }
 }
 //---------------------------------------------------------------------------------------------
-void Tissue::ParaViewBoundary ()
+void MeshTissue::ParaViewBoundary ()
 {
     vector<double> allNodesX ;
     vector<double> allNodesY ;
@@ -921,7 +921,7 @@ void Tissue::ParaViewBoundary ()
         }
     }
     int size =static_cast<int> (allNodesX.size() );
-    string vtkFileName = "Boundary"+ to_string(index)+ ".vtk" ;
+    string vtkFileName = "Boundary"+ to_string(frameIndex)+ ".vtk" ;
     ofstream TissueOut;
     TissueOut.open(vtkFileName.c_str());
     TissueOut<< "# vtk DataFile Version 3.0" << endl;
@@ -939,7 +939,7 @@ void Tissue::ParaViewBoundary ()
     TissueOut.close();
 }
 //---------------------------------------------------------------------------------------------
-void Tissue::ParaViewInitialConfiguration ()
+void MeshTissue::ParaViewInitialConfiguration ()
 {
     vector<double> allNodesX ;
     vector<double> allNodesY ;
@@ -952,7 +952,7 @@ void Tissue::ParaViewInitialConfiguration ()
         }
     }
     int size =static_cast<int> (allNodesX.size() );
-    string vtkFileName = "Initial"+ to_string(index)+ ".vtk" ;
+    string vtkFileName = "Initial"+ to_string(frameIndex)+ ".vtk" ;
     ofstream TissueOut;
     TissueOut.open(vtkFileName.c_str());
     TissueOut<< "# vtk DataFile Version 3.0" << endl;
@@ -970,7 +970,7 @@ void Tissue::ParaViewInitialConfiguration ()
     TissueOut.close();
 }
 //---------------------------------------------------------------------------------------------
-void Tissue::Refine_CurvedInterface ()
+void MeshTissue::Refine_CurvedInterface ()
 {
     for (int i = 0; i< cells.size(); i++)
     {
@@ -1067,7 +1067,7 @@ void Tissue::Refine_CurvedInterface ()
 }
 
 //---------------------------------------------------------------------------------------------
-void Tissue::Print_VeritcesSize()
+void MeshTissue::Print_VeritcesSize()
 {
     for (int i=0; i<cells.size(); i++)
     {
@@ -1081,7 +1081,7 @@ void Tissue::Print_VeritcesSize()
 
 //--------------------------------------Meshes----------------=--------------------------------
 //---------------------------------------------------------------------------------------------
-void Tissue::Find_AllMeshes()
+void MeshTissue::Find_AllMeshes()
 {
     for (int i =0 ; i < cells.size(); i++)
     {
@@ -1089,7 +1089,23 @@ void Tissue::Find_AllMeshes()
     }
 }
 //---------------------------------------------------------------------------------------------
-void Tissue::Cal_AllSelfDiffusion()
+void MeshTissue::Cal_AreaOfTissue()
+{
+    areaTissue = 0.0 ;
+    for (int i =0; i<cells.size(); i++)
+    {
+        cells.at(i).areaCell = 0.0 ;
+        for (int j=0; j<cells.at(i).meshes.size(); j++)
+        {
+           cells.at(i).areaCell += cells.at(i).meshes.at(j).Cal_MeshArea() ;
+            
+        }
+        areaTissue += cells.at(i).areaCell ;
+    }
+    radius = sqrt(areaTissue/ pi ) ;
+}
+//---------------------------------------------------------------------------------------------
+void MeshTissue::Cal_AllSelfDiffusion()
 {
     for (int i =0 ; i < cells.size(); i++)
     {
@@ -1097,7 +1113,7 @@ void Tissue::Cal_AllSelfDiffusion()
     }
 }
 //---------------------------------------------------------------------------------------------
-void Tissue::Find_IntercellularMeshConnection()
+void MeshTissue::Find_IntercellularMeshConnection()
 {
     for (int i =0; i < cells.size(); i++)
     {
@@ -1151,9 +1167,9 @@ void Tissue::Find_IntercellularMeshConnection()
 
 //---------------------------------------------------------------------------------------------
 
-void Tissue::IntercellularDiffusion()
+void MeshTissue::IntercellularDiffusion()
 {
-    double dInter = 4.0 ;
+    double dInter = 1.0 ;
     for (int i =0 ; i < cells.size(); i++)
     {
         for (int j =0; j < cells.at(i).meshes.size(); j++)
@@ -1165,28 +1181,25 @@ void Tissue::IntercellularDiffusion()
             {
                 continue ;
             }
-            double area = cells.at(i).meshes.at(j).area.at(2) ;
+            double tmpChannel = cells.at(i).meshes.at(j).channel.at(2) ;
             double length = cells.at(i).meshes.at(j).length.at(2) ;
             double deltaU = cells.at(cellID).meshes.at(meshID).u1 - cells.at(i).meshes.at(j).u1 ;
-            cells.at(i).meshes.at(j).flux.push_back(dInter * area * deltaU / length) ;
+            cells.at(i).meshes.at(j).flux.push_back(dInter * tmpChannel * deltaU / length) ;
             
         }
     }
 }
 //---------------------------------------------------------------------------------------------
-void Tissue::EulerMethod()
+void MeshTissue::EulerMethod()
 {
     bool state = false ;
     int l = 0 ;
-    cout<< "Signal_Calculator is running"<<endl ;
     while (state==false)
     {
         Cal_AllSelfDiffusion() ;
         IntercellularDiffusion() ;
-        
-   //     if (l%1000==0) cout<<l/1000<<endl ;
-   //     if (l%1000==0) ParaViewMesh(l/1000) ;
-        
+        if (l%1000==0) cout<<l/1000<<endl ;
+      //  if (l%1000==0) ParaViewMesh(l/1000) ;
         for (int i = 0; i < cells.size(); i++)
         {
             for (int j =0; j < cells.at(i).meshes.size(); j++)
@@ -1219,7 +1232,7 @@ void Tissue::EulerMethod()
         
         l++ ;
     }
- //    ParaViewMesh(index) ;
+     ParaViewMesh(frameIndex) ;
     double value = 0 ;
     for (int j =0 ; j < cells.size();j++)
     {
@@ -1229,10 +1242,10 @@ void Tissue::EulerMethod()
         }
     }
     cout<< "value is "<<value<<endl ;
-//    cout<< "number of steps needed is " << l <<endl ;
+    cout<< "number of steps needed is " << l <<endl ;
 }
 //---------------------------------------------------------------------------------------------
-void Tissue::EulerMethod2 ()
+void MeshTissue::EulerMethod2 ()
 {
     
     for (int l =0 ; l <= 100000; l++)
@@ -1257,17 +1270,27 @@ void Tissue::EulerMethod2 ()
     }
 }
 //---------------------------------------------------------------------------------------------
-void Tissue::Find_SecretingCell()
+void MeshTissue::Find_SecretingCell()
 {
+    double cntX ;
+    double cntY ;
+    if (cellType == plant)
+    {
+        cntX = 0.0 ;
+        cntY = 0.0 ;
+    }
+    else if ( cellType == wingDisc)
+    {
+        cntX = 25 ;
+        cntY = 25 ;
+    }
     
-    double minDis = Dist2D(25, 25, cells.at(0).centroid.at(0), cells.at(0).centroid.at(1)) ;
- //   double minDis = Dist2D(0, 0, cells.at(0).centroid.at(0), cells.at(0).centroid.at(1)) ;
+    double minDis = Dist2D(cntX, cntY , cells.at(0).centroid.at(0), cells.at(0).centroid.at(1)) ;
     int cellID = 0 ;
     double dis ;
     for (int i = 1; i< cells.size(); i++)
     {
-        dis = Dist2D(25, 25, cells.at(i).centroid.at(0), cells.at(i).centroid.at(1)) ;
-     //   dis = Dist2D(0, 0, cells.at(i).centroid.at(0), cells.at(i).centroid.at(1)) ;
+        dis = Dist2D(cntX, cntY, cells.at(i).centroid.at(0), cells.at(i).centroid.at(1)) ;
         if (dis < minDis)
         {
             minDis = dis ;
@@ -1281,7 +1304,7 @@ void Tissue::Find_SecretingCell()
     }
 }
 //---------------------------------------------------------------------------------------------
-void Tissue::ParaViewMesh(int number)
+void MeshTissue::ParaViewMesh(int number)
 {
     vector<double> allNodesX ;
     vector<double> allNodesY ;
@@ -1415,7 +1438,7 @@ void Tissue::ParaViewMesh(int number)
     ECMOut.close();
 }
  //---------------------------------------------------------------------------------------------
-void Tissue::FullModel_Diffusion()
+void MeshTissue::FullModel_Diffusion()
 {
     for (int i=0; i<cells.size(); i++)
     {
@@ -1424,40 +1447,80 @@ void Tissue::FullModel_Diffusion()
             cells.at(i).meshes.at(j).Flux.clear() ;
         }
     }
+    
     for (int i =0 ; i<cells.size(); i++)
     {
         
-       cells.at(i).FullModel_SelfDiffusion () ;
+        cells.at(i).FullModel_SelfDiffusion (cellType) ;
     }
-   
-    for (int i =0 ; i<cells.size(); i++)
+    if (cellType == plant )
     {
-        for (int j =0; j < cells.at(i).meshes.size(); j++)
+
+        for (int i =0 ; i<cells.size(); i++)
         {
-            int cellID = cells.at(i).meshes.at(j).connection.first ;
-            int meshID = cells.at(i).meshes.at(j).connection.second ;
-            //cellID== -1 means the mesh is a boundary mesh (internal connections only )
-            if (cellID == -1)
+            for (int j =0; j < cells.at(i).meshes.size(); j++)
             {
-                continue ;
+                int cellID = cells.at(i).meshes.at(j).connection.first ;
+                int meshID = cells.at(i).meshes.at(j).connection.second ;
+                //cellID== -1 means the mesh is a boundary mesh (internal connections only )
+                if (cellID == -1)
+                {
+                    continue ;
+                }
+                else if (i < cellID )
+                {
+                    double tmpChannel = cells.at(i).meshes.at(j).channel.at(2) ;
+                    double length = cells.at(i).meshes.at(j).length.at(2) ;
+                    vector<double> deltaU ;
+                    deltaU.resize(cells.at(i).meshes.at(j).concentrations.size() ) ;
+                   transform( cells.at(cellID).meshes.at(meshID ).concentrations.begin()+1, cells.at(cellID).meshes.at(meshID ).concentrations.begin()+5,
+                              cells.at(i).meshes.at(j).concentrations.begin()+1, deltaU.begin()+1, linearConfig(1 ,-1) );
+                    vector<double> flux ;
+                    flux.clear() ;
+                    flux.resize(deltaU.size() ) ;
+                  transform(deltaU.begin()+1, deltaU.begin()+5, flux.begin()+1, productNum(tmpChannel/length ) ) ;
+                    transform(flux.begin()+1, flux.begin()+5, cells.at(i).meshes.at(j).diffusions.begin()+1, flux.begin()+1 , productVec()  ) ;
+                    cells.at(i).meshes.at(j).Flux.push_back(flux) ;
+                    transform(flux.begin()+1, flux.begin()+5, flux.begin()+1, productNum(-1) ) ;
+                    cells.at(cellID).meshes.at(meshID).Flux.push_back( flux ) ;
+        
+                }
             }
-            else if (i < cellID )
-            {
-                double area = cells.at(i).meshes.at(j).area.at(2) ;
-                double length = cells.at(i).meshes.at(j).length.at(2) ;
-                vector<double> deltaU ;
-                deltaU.resize(cells.at(i).meshes.at(j).concentrations.size() ) ;
-               transform( cells.at(cellID).meshes.at(meshID ).concentrations.begin()+1, cells.at(cellID).meshes.at(meshID ).concentrations.begin()+5,
-                          cells.at(i).meshes.at(j).concentrations.begin()+1, deltaU.begin()+1, linearConfig(1 ,-1) );
-                vector<double> flux ;
-                flux.clear() ;
-                flux.resize(deltaU.size() ) ;
-              transform(deltaU.begin()+1, deltaU.begin()+5, flux.begin()+1, productNum(area/length ) ) ;
-                transform(flux.begin()+1, flux.begin()+5, cells.at(i).meshes.at(j).diffusions.begin()+1, flux.begin()+1 , productVec()  ) ;
-                cells.at(i).meshes.at(j).Flux.push_back(flux) ;
-                transform(flux.begin()+1, flux.begin()+5, flux.begin()+1, productNum(-1) ) ;
-                cells.at(cellID).meshes.at(meshID).Flux.push_back( flux ) ;
+        }
+    }
     
+    else if (cellType == wingDisc)
+    {
+        for (int i =0 ; i<cells.size(); i++)
+        {
+            for (int j =0; j < cells.at(i).meshes.size(); j++)
+            {
+                int cellID = cells.at(i).meshes.at(j).connection.first ;
+                int meshID = cells.at(i).meshes.at(j).connection.second ;
+                //cellID== -1 means the mesh is a boundary mesh (internal connections only )
+                if (cellID == -1)
+                {
+                    continue ;
+                }
+                else if (i < cellID )
+                {
+                    double tmpChannel = cells.at(i).meshes.at(j).channel.at(2) ;
+                    double length = cells.at(i).meshes.at(j).length.at(2) ;
+                    vector<double> deltaU ;
+                    deltaU.resize(cells.at(i).meshes.at(j).concentrations.size() ) ;
+                    transform( cells.at(cellID).meshes.at(meshID ).concentrations.begin()+4, cells.at(cellID).meshes.at(meshID ).concentrations.begin()+5,
+                              cells.at(i).meshes.at(j).concentrations.begin()+4, deltaU.begin()+4, linearConfig(1 ,-1) );
+                    double dif = cells.at(i).meshes.at(j).diffusions.at(4) ;
+                    vector<double> flux ;
+                    flux.clear() ;
+                    flux.resize(deltaU.size() ) ;
+                    transform(deltaU.begin()+4, deltaU.begin()+5, flux.begin()+4, productNum(tmpChannel/length ) ) ;
+                    transform(flux.begin()+4, flux.begin()+5 , flux.begin()+4 , productNum( dif)  ) ;
+                    cells.at(i).meshes.at(j).Flux.push_back(flux) ;
+                    transform(flux.begin()+4, flux.begin()+5, flux.begin()+4, productNum(-1) ) ;
+                    cells.at(cellID).meshes.at(meshID).Flux.push_back( flux ) ;
+                    
+                }
             }
         }
     }
@@ -1466,45 +1529,60 @@ void Tissue::FullModel_Diffusion()
 
 //---------------------------------------------------------------------------------------------
 
-void Tissue::FullModel_AllCellProductions()         //call once, initialize the constants
+void MeshTissue::FullModel_AllCellProductions()         //call once, initialize the constants
 {
     for (int i=0; i<cells.size(); i++)
     {
-        if (cells.at(i).layer >= thres_layer && abs(cells.at(i).centroid.at(0) ) < thres_Production )
+        if (cellType == false)      //plant
         {
-            // CLV3 layer 3+
-            cells.at(i).productionW = 1 ;
-            cells.at(i).productionC = 1 ;
-            // ck layer 4+
-            cells.at(i).productionCk  = 1 ;
+            if (cells.at(i).layer >= thres_layer && abs(cells.at(i).centroid.at(0) ) < thres_Production )
+            {
+                // CLV3 layer 3+
+                cells.at(i).productionW = 1 ;
+                cells.at(i).productionC = 1 ;
+                // ck layer 4+
+                cells.at(i).productionCk  = 1 ;
+                cells.at(i).productionCkR  = 1 ;
+                
+            }
+            else
+            {
+                cells.at(i).productionW = 0 ;
+                cells.at(i).productionC = 0 ;
+                cells.at(i).productionCk  = 0 ;
+                cells.at(i).productionCkR  = 0 ;
+            }
+            cells.at(i).productionPMad  = 0 ;
         }
-        else
+        else    //WingDisc
         {
             cells.at(i).productionW = 0 ;
             cells.at(i).productionC = 0 ;
-            cells.at(i).productionCk  = 0 ;
+            cells.at(i).productionCk  = 1 ;         //corresponds to Dpp
+            cells.at(i).productionCkR  = 1 ;        //corresponds to Tkv
+            cells.at(i).productionPMad  = 1 ;
         }
         cells.at(i).FullModel_ProductionCell() ;
     }
 }
 //---------------------------------------------------------------------------------------------
-void Tissue::FullModelEulerMethod()
+void MeshTissue::FullModelEulerMethod()
 {
     bool state = false ;
     int l = 0 ;
     while (
            state==false
-           && l<=70000
+           && l<=100000
            )
     {
         FullModel_Diffusion() ;
-   //     if (l%1000==0) cout<<l/1000<<endl ;
+        if (l%1000==0) cout<<l/1000<<endl ;
    //     if (l%1000==0) ParaViewMesh(l/1000) ;
         for (int i = 0; i < cells.size(); i++)
         {
             for (int j =0; j < cells.at(i).meshes.size(); j++)
             {
-                cells.at(i).meshes.at(j).FullModel_Euler() ;
+                cells.at(i).meshes.at(j).FullModel_Euler(cellType , radius) ;
             }
         }
         
@@ -1513,14 +1591,28 @@ void Tissue::FullModelEulerMethod()
         {
             for (int j =0; j < cells.at(i).meshes.size(); j++)
             {
-                if(
-                   abs(cells.at(i).meshes.at(j).concentrations2.at(1) - cells.at(i).meshes.at(j).concentrations.at(1) )/(cells.at(i).meshes.at(j).concentrations.at(1) + 0.000001) > 0.000001
-                 ||  abs(cells.at(i).meshes.at(j).concentrations2.at(3) - cells.at(i).meshes.at(j).concentrations.at(3) )/(cells.at(i).meshes.at(j).concentrations.at(3) + 0.000001) > 0.000001
-                    || abs(cells.at(i).meshes.at(j).concentrations2.at(6) - cells.at(i).meshes.at(j).concentrations.at(6) )/(cells.at(i).meshes.at(j).concentrations.at(6) + 0.000001) > 0.000001
-                   )
+                if (cellType == plant)
                 {
-                    state = false ;
-                    break ;
+                    if(
+                       abs(cells.at(i).meshes.at(j).concentrations2.at(1) - cells.at(i).meshes.at(j).concentrations.at(1) )/(cells.at(i).meshes.at(j).concentrations.at(1) + 0.000001) > 0.000001
+                     ||  abs(cells.at(i).meshes.at(j).concentrations2.at(3) - cells.at(i).meshes.at(j).concentrations.at(3) )/(cells.at(i).meshes.at(j).concentrations.at(3) + 0.000001) > 0.000001
+                        || abs(cells.at(i).meshes.at(j).concentrations2.at(6) - cells.at(i).meshes.at(j).concentrations.at(6) )/(cells.at(i).meshes.at(j).concentrations.at(6) + 0.000001) > 0.000001
+                       )
+                    {
+                        state = false ;
+                        break ;
+                    }
+                }
+                else if (cellType== wingDisc)
+                {
+                    //condition is not finilized
+                    if (abs(cells.at(i).meshes.at(j).concentrations2.at(4) - cells.at(i).meshes.at(j).concentrations.at(4) )/(cells.at(i).meshes.at(j).concentrations.at(4) + 0.000001) > 0.000001 ||
+                        abs(cells.at(i).meshes.at(j).concentrations2.at(7) - cells.at(i).meshes.at(j).concentrations.at(7) )/(cells.at(i).meshes.at(j).concentrations.at(7) + 0.000001) > 0.000001
+                        )
+                    {
+                        state = false ;
+                        break ;
+                    }
                 }
                 
             }
@@ -1537,7 +1629,7 @@ void Tissue::FullModelEulerMethod()
         
         l++ ;
     }
-    ParaViewMesh(index) ;
+    ParaViewMesh(frameIndex) ;
     cout<<"l is equal to "<<l << endl ;
     /*
     double value = 0 ;
@@ -1554,11 +1646,11 @@ void Tissue::FullModelEulerMethod()
 }
 //---------------------------------------------------------------------------------------------
 
-void Tissue::Cal_AllCellConcentration()
+void MeshTissue::Cal_AllCellConcentration()
 {
     for (int i =0; i<cells.size(); i++)
     {
-        cells.at(i).CellLevelConcentration() ;
+        cells.at(i).CellLevelConcentration(cellType) ;
         if (equationsType== simpeODE)
         {
             tissueLevelU.push_back(cells.at(i).cellU ) ;
