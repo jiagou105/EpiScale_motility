@@ -2043,6 +2043,7 @@ struct DppGrowRegulator: public thrust::unary_function<DDDD, double> {
 		double progressNew ; 
 
 		progressNew=progress+speed*_dt ; 
+		return progressNew ;	// Alireza : bypass if conditions
 		if ((progress <= _mitoticCheckPoint) && (progressNew>_mitoticCheckPoint)) {
 			if (dpp/(dpp_Old+0.0005)>1.5) {
 				return (progressNew) ; 
