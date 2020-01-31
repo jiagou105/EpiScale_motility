@@ -23,7 +23,7 @@ int main ()
     MeshTissue tissue ;
     tissue.cellType = wingDisc ;
     tissue.equationsType = simpeODE ;
-    tissue.readFileStatus = true ;
+    tissue.readFileStatus = false ;
     tissue.frameIndex = index ;
      cout<< "Signal_Calculator function is working "<<endl ;
     if (tissue.readFileStatus)
