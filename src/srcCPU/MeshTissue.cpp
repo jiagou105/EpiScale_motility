@@ -1198,7 +1198,7 @@ void MeshTissue::EulerMethod()
     {
         Cal_AllSelfDiffusion() ;
         IntercellularDiffusion() ;
-        if (l%1000==0) cout<<l/1000<<endl ;
+      //  if (l%1000==0) cout<<l/1000<<endl ;
       //  if (l%1000==0) ParaViewMesh(l/1000) ;
         for (int i = 0; i < cells.size(); i++)
         {
@@ -1576,7 +1576,7 @@ void MeshTissue::FullModelEulerMethod()
            )
     {
         FullModel_Diffusion() ;
-        if (l%1000==0) cout<<l/1000<<endl ;
+   //     if (l%1000==0) cout<<l/1000<<endl ;
    //     if (l%1000==0) ParaViewMesh(l/1000) ;
         for (int i = 0; i < cells.size(); i++)
         {

@@ -3,7 +3,7 @@
 #include "Signal_Calculator.h"
 
 //---------------------------------------------------------------------------------------------
-/*
+ /*
 vector<double> Signal_Calculator(vector< vector<double> > locX , vector< vector<double> > locY , vector<double > centX , vector<double > centY ,int index)
 {
     vector<double > a ;
@@ -17,14 +17,15 @@ int main ()
      vector<double > centX ;
      vector<double > centY ;
      int index = 5 ;
-*/
+ */
  vector<double> Signal_Calculator ( vector< vector<double> > locX , vector< vector<double> > locY , vector<double > centX , vector<double > centY, int index ){
     
     MeshTissue tissue ;
     tissue.cellType = wingDisc ;
     tissue.equationsType = simpeODE ;
-    tissue.readFileStatus = false ;
+    tissue.readFileStatus = true ;
     tissue.frameIndex = index ;
+     cout<< "Signal_Calculator function is working "<<endl ;
     if (tissue.readFileStatus)
     {
         if (tissue.cellType == plant)
@@ -85,9 +86,9 @@ int main ()
     }
     
     tissue.Cal_AllCellConcentration() ; 
-    
+     cout<< "Signal_Calculator function finished working "<<endl ;
    return tissue.tissueLevelU ;
- //    return 0 ;
+  //   return 0 ;
 }
 
 // Adjust index and other global variables
