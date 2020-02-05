@@ -1348,7 +1348,7 @@ void MeshTissue::ParaViewMesh(int number)
     for (uint i = 0; i < numberOfCells ; i++) {
         ECMOut << "5" << endl;
     }
-    if (equationsType == simpeODE)
+    if (equationsType == simpleODE)
     {
         ECMOut << "POINT_DATA "<<allNodesX.size() <<endl ;
         ECMOut << "SCALARS WUS " << "float"<< endl;
@@ -1651,13 +1651,34 @@ void MeshTissue::Cal_AllCellConcentration()
     for (int i =0; i<cells.size(); i++)
     {
         cells.at(i).CellLevelConcentration(cellType) ;
-        if (equationsType== simpeODE)
+        if (equationsType== simpleODE)
         {
             tissueLevelU.push_back(cells.at(i).cellU ) ;
         }
         else
         {
             tissueLevelConcentration.push_back(cells.at(i).cellConcentration ) ;
+        }
+    }
+}
+//---------------------------------------------------------------------------------------------
+void MeshTissue::Cal_ReturnSignal()
+{
+    if (equationsType == fullModel)
+    {
+        int sgnl ;
+        if (cellType== wingDisc)
+        {
+            sgnl = 0 ;     //Dpp
+        }
+        else
+        {
+            sgnl = 3 ;     //CLV3
+        }
+        tissueLevelU.clear() ;
+        for (int i=0 ; i < cells.size() ; i++)
+        {
+            tissueLevelU.push_back( tissueLevelConcentration.at(i).at(sgnl) ) ;
         }
     }
 }

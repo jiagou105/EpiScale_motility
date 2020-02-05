@@ -22,7 +22,7 @@ int main ()
     
     MeshTissue tissue ;
     tissue.cellType = wingDisc ;
-    tissue.equationsType = simpeODE ;
+    tissue.equationsType = fullModel ;
     tissue.readFileStatus = false ;
     tissue.frameIndex = index ;
      cout<< "Signal_Calculator function is working "<<endl ;
@@ -67,14 +67,14 @@ int main ()
     tissue.Cal_AllCellConnections() ;
  // tissue.Print_VeritcesSize() ;
     tissue.ParaViewVertices() ;
-    tissue.ParaViewTissue () ;
-    tissue.ParaViewInitialConfiguration() ;
+//    tissue.ParaViewTissue () ;
+//   tissue.ParaViewInitialConfiguration() ;
     
     tissue.Find_AllMeshes () ;
     tissue.Find_IntercellularMeshConnection () ;
     tissue.Cal_AreaOfTissue() ;
  //   tissue.ParaViewMesh(0) ;
-    if (tissue.equationsType == simpeODE)
+    if (tissue.equationsType == simpleODE)
     {
         tissue.Find_SecretingCell() ;
         tissue.EulerMethod () ;
@@ -85,8 +85,11 @@ int main ()
         tissue.FullModelEulerMethod () ;
     }
     
-    tissue.Cal_AllCellConcentration() ; 
-     cout<< "Signal_Calculator function finished working "<<endl ;
+    tissue.Cal_AllCellConcentration() ;     // output depends on the cellType and equationType
+    tissue.Cal_ReturnSignal() ;             // returning Dpp level as U
+    cout<< "Signal_Calculator function finished working "<<endl ;
+    
+     
    return tissue.tissueLevelU ;
   //   return 0 ;
 }

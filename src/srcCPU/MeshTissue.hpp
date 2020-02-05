@@ -8,7 +8,7 @@ enum CellType
 };
 enum Equation
 {
-    simpeODE = 0 ,
+    simpleODE = 0 ,
     fullModel = 1
 };
 class MeshTissue
@@ -75,6 +75,7 @@ public:
     void FullModelEulerMethod ( ) ;              //Main loop
     
     void Cal_AllCellConcentration () ;
+    void Cal_ReturnSignal () ;
     
 
     
