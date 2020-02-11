@@ -70,15 +70,14 @@ void Signal::exportGeometryInfo() {
 
 	//ALIREZA CODE BEGIN
 
-
-
-
  	double Center_X=minX+0.5*(maxX-minX); 
  	int cellRank ; 
 	int totalNumActiveMembraneNodes=0 ; 
-	for (uint i = 0; i < maxTotalNumActiveNodes; i++) {
+	for (uint i = 0; i < maxTotalNumActiveNodes; i++) 
+	{
 		cellRank = i / maxAllNodePerCell;
-		if (nodeIsActiveHost[i] && (i%maxAllNodePerCell) < maxMembrNodePerCell) {
+		if (nodeIsActiveHost[i] && (i%maxAllNodePerCell) < maxMembrNodePerCell) 
+		{
 			totalNumActiveMembraneNodes++ ; 
 		}
 	}
@@ -120,6 +119,46 @@ void Signal::exportGeometryInfo() {
         tissueDppLevel.push_back(0.0) ;   //these cells are not active
     }
     dppLevel = tissueDppLevel ;
+	
+	
+	//Ali code: writing nodes locations in a file, needed for debuging
+	srand(time(NULL));
+
+ 	double max_Rx=max (maxX-Center_X,Center_X-minX) ; 
+	cout << "The information is read from "<< periodCount<<" data" <<endl ; 
+	cout << "size of node is active in signal module is " << nodeIsActiveHost.size() << endl ; 
+	cout << "max total number of active nodes in signal module is " << maxTotalNumActiveNodes  << endl ; 
+	cout << "max of all nodes per cell in signal module is " << maxAllNodePerCell << endl ; 
+	//std :: string  txtFileName="ExportTisuProp_" + patch::to_string(periodCount)+".txt" ; 
+	std :: string  txtFileName="ExportCellProp_" + patch::to_string(periodCount)+".txt" ; 
+	ofstream ExportOut ; 
+	ExportOut.open(txtFileName.c_str()); 
+	//ExportOut << "Time (s), Tissue_CenterX(micro meter),Max_Length_X(micro meter)"<<endl; 
+	//ExportOut<<curTime<<","<<Center_X<<","<<max_Rx<<endl   ;
+	//ExportOut << "CellRank,CellCenterX,CellCenterY"<<endl;
+	/*
+	// writing cell centers at the beginning of the file
+	for (int k=0; k<numActiveCells; k++){
+		ExportOut<<k<<","<<cellCenterX[k]<<","<<cellCenterY[k]<<endl   ;
+	}
+	*/
+ 	//ExportOut << "CellRank,MembraneNodeX,MembraneNodeY"<<endl;
+
+	for ( uint i=0 ; i< maxTotalNumActiveNodes ; i++) {
+
+		cellRank= i/maxAllNodePerCell ; 
+		if (nodeIsActiveHost[i] && (i%maxAllNodePerCell)<maxMembrNodePerCell) {
+			ExportOut<<cellRank<<" "<<nodeLocXHost[i]<<" "<<nodeLocYHost[i]<<endl   ;
+		}
+	}
+	//LastLineIndicator is not included in the Signal_Calculator function
+	/*
+	int lastLineIndicator=123456789 ;
+	ExportOut<<lastLineIndicator<<","<<lastLineIndicator<<","<<lastLineIndicator<<endl   ;
+	*/
+	ExportOut.flush() ;
+	cout << "I exported  the data for signaling model"<< endl ; 
+	ExportOut.close() ;  
 }
 
 	/*
