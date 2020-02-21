@@ -113,7 +113,6 @@ void Signal::exportGeometryInfo() {
     }
     vector<double> tissueDppLevel ;
     tissueDppLevel = Signal_Calculator ( locX , locY , cntX , cntY, frameNumber ) ;       //output required
-    frameNumber += 3 ;
     for (int k=numActiveCells; k<maxCellCount ; k++)
     {
         tissueDppLevel.push_back(0.0) ;   //these cells are not active
@@ -159,6 +158,7 @@ void Signal::exportGeometryInfo() {
 	ExportOut.flush() ;
 	cout << "I exported  the data for signaling model"<< endl ; 
 	ExportOut.close() ;  
+	frameNumber += 3 ;
 }
 
 	/*
