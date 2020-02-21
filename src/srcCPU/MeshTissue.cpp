@@ -379,10 +379,6 @@ void MeshTissue::Cal_Intersect()
                     int cellID_C = cells.at(i).neighbors.at(j).commonNeighbors.at(k).cellIDCommonNeighbor ;
                     if (cellID_B < cellID_C )
                     {
-                        if (i==7 && cellID_B == 15)
-                        {
-                      //      cout<< i << '\t'<<cellID_B<<'\t'<<cellID_C<<endl ;
-                        }
                         int nghbrIDA_C = cells.at(i).neighbors.at(j).commonNeighbors.at(k).nghbrIDCell_CommonNeighbor ;
                         int nghbrIDC_A = cells.at(i).neighbors.at(j).commonNeighbors.at(k).nghbrIDCommonNeighbor_Cell ;
                         int nghbrIDB_C = cells.at(i).neighbors.at(j).commonNeighbors.at(k).nghbrIDNeighboringCell_CommonNeighbor ;

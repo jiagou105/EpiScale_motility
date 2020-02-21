@@ -277,6 +277,10 @@ void MeshCell::Add_BoundaryVertice3 ()
                 deltaTetta += 2*pi ;
             }
         }
+        if (deltaTetta < 0.0)
+        {
+            cout<< "OMG!!! deltaTetta is negative :"<<deltaTetta<<endl ;
+        }
         int number = round(deltaTetta / preferedAngle);
         double step = deltaTetta / number ;
         for (int i =1; i< number; i++)
@@ -303,7 +307,7 @@ void MeshCell::Refine_NoBoundary ()
         {
             tmp = Dist_PointToVec2D(noNeighboringNodesX.at(i), noNeighboringNodesY.at(i), verticesX, verticesY) ;
             double tmpMin = *min_element(tmp.begin(), tmp.end()) ;
-            if (tmpMin < thres_intersect)
+            if (tmpMin < thres_refineNodes )
             {
                 removeNoBoundaryNode.push_back(i) ;
             }
@@ -331,7 +335,7 @@ void MeshCell::Refine_NodeXNew ()
         {
             tmp = Dist_PointToVec2D(nodesXNew.at(i), nodesYNew.at(i), verticesX, verticesY) ;
             double tmpMin = *min_element(tmp.begin(), tmp.end()) ;
-            if (tmpMin < thres_intersect)
+            if (tmpMin < thres_refineNodes )
             {
                 removeNodeXNew.push_back(i) ;
             }
