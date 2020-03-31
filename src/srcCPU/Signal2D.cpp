@@ -39,6 +39,9 @@ void Signal::Initialize (uint maxAllNodePerCell, uint maxMembrNodePerCell, uint 
 	cellCenterX.resize(maxCellCount,0.0) ; 
 	cellCenterY.resize(maxCellCount,0.0) ; 
 	dppLevel.resize(maxCellCount,0.0) ; 
+	tkvLevel.resize(maxCellCount,0.0) ; //Alireza
+	dppTkvLevel.resize(maxCellCount,0.0) ; //Alireza
+	pMadLevel.resize(maxCellCount,0.0) ; //Alireza
 
 	minResol=0.1 ;// max distance of the first imported coordinate of DPP from the tissue center to accept it for that cell    
 	resol=501 ; // the number of imported DPP values
