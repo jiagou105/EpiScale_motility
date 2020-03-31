@@ -29,6 +29,9 @@ class Signal {
     std::vector<bool> nodeIsActiveHost ;
     std::vector<double> nodeLocXHost, nodeLocYHost, cellCenterX,cellCenterY ;
     std::vector<double> dppLevel ;
+    std::vector<double> tkvLevel ;  //Alireza
+    std::vector<double> dppTkvLevel ;  //Alireza
+    std::vector<double> pMadLevel ;  //Alireza
     std::vector<double> dppDistV,dppLevelV ;
     
     void updateSignal(double minX, double maxX, double minY, double maxY, double curTime, int maxTotalNumActiveNodes, int numActiveCells) ;
