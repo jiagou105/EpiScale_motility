@@ -22,7 +22,7 @@ using namespace std ;
 #define thres_noBoundary 20
 #define thres_Production 20
 #define thres_layer 3             //CLV3 layer 3+
-#define dt 0.05
+#define dt 0.03
 
 
 
