@@ -91,7 +91,14 @@ void Signal::exportGeometryInfo() {
     	{
 		cntX.push_back( cellCenterX[k] ) ;
 		cntY.push_back( cellCenterY[k] ) ;
+		
 		vector<double> newCell ;
+		newCell.push_back( dppLevel[k] ) ;
+		newCell.push_back( tkvLevel[k] ) ;
+		newCell.push_back( dppTkvLevel[k] ) ;
+		newCell.push_back( pMadLevel[k] ) ;
+		concentrations.push_back( newCell ) ;
+		
     	}
 	vector <vector < double > > locX ;
    	vector <vector < double > > locY ;
@@ -114,14 +121,14 @@ void Signal::exportGeometryInfo() {
 			locY.back().push_back ( nodeLocYHost[i] ) ;
        		 }
   	  }
-   	 vector<double> tissueDppLevel ;
-   	 tissueDppLevel = Signal_Calculator ( locX , locY , cntX , cntY, frameNumber ) ;       //output required
-   	 for (int k=numActiveCells; k<maxCellCount ; k++)
-   	 {
-    	    tissueDppLevel.push_back(0.0) ;   //these cells are not active
-    	}
-   	 dppLevel = tissueDppLevel ;
-	
+	concentrations = Signal_Calculator ( locX , locY , cntX , cntY, concentrations, frameNumber ) ;       //output required
+	for (int k = 0; k < numActiveCells; k++)
+    	{
+		dppLevel[i] = cencentrations[i].at[0] ;
+		tkvLevel[i] = cencentrations[i].at[1] ;
+		dppTkvLevel[i] = cencentrations[i].at[2] ;
+		pMadLevel[i] = cencentrations[i].at[3] ;
+	}
 	
 	//Ali code: writing nodes locations in a file, needed for debuging
 	srand(time(NULL));
