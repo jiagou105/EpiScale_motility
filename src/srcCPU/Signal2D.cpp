@@ -84,43 +84,43 @@ void Signal::exportGeometryInfo() {
 			totalNumActiveMembraneNodes++ ; 
 		}
 	}
-    vector<double > cntX ;
-    vector<double > cntY ;
-    for (int k = 0; k < numActiveCells; k++)
-    {
-        cntX.push_back( cellCenterX[k] ) ;
-        cntY.push_back( cellCenterY[k] ) ;
-    }
-    
-    vector <vector < double > > locX ;
-    vector <vector < double > > locY ;
-    locX.clear() ;
-    locY.clear() ;
-    int size = 0 ;
-    
-    for (uint i = 0; i < maxTotalNumActiveNodes; i++)
-    {
-        cellRank = i / maxAllNodePerCell ;
-        if (nodeIsActiveHost[i] && (i % maxAllNodePerCell) < maxMembrNodePerCell)
-        {
-            if (size == cellRank)
-            {
-                vector < double > newCell ;
-                locX.push_back( newCell ) ;
-                locY.push_back( newCell ) ;
-                size += 1 ;
-            }
-             locX.back().push_back ( nodeLocXHost[i] ) ;
-             locY.back().push_back ( nodeLocYHost[i] ) ;
-        }
-    }
-    vector<double> tissueDppLevel ;
-    tissueDppLevel = Signal_Calculator ( locX , locY , cntX , cntY, frameNumber ) ;       //output required
-    for (int k=numActiveCells; k<maxCellCount ; k++)
-    {
-        tissueDppLevel.push_back(0.0) ;   //these cells are not active
-    }
-    dppLevel = tissueDppLevel ;
+	vector<double > cntX ;
+   	vector<double > cntY ;
+	vector<vector<double > > concentrations ;
+    	for (int k = 0; k < numActiveCells; k++)
+    	{
+		cntX.push_back( cellCenterX[k] ) ;
+		cntY.push_back( cellCenterY[k] ) ;
+		vector<double> newCell ;
+    	}
+	vector <vector < double > > locX ;
+   	vector <vector < double > > locY ;
+	locX.clear() ;
+	locY.clear() ;
+	int size = 0 ;
+    	for (uint i = 0; i < maxTotalNumActiveNodes; i++)
+   	 {
+		cellRank = i / maxAllNodePerCell ;
+		if (nodeIsActiveHost[i] && (i % maxAllNodePerCell) < maxMembrNodePerCell)
+        	{
+           	 	if (size == cellRank)
+		 	{
+                		vector < double > newCell ;
+                		locX.push_back( newCell ) ;
+                		locY.push_back( newCell ) ;
+				 size += 1 ;
+			 }
+			locX.back().push_back ( nodeLocXHost[i] ) ;
+			locY.back().push_back ( nodeLocYHost[i] ) ;
+       		 }
+  	  }
+   	 vector<double> tissueDppLevel ;
+   	 tissueDppLevel = Signal_Calculator ( locX , locY , cntX , cntY, frameNumber ) ;       //output required
+   	 for (int k=numActiveCells; k<maxCellCount ; k++)
+   	 {
+    	    tissueDppLevel.push_back(0.0) ;   //these cells are not active
+    	}
+   	 dppLevel = tissueDppLevel ;
 	
 	
 	//Ali code: writing nodes locations in a file, needed for debuging
