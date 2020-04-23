@@ -168,7 +168,7 @@ void Signal::exportGeometryInfo() {
 	ExportOut.flush() ;
 	cout << "I exported  the data for signaling model"<< endl ; 
 	ExportOut.close() ;  
-	frameNumber += 1 ;
+	frameNumber += 10 ;
 }
 
 	/*
