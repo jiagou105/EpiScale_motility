@@ -24,6 +24,7 @@ public:
     double areaTissue ;
     double radius ;
     int frameIndex ;
+    bool frameIsNan = false ;
     
     
     
@@ -35,7 +36,7 @@ public:
     vector<MeshCell> ReadFile ( ) ;
     vector<MeshCell> ReadFile2 ( ) ;
     vector<MeshCell> ReadFile3 ( ) ;
-    void Coupling (vector< vector<double> > locX , vector< vector<double> > locY , vector<double > centX , vector<double > centY ) ;
+    void Coupling (vector< vector<double> > locX , vector< vector<double> > locY ) ;
     void Find_AllCell_NeighborID_Cell () ;
     void Cal_AllCellNewEdge () ;
     void Find_CommonNeighbors () ;
@@ -76,6 +77,10 @@ public:
     
     void Cal_AllCellConcentration () ;
     void Cal_ReturnSignal () ;
+    void Initialize_Concentrations (vector<vector<double> > oldConcentrations) ;
+    void WriteConcentrations () ;
+    void ReadConcentrations () ;
+    void UpdateNanStatus () ;
     
 
     
