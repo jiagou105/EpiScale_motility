@@ -24,7 +24,7 @@ class Signal {
     int maxTotalNumActiveNodes ;
     int numActiveCells ;
     double minResol, resol ;
-    int frameNumber = 0 ;
+    int frameNumber = 1 ;
     
     std::vector<bool> nodeIsActiveHost ;
     std::vector<double> nodeLocXHost, nodeLocYHost, cellCenterX,cellCenterY ;
