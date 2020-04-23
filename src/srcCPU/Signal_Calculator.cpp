@@ -23,6 +23,7 @@ int main ()
  vector< vector<double> > Signal_Calculator ( vector< vector<double> > locX , vector< vector<double> > locY , vector<double > centX , vector<double > centY,vector< vector<double> > oldConcentrations , int index ){
     
     ofstream nanIndex ("NanIndex.txt", ofstream::app) ;    //everything will be written at the end of the existing file
+    ofstream sgnlCalculator ("sgnlCalculator.txt", ofstream::app) ;    //everything will be written at the end of the existing file
     auto start = std::chrono::high_resolution_clock::now() ;
     MeshTissue tissue ;
     tissue.cellType = wingDisc ;
@@ -30,6 +31,7 @@ int main ()
     tissue.readFileStatus = false ;
     tissue.frameIndex = index ;
     cout<<"current index in Signal_Calculator function is "<<index<<endl ;
+    sgnlCalculator<<"current index in Signal_Calculator function is "<<index<<endl ;
     if (tissue.readFileStatus)
     {
         if (tissue.cellType == plant)
@@ -49,6 +51,7 @@ int main ()
         tissue.Cal_AllCellCenters () ;
     }
      cout<<"number of the cells is "<<tissue.cells.size()<<endl ;
+     sgnlCalculator<<"number of the cells is "<<tissue.cells.size()<<endl ;
      
      
   // // // // //  tissue.ParaViewInitialConfiguration() ;       // Bug when I run this early in the code!!!! intx.size()= 0 !!!!!!
@@ -118,13 +121,15 @@ int main ()
      tissue.UpdateNanStatus() ;
      if (tissue.frameIsNan)
      {
-         nanIndex << tissue.frameIndex<<endl ;
+         nanIndex <<"This is a Nan frame :" <<tissue.frameIndex<<endl ;
      }
      nanIndex.close() ;
      
      auto stop = std::chrono::high_resolution_clock::now();
      auto duration = std::chrono::duration_cast<std::chrono::seconds>(stop - start);
      cout << "Time taken by Singnal_Calculator is : " << duration.count() << " seconds" << endl;
+     sgnlCalculator << "Time taken by Singnal_Calculator is : " << duration.count() << " seconds" << endl;
+     sgnlCalculator.close() ;
      
      // return tissue.tissueLevelU ;
        return tissue.tissueLevelConcentration ;
