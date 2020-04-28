@@ -7,7 +7,7 @@
 /*
 vector<vector<double> > Signal_Calculator(vector< vector<double> > locX , vector< vector<double> > locY , vector<double > centX , vector<double > centY ,vector< vector<double> > oldConcentrations ,int index)
 {
-    vector<double > a ;
+    vector<vector<double > > a ;
     return a ;
 }
 
@@ -28,7 +28,7 @@ int main ()
     MeshTissue tissue ;
     tissue.cellType = wingDisc ;
     tissue.equationsType = fullModel ;
-    tissue.readFileStatus = false ;
+    tissue.readFileStatus = true ;
     tissue.frameIndex = index ;
     cout<<"current index in Signal_Calculator function is "<<index<<endl ;
     sgnlCalculator<<"current index in Signal_Calculator function is "<<index<<endl ;
@@ -97,16 +97,19 @@ int main ()
         if (tissue.readFileStatus)
         {
             tissue.ReadConcentrations() ;
+            tissue.WriteConcentrations("old") ;
         }
         else if (oldConcentrations.size()== tissue.cells.size() )
         {
-            nanIndex << "Initialize_Concetrations is going to work"<< endl ;
+            
             tissue.Initialize_Concentrations( oldConcentrations ) ;
-             nanIndex << "Initialize_Concetrations finished working "<< endl ;
+            tissue.tissueLevelConcentration = oldConcentrations ;
+            tissue.WriteConcentrations("old") ;
         }
         else
         {
-            nanIndex << "tissue size is "<<tissue.cells.size()<<'t'<<"oldConcentration size is "<<oldConcentrations.size()<<endl ;
+            nanIndex <<"frame index is "<<tissue.frameIndex<<'\t' <<"tissue size is "<<tissue.cells.size()<<'t'
+                    <<"oldConcentration size is "<<oldConcentrations.size()<<endl ;
         }
         
         tissue.FullModel_AllCellProductions() ;     //Initialize production values
@@ -117,7 +120,8 @@ int main ()
      
      
    //  tissue.Cal_ReturnSignal() ;             // returning Dpp level as U
-     tissue.WriteConcentrations() ;
+     
+     tissue.WriteConcentrations("new") ;
      tissue.UpdateNanStatus() ;
      if (tissue.frameIsNan)
      {

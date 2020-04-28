@@ -78,7 +78,7 @@ public:
     void Cal_AllCellConcentration () ;
     void Cal_ReturnSignal () ;
     void Initialize_Concentrations (vector<vector<double> > oldConcentrations) ;
-    void WriteConcentrations () ;
+    void WriteConcentrations (string ) ;
     void ReadConcentrations () ;
     void UpdateNanStatus () ;
     

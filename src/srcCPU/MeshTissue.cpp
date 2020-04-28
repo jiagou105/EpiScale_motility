@@ -1635,7 +1635,6 @@ void MeshTissue::FullModelEulerMethod()
     }
     ParaViewMesh(frameIndex) ;
     cout<<"l is equal to "<<l << endl ;
-    
     double value = 0 ;
     for (int j =0 ; j < cells.size();j++)
     {
@@ -1732,10 +1731,10 @@ void MeshTissue:: Initialize_Concentrations(vector<vector<double> > oldConcentra
 
 //---------------------------------------------------------------------------------------------
 
-void MeshTissue::WriteConcentrations()
+void MeshTissue::WriteConcentrations(string timer)
 {
     string number = to_string(frameIndex) ;
-    ofstream concentrationsData ("concentrations_"+ number +".txt") ;
+    ofstream concentrationsData (timer + "concentrations_"+ number +".txt") ;
     concentrationsData << cells.size()<<endl ;
     for (int i=0; i<tissueLevelConcentration.size(); i++)
     {
