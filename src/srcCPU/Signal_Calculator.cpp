@@ -28,7 +28,7 @@ int main ()
     MeshTissue tissue ;
     tissue.cellType = wingDisc ;
     tissue.equationsType = fullModel ;
-    tissue.readFileStatus = true ;
+    tissue.readFileStatus = false ;
     tissue.frameIndex = index ;
     cout<<"current index in Signal_Calculator function is "<<index<<endl ;
     sgnlCalculator<<"current index in Signal_Calculator function is "<<index<<endl ;
