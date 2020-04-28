@@ -122,12 +122,12 @@ void Signal::exportGeometryInfo() {
        		 }
   	  }
 	concentrations = Signal_Calculator ( locX , locY , cntX , cntY, concentrations, frameNumber ) ;       //output required
-	for (int k = 0; k < numActiveCells; k++)
+	for (int i = 0; i < numActiveCells; i++)
     	{
-		dppLevel[i] = cencentrations[i].at[0] ;
-		tkvLevel[i] = cencentrations[i].at[1] ;
-		dppTkvLevel[i] = cencentrations[i].at[2] ;
-		pMadLevel[i] = cencentrations[i].at[3] ;
+		dppLevel[i] = concentrations[i].at(0) ;
+		tkvLevel[i] = concentrations[i].at(1) ;
+		dppTkvLevel[i] = concentrations[i].at(2) ;
+		pMadLevel[i] = concentrations[i].at(3) ;
 	}
 	
 	//Ali code: writing nodes locations in a file, needed for debuging
