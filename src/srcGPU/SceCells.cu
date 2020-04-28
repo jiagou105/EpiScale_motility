@@ -1489,7 +1489,7 @@ if (firstTimeReadDpp) {
 		thrust:: copy (cellInfoVecs.centerCoordY.begin(),cellInfoVecs.centerCoordY.begin()+allocPara_m.currentActiveCellCount, signal.cellCenterY.begin());
 		
 		thrust:: copy (cellInfoVecs.cell_Dpp.begin(),cellInfoVecs.cell_Dpp.begin()+allocPara_m.currentActiveCellCount, signal.dppLevel.begin());		//Alireza
-		thrust:: copy (cellInfoVecs.cell_tkv.begin(),cellInfoVecs.cell_Tkv.begin()+allocPara_m.currentActiveCellCount, signal.tkvLevel.begin());		//Alireza
+		thrust:: copy (cellInfoVecs.cell_Tkv.begin(),cellInfoVecs.cell_Tkv.begin()+allocPara_m.currentActiveCellCount, signal.tkvLevel.begin());		//Alireza
 		thrust:: copy (cellInfoVecs.cell_DppTkv.begin(),cellInfoVecs.cell_DppTkv.begin()+allocPara_m.currentActiveCellCount, signal.dppTkvLevel.begin());	//Alireza
 		thrust:: copy (cellInfoVecs.cell_pMad.begin(),cellInfoVecs.cell_pMad.begin()+allocPara_m.currentActiveCellCount, signal.pMadLevel.begin());		//Alireza
 		
