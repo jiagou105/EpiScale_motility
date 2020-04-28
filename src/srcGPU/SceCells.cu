@@ -1495,10 +1495,10 @@ if (firstTimeReadDpp) {
 		
         	signal.updateSignal(Tisu_MinX,Tisu_MaxX,Tisu_MinY,Tisu_MaxY,curTime,totalNodeCountForActiveCells,allocPara_m.currentActiveCellCount) ; //Ali
         	assert(cellInfoVecs.cell_Dpp.size()==signal.dppLevel.size());
-        	thrust::copy(signal.dppLevel.begin(),signal.dppLevel.end(),cellInfoVecs.cell_Dpp.begin()) ;
-		thrust::copy(signal.tkvLevel.begin(),signal.tkvLevel.end(),cellInfoVecs.cell_Tkv.begin()) ;		//Alireza
-		thrust::copy(signal.dppTkvLevel.begin(),signal.dppTkvLevel.end(),cellInfoVecs.cell_DppTkv.begin()) ;	//Alireza
-		thrust::copy(signal.pMadLevel.begin(),signal.pMadLevel.end(),cellInfoVecs.cell_pMad.begin()) ;		//Alireza
+        	thrust::copy(signal.dppLevel.begin(),signal.dppLevel.begin() + allocPara_m.currentActiveCellCount,cellInfoVecs.cell_Dpp.begin()) ;
+		thrust::copy(signal.tkvLevel.begin(),signal.tkvLevel.begin() + allocPara_m.currentActiveCellCount,cellInfoVecs.cell_Tkv.begin()) ;		//Alireza
+		thrust::copy(signal.dppTkvLevel.begin(),signal.dppTkvLevel.begin() + allocPara_m.currentActiveCellCount,cellInfoVecs.cell_DppTkv.begin()) ;	//Alireza
+		thrust::copy(signal.pMadLevel.begin(),signal.pMadLevel.begin() + allocPara_m.currentActiveCellCount,cellInfoVecs.cell_pMad.begin()) ;		//Alireza
 		//currentActiveCellCountOld=allocPara_m.currentActiveCellCount;
  
 	}
