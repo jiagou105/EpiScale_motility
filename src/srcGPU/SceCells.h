@@ -2270,6 +2270,9 @@ struct CellInfoVecs {
 	thrust::device_vector<double> Cell_Damp;//Ali
 	thrust::device_vector<double> cell_Dpp;//Ali
 	thrust::device_vector<double> cell_DppOld;//Ali
+	thrust::device_vector<double> cell_Tkv;//Alireza
+	thrust::device_vector<double> cell_DppTkv;//Alireza
+	thrust::device_vector<double> cell_pMad;//Alireza
        
 	thrust::device_vector<double> growthProgressOld;  //A&A
 //Ali

@@ -166,7 +166,7 @@ vector<MeshCell> MeshTissue::ReadFile3 ( )
     ifstream nodeData ("ExportCellProp_"+ number +".txt") ;
     if (nodeData.is_open())
     {
-        cout << "file is open"<<endl ;
+     //   cout << "file is open"<<endl ;
     }
     else{
         cout << "Error in file"<<endl ;
@@ -194,7 +194,7 @@ vector<MeshCell> MeshTissue::ReadFile3 ( )
 }
 //---------------------------------------------------------------------------------------------
 
-void MeshTissue::Coupling (vector< vector<double> > locX , vector< vector<double> > locY , vector<double > centX , vector<double > centY )
+void MeshTissue::Coupling (vector< vector<double> > locX , vector< vector<double> > locY)
 {
     int cellSize = static_cast<int>( locX.size() ) ;
     for (int i =0 ; i< cellSize ; i++)
@@ -207,9 +207,6 @@ void MeshTissue::Coupling (vector< vector<double> > locX , vector< vector<double
         tmpCell.nodesY = locY.at(i) ;
         tmpCell.nodesYNew = locY.at(i) ;
         tmpCell.noNeighboringNodesY = locY.at(i) ;
-        
-        tmpCell.centroid.at(0) = centX.at(i) ;
-        tmpCell.centroid.at(1) = centY.at(i) ;
         
         cells.push_back( tmpCell ) ;
     }
@@ -563,51 +560,51 @@ void MeshTissue::ParaViewVertices ()
         }
     }
     string vtkFileName = "Vertices"+ to_string(frameIndex)+ ".vtk" ;
-    ofstream ECMOut;
-    ECMOut.open(vtkFileName.c_str());
-    ECMOut<< "# vtk DataFile Version 3.0" << endl;
-    ECMOut<< "Result for paraview 2d code" << endl;
-    ECMOut << "ASCII" << endl;
-    ECMOut << "DATASET UNSTRUCTURED_GRID" << endl;
-    ECMOut << "POINTS " << allNodesX.size()   << " float" << endl;
+    ofstream VerticesOut;
+    VerticesOut.open(vtkFileName.c_str());
+    VerticesOut<< "# vtk DataFile Version 3.0" << endl;
+    VerticesOut<< "Result for paraview 2d code" << endl;
+    VerticesOut << "ASCII" << endl;
+    VerticesOut << "DATASET UNSTRUCTURED_GRID" << endl;
+    VerticesOut << "POINTS " << allNodesX.size()   << " float" << endl;
     
     for (uint i = 0; i < allNodesX.size(); i++)
     {
         
-        ECMOut << allNodesX.at(i) << " " << allNodesY.at(i) << " " << 0.0 << endl;
+        VerticesOut << allNodesX.at(i) << " " << allNodesY.at(i) << " " << 0.0 << endl;
     }
-    ECMOut<< endl;
+    VerticesOut<< endl;
     
-    ECMOut<< "CELLS " << links.size()+ links2.size() << " " << 3 *( links.size()+ links2.size() )<< endl;
+    VerticesOut<< "CELLS " << links.size()+ links2.size() << " " << 3 *( links.size()+ links2.size() )<< endl;
     
     for (uint i = 0; i < (links.size()); i++)           //number of connections per node
     {
-        ECMOut << 2 << " " << i << " " << links.at(i) << endl;
-        ECMOut << 2 << " " << i << " " << links2.at(i) << endl;
+        VerticesOut << 2 << " " << i << " " << links.at(i) << endl;
+        VerticesOut << 2 << " " << i << " " << links2.at(i) << endl;
         
     }
     
-    ECMOut << "CELL_TYPES " << links.size()+ links2.size()<< endl;             //connection type
+    VerticesOut << "CELL_TYPES " << links.size()+ links2.size()<< endl;             //connection type
     for (uint i = 0; i < links.size()+ links2.size(); i++) {
-        ECMOut << "3" << endl;
+        VerticesOut << "3" << endl;
     }
     
-    ECMOut << "POINT_DATA "<<allNodesX.size() <<endl ;
-    ECMOut << "SCALARS Cell_ID " << "float"<< endl;
-    ECMOut << "LOOKUP_TABLE " << "default"<< endl;
+    VerticesOut << "POINT_DATA "<<allNodesX.size() <<endl ;
+    VerticesOut << "SCALARS Cell_ID " << "float"<< endl;
+    VerticesOut << "LOOKUP_TABLE " << "default"<< endl;
     for (uint i = 0; i < cells.size() ; i++)
     {
         for ( uint j=0; j < cells.at(i).verticesX.size() ; j++)
         {
-            ECMOut<< i <<endl ;
+            VerticesOut<< i <<endl ;
         }
     }
     for (uint i = 0; i < cells.size() ; i++)
     {
-        ECMOut<< i <<endl ;
+        VerticesOut<< i <<endl ;
     }
     
-    ECMOut.close();
+    VerticesOut.close();
 }
 //---------------------------------------------------------------------------------------------
 
@@ -660,8 +657,8 @@ void MeshTissue::ParaViewTissue ()
     {
         for ( uint j=0; j< cells.at(i).nodesXNew.size()  ; j++)
         {
-         //   TissueOut<< cells.at(i).verticesX.size() <<endl ;
-            TissueOut<< cells.at(i).layer<<endl ;
+            TissueOut<< cells.at(i).verticesX.size() <<endl ;
+         //   TissueOut<< cells.at(i).layer<<endl ;
         }
     }
     
@@ -918,21 +915,21 @@ void MeshTissue::ParaViewBoundary ()
     }
     int size =static_cast<int> (allNodesX.size() );
     string vtkFileName = "Boundary"+ to_string(frameIndex)+ ".vtk" ;
-    ofstream TissueOut;
-    TissueOut.open(vtkFileName.c_str());
-    TissueOut<< "# vtk DataFile Version 3.0" << endl;
-    TissueOut<< "Result for paraview 2d code" << endl;
-    TissueOut << "ASCII" << endl;
-    TissueOut << "DATASET UNSTRUCTURED_GRID" << endl;
-    TissueOut << "POINTS " << size   << " float" << endl;
+    ofstream BoundaryOut;
+    BoundaryOut.open(vtkFileName.c_str());
+    BoundaryOut<< "# vtk DataFile Version 3.0" << endl;
+    BoundaryOut<< "Result for paraview 2d code" << endl;
+    BoundaryOut << "ASCII" << endl;
+    BoundaryOut << "DATASET UNSTRUCTURED_GRID" << endl;
+    BoundaryOut << "POINTS " << size   << " float" << endl;
     
     for (uint i = 0; i < size ; i++)
     {
         
-        TissueOut << allNodesX.at(i) << " " << allNodesY.at(i) << " " << 0.0 << endl;
+        BoundaryOut << allNodesX.at(i) << " " << allNodesY.at(i) << " " << 0.0 << endl;
     }
-    TissueOut<< endl;
-    TissueOut.close();
+    BoundaryOut<< endl;
+    BoundaryOut.close();
 }
 //---------------------------------------------------------------------------------------------
 void MeshTissue::ParaViewInitialConfiguration ()
@@ -941,7 +938,7 @@ void MeshTissue::ParaViewInitialConfiguration ()
     vector<double> allNodesY ;
     for (int i=0 ; i< cells.size() ; i++)
     {
-        for ( int j=0 ; j< cells.at(i).nodesX.size() ; j++)
+        for ( int j=0 ; j < cells.at(i).nodesX.size() ; j++)
         {
             allNodesX.push_back(cells.at(i).nodesX.at(j))   ;
             allNodesY.push_back(cells.at(i).nodesY.at(j))   ;
@@ -949,21 +946,22 @@ void MeshTissue::ParaViewInitialConfiguration ()
     }
     int size =static_cast<int> (allNodesX.size() );
     string vtkFileName = "Initial"+ to_string(frameIndex)+ ".vtk" ;
-    ofstream TissueOut;
-    TissueOut.open(vtkFileName.c_str());
-    TissueOut<< "# vtk DataFile Version 3.0" << endl;
-    TissueOut<< "Result for paraview 2d code" << endl;
-    TissueOut << "ASCII" << endl;
-    TissueOut << "DATASET UNSTRUCTURED_GRID" << endl;
-    TissueOut << "POINTS " << size   << " float" << endl;
+    ofstream InitialOut;
+    InitialOut.open(vtkFileName.c_str());
+    InitialOut<< "# vtk DataFile Version 3.0" << endl;
+    InitialOut<< "Result for paraview 2d code" << endl;
+    InitialOut << "ASCII" << endl;
+    InitialOut << "DATASET UNSTRUCTURED_GRID" << endl;
+    InitialOut << "POINTS " << size   << " float" << endl;
     
-    for (uint i = 0; i < size ; i++)
+    for (int i = 0; i < size ; i++)
     {
         
-        TissueOut << allNodesX.at(i) << " " << allNodesY.at(i) << " " << 0.0 << endl;
+        InitialOut << allNodesX.at(i) << " " << allNodesY.at(i) << " " << 0.0 << endl;
     }
-    TissueOut<< endl;
-    TissueOut.close();
+    
+    InitialOut<< endl;
+    InitialOut.close();
 }
 //---------------------------------------------------------------------------------------------
 void MeshTissue::Refine_CurvedInterface ()
@@ -1015,8 +1013,8 @@ void MeshTissue::Refine_CurvedInterface ()
                 distToCntrX.resize(tmpX.size() ) ;
                 vector<double > distToCntrY ;
                 distToCntrY.resize(tmpY.size() ) ;
-                transform(tmpX.begin(), tmpX.end(), cntx.begin(), distToCntrX.begin(), linearConfig(1 ,-1) ) ;
-                transform(tmpY.begin(), tmpY.end(), cnty.begin(), distToCntrY.begin(), linearConfig(1 ,-1) ) ;
+                transform(tmpX.begin(), tmpX.end(), cntx.begin(), distToCntrX.begin(), linearConfig(1.0 ,-1.0) ) ;
+                transform(tmpY.begin(), tmpY.end(), cnty.begin(), distToCntrY.begin(), linearConfig(1.0 ,-1.0) ) ;
                 vector<double> tetta ;
                 vector<double> tmpMag ;
                 
@@ -1053,8 +1051,6 @@ void MeshTissue::Refine_CurvedInterface ()
                     //       cells.at(cellID_Neighbor).neighbors.at(neighborID_Cell ).curvedInterface = true ;
                     cells.at(cellID_Neighbor).verticesX.push_back(tmpX.at(idNode)) ;
                     cells.at(cellID_Neighbor).verticesY.push_back(tmpY.at(idNode)) ;
-                    
-                    
                     
                 }
             }
@@ -1229,6 +1225,7 @@ void MeshTissue::EulerMethod()
         l++ ;
     }
      ParaViewMesh(frameIndex) ;
+    /*
     double value = 0 ;
     for (int j =0 ; j < cells.size();j++)
     {
@@ -1237,7 +1234,9 @@ void MeshTissue::EulerMethod()
             value += cells.at(j).meshes.at(i).u1 ;
         }
     }
+
     cout<< "value is "<<value<<endl ;
+     */
     cout<< "number of steps needed is " << l <<endl ;
 }
 //---------------------------------------------------------------------------------------------
@@ -1319,119 +1318,119 @@ void MeshTissue::ParaViewMesh(int number)
     }
     
     string vtkFileName = "Mesh"+ to_string(number)+ ".vtk" ;
-    ofstream ECMOut;
-    ECMOut.open(vtkFileName.c_str());
-    ECMOut<< "# vtk DataFile Version 3.0" << endl;
-    ECMOut<< "Result for paraview 2d code" << endl;
-    ECMOut << "ASCII" << endl;
-    ECMOut << "DATASET UNSTRUCTURED_GRID" << endl;
-    ECMOut << "POINTS " << allNodesX.size()   << " float" << endl;
+    ofstream MeshOut;
+    MeshOut.open(vtkFileName.c_str());
+    MeshOut<< "# vtk DataFile Version 3.0" << endl;
+    MeshOut<< "Result for paraview 2d code" << endl;
+    MeshOut << "ASCII" << endl;
+    MeshOut << "DATASET UNSTRUCTURED_GRID" << endl;
+    MeshOut << "POINTS " << allNodesX.size()   << " float" << endl;
     
     for (uint i = 0; i < allNodesX.size(); i++)
     {
         
-        ECMOut << allNodesX.at(i) << " " << allNodesY.at(i) << " " << 0.0 << endl;
+        MeshOut << allNodesX.at(i) << " " << allNodesY.at(i) << " " << 0.0 << endl;
     }
-    ECMOut<< endl;
-    ECMOut<< "CELLS " << numberOfCells << " " << 4 *( numberOfCells )<< endl;
+    MeshOut<< endl;
+    MeshOut<< "CELLS " << numberOfCells << " " << 4 *( numberOfCells )<< endl;
     
     for (int i=0 ; i< numberOfCells ; i++)
     {
-            ECMOut << 3 << " " << 3*i << " " << 3*i +1  << " " << 3*i +2 <<endl;
+            MeshOut << 3 << " " << 3*i << " " << 3*i +1  << " " << 3*i +2 <<endl;
     }
     
-    ECMOut << "CELL_TYPES " << numberOfCells << endl;             //connection type
+    MeshOut << "CELL_TYPES " << numberOfCells << endl;             //connection type
     for (uint i = 0; i < numberOfCells ; i++) {
-        ECMOut << "5" << endl;
+        MeshOut << "5" << endl;
     }
     if (equationsType == simpleODE)
     {
-        ECMOut << "POINT_DATA "<<allNodesX.size() <<endl ;
-        ECMOut << "SCALARS WUS " << "float"<< endl;
-        ECMOut << "LOOKUP_TABLE " << "default"<< endl;
+        MeshOut << "POINT_DATA "<<allNodesX.size() <<endl ;
+        MeshOut << "SCALARS WUS " << "float"<< endl;
+        MeshOut << "LOOKUP_TABLE " << "default"<< endl;
         for (uint i = 0; i < cells.size() ; i++)
         {
             for ( uint j=0; j < cells.at(i).meshes.size() ; j++)
             {
-                ECMOut << cells.at(i).meshes.at(j).u1 << " " <<cells.at(i).meshes.at(j).u1 << " "<<cells.at(i).meshes.at(j).u1 <<endl ;
+                MeshOut << cells.at(i).meshes.at(j).u1 << " " <<cells.at(i).meshes.at(j).u1 << " "<<cells.at(i).meshes.at(j).u1 <<endl ;
             }
         }
     }
     if (equationsType == fullModel)
     {
-        ECMOut << "POINT_DATA "<<allNodesX.size() <<endl ;
-        ECMOut << "SCALARS WUS_mRNA " << "float"<< endl;
-        ECMOut << "LOOKUP_TABLE " << "default"<< endl;
+        MeshOut << "POINT_DATA "<<allNodesX.size() <<endl ;
+        MeshOut << "SCALARS WUS_mRNA " << "float"<< endl;
+        MeshOut << "LOOKUP_TABLE " << "default"<< endl;
         for (uint i = 0; i < cells.size() ; i++)
         {
             for ( uint j=0; j < cells.at(i).meshes.size() ; j++)
             {
-                   ECMOut << cells.at(i).meshes.at(j).concentrations2.at(0)<<" " <<cells.at(i).meshes.at(j).concentrations2.at(0) << " "<<cells.at(i).meshes.at(j).concentrations2.at(0) <<endl ;
+                   MeshOut << cells.at(i).meshes.at(j).concentrations2.at(0)<<" " <<cells.at(i).meshes.at(j).concentrations2.at(0) << " "<<cells.at(i).meshes.at(j).concentrations2.at(0) <<endl ;
             }
         }
         
-        ECMOut << "SCALARS WUS_nucleus " << "float"<< endl;
-        ECMOut << "LOOKUP_TABLE " << "default"<< endl;
+        MeshOut << "SCALARS WUS_nucleus " << "float"<< endl;
+        MeshOut << "LOOKUP_TABLE " << "default"<< endl;
         for (uint i = 0; i < cells.size() ; i++)
         {
             for ( uint j=0; j < cells.at(i).meshes.size() ; j++)
             {
-                ECMOut << cells.at(i).meshes.at(j).concentrations2.at(1)<<" " <<cells.at(i).meshes.at(j).concentrations2.at(1) << " "<<cells.at(i).meshes.at(j).concentrations2.at(1) <<endl ;
+                MeshOut << cells.at(i).meshes.at(j).concentrations2.at(1)<<" " <<cells.at(i).meshes.at(j).concentrations2.at(1) << " "<<cells.at(i).meshes.at(j).concentrations2.at(1) <<endl ;
             }
         }
 
-        ECMOut << "SCALARS WUS_cytoplasm " << "float"<< endl;
-        ECMOut << "LOOKUP_TABLE " << "default"<< endl;
+        MeshOut << "SCALARS WUS_cytoplasm " << "float"<< endl;
+        MeshOut << "LOOKUP_TABLE " << "default"<< endl;
         for (uint i = 0; i < cells.size() ; i++)
         {
             for ( uint j=0; j < cells.at(i).meshes.size() ; j++)
             {
-                ECMOut << cells.at(i).meshes.at(j).concentrations2.at(2)<<" " <<cells.at(i).meshes.at(j).concentrations2.at(2) << " "<<cells.at(i).meshes.at(j).concentrations2.at(2) <<endl ;
+                MeshOut << cells.at(i).meshes.at(j).concentrations2.at(2)<<" " <<cells.at(i).meshes.at(j).concentrations2.at(2) << " "<<cells.at(i).meshes.at(j).concentrations2.at(2) <<endl ;
             }
         }
 
-        ECMOut << "SCALARS CLV3 " << "float"<< endl;
-        ECMOut << "LOOKUP_TABLE " << "default"<< endl;
+        MeshOut << "SCALARS CLV3 " << "float"<< endl;
+        MeshOut << "LOOKUP_TABLE " << "default"<< endl;
         for (uint i = 0; i < cells.size() ; i++)
         {
             for ( uint j=0; j < cells.at(i).meshes.size() ; j++)
             {
-                ECMOut << cells.at(i).meshes.at(j).concentrations2.at(3)<<" " <<cells.at(i).meshes.at(j).concentrations2.at(3) << " "<<cells.at(i).meshes.at(j).concentrations2.at(3) <<endl ;
+                MeshOut << cells.at(i).meshes.at(j).concentrations2.at(3)<<" " <<cells.at(i).meshes.at(j).concentrations2.at(3) << " "<<cells.at(i).meshes.at(j).concentrations2.at(3) <<endl ;
             }
         }
         
-        ECMOut << "SCALARS ck " << "float"<< endl;
-        ECMOut << "LOOKUP_TABLE " << "default"<< endl;
+        MeshOut << "SCALARS ck " << "float"<< endl;
+        MeshOut << "LOOKUP_TABLE " << "default"<< endl;
         for (uint i = 0; i < cells.size() ; i++)
         {
             for ( uint j=0; j < cells.at(i).meshes.size() ; j++)
             {
-                ECMOut << cells.at(i).meshes.at(j).concentrations2.at(4)<<" " <<cells.at(i).meshes.at(j).concentrations2.at(4) << " "<<cells.at(i).meshes.at(j).concentrations2.at(4) <<endl ;
+                MeshOut << cells.at(i).meshes.at(j).concentrations2.at(4)<<" " <<cells.at(i).meshes.at(j).concentrations2.at(4) << " "<<cells.at(i).meshes.at(j).concentrations2.at(4) <<endl ;
             }
         }
 
-        ECMOut << "SCALARS ck_R " << "float"<< endl;
-        ECMOut << "LOOKUP_TABLE " << "default"<< endl;
+        MeshOut << "SCALARS ck_R " << "float"<< endl;
+        MeshOut << "LOOKUP_TABLE " << "default"<< endl;
         for (uint i = 0; i < cells.size() ; i++)
         {
             for ( uint j=0; j < cells.at(i).meshes.size() ; j++)
             {
-                ECMOut << cells.at(i).meshes.at(j).concentrations2.at(5)<<" " <<cells.at(i).meshes.at(j).concentrations2.at(5) << " "<<cells.at(i).meshes.at(j).concentrations2.at(5) <<endl ;
+                MeshOut << cells.at(i).meshes.at(j).concentrations2.at(5)<<" " <<cells.at(i).meshes.at(j).concentrations2.at(5) << " "<<cells.at(i).meshes.at(j).concentrations2.at(5) <<endl ;
             }
         }
         
 
-        ECMOut << "SCALARS CK " << "float"<< endl;
-        ECMOut << "LOOKUP_TABLE " << "default"<< endl;
+        MeshOut << "SCALARS CK " << "float"<< endl;
+        MeshOut << "LOOKUP_TABLE " << "default"<< endl;
         for (uint i = 0; i < cells.size() ; i++)
         {
             for ( uint j=0; j < cells.at(i).meshes.size() ; j++)
             {
-                ECMOut << cells.at(i).meshes.at(j).concentrations2.at(6)<<" " <<cells.at(i).meshes.at(j).concentrations2.at(6) << " "<<cells.at(i).meshes.at(j).concentrations2.at(6) <<endl ;
+                MeshOut << cells.at(i).meshes.at(j).concentrations2.at(6)<<" " <<cells.at(i).meshes.at(j).concentrations2.at(6) << " "<<cells.at(i).meshes.at(j).concentrations2.at(6) <<endl ;
             }
         }
     }
-    ECMOut.close();
+    MeshOut.close();
 }
  //---------------------------------------------------------------------------------------------
 void MeshTissue::FullModel_Diffusion()
@@ -1470,14 +1469,14 @@ void MeshTissue::FullModel_Diffusion()
                     vector<double> deltaU ;
                     deltaU.resize(cells.at(i).meshes.at(j).concentrations.size() ) ;
                    transform( cells.at(cellID).meshes.at(meshID ).concentrations.begin()+1, cells.at(cellID).meshes.at(meshID ).concentrations.begin()+5,
-                              cells.at(i).meshes.at(j).concentrations.begin()+1, deltaU.begin()+1, linearConfig(1 ,-1) );
+                              cells.at(i).meshes.at(j).concentrations.begin()+1, deltaU.begin()+1, linearConfig(1.0 ,-1.0) );
                     vector<double> flux ;
                     flux.clear() ;
                     flux.resize(deltaU.size() ) ;
                   transform(deltaU.begin()+1, deltaU.begin()+5, flux.begin()+1, productNum(tmpChannel/length ) ) ;
                     transform(flux.begin()+1, flux.begin()+5, cells.at(i).meshes.at(j).diffusions.begin()+1, flux.begin()+1 , productVec()  ) ;
                     cells.at(i).meshes.at(j).Flux.push_back(flux) ;
-                    transform(flux.begin()+1, flux.begin()+5, flux.begin()+1, productNum(-1) ) ;
+                    transform(flux.begin()+1, flux.begin()+5, flux.begin()+1, productNum(-1.0) ) ;
                     cells.at(cellID).meshes.at(meshID).Flux.push_back( flux ) ;
         
                 }
@@ -1505,7 +1504,7 @@ void MeshTissue::FullModel_Diffusion()
                     vector<double> deltaU ;
                     deltaU.resize(cells.at(i).meshes.at(j).concentrations.size() ) ;
                     transform( cells.at(cellID).meshes.at(meshID ).concentrations.begin()+4, cells.at(cellID).meshes.at(meshID ).concentrations.begin()+5,
-                              cells.at(i).meshes.at(j).concentrations.begin()+4, deltaU.begin()+4, linearConfig(1 ,-1) );
+                              cells.at(i).meshes.at(j).concentrations.begin()+4, deltaU.begin()+4, linearConfig(1.0 ,-1.0) );
                     double dif = cells.at(i).meshes.at(j).diffusions.at(4) ;
                     vector<double> flux ;
                     flux.clear() ;
@@ -1513,7 +1512,7 @@ void MeshTissue::FullModel_Diffusion()
                     transform(deltaU.begin()+4, deltaU.begin()+5, flux.begin()+4, productNum(tmpChannel/length ) ) ;
                     transform(flux.begin()+4, flux.begin()+5 , flux.begin()+4 , productNum( dif)  ) ;
                     cells.at(i).meshes.at(j).Flux.push_back(flux) ;
-                    transform(flux.begin()+4, flux.begin()+5, flux.begin()+4, productNum(-1) ) ;
+                    transform(flux.begin()+4, flux.begin()+5, flux.begin()+4, productNum(-1.0) ) ;
                     cells.at(cellID).meshes.at(meshID).Flux.push_back( flux ) ;
                     
                 }
@@ -1534,7 +1533,7 @@ void MeshTissue::FullModel_AllCellProductions()         //call once, initialize 
             if (cells.at(i).layer >= thres_layer && abs(cells.at(i).centroid.at(0) ) < thres_Production )
             {
                 // CLV3 layer 3+
-                cells.at(i).productionW = 1 ;
+                cells.at(i).productionW = 1.0 ;
                 cells.at(i).productionC = 1 ;
                 // ck layer 4+
                 cells.at(i).productionCk  = 1 ;
@@ -1564,6 +1563,11 @@ void MeshTissue::FullModel_AllCellProductions()         //call once, initialize 
 //---------------------------------------------------------------------------------------------
 void MeshTissue::FullModelEulerMethod()
 {
+    /*
+    string txtFileName = "Histagram_"+ to_string(frameIndex)+ ".txt" ;
+    ofstream histagram;
+    histagram.open(txtFileName.c_str());
+     */
     bool state = false ;
     int l = 0 ;
     while (
@@ -1571,9 +1575,10 @@ void MeshTissue::FullModelEulerMethod()
            && l<=100000
            )
     {
+        double smallValue = 0.0001 ;
         FullModel_Diffusion() ;
-   //     if (l%1000==0) cout<<l/1000<<endl ;
-   //     if (l%1000==0) ParaViewMesh(l/1000) ;
+    //    if (l%1000==0) cout<<l/1000<<endl ;
+    //    if (l%100==0) ParaViewMesh(l/100) ;
         for (int i = 0; i < cells.size(); i++)
         {
             for (int j =0; j < cells.at(i).meshes.size(); j++)
@@ -1590,9 +1595,9 @@ void MeshTissue::FullModelEulerMethod()
                 if (cellType == plant)
                 {
                     if(
-                       abs(cells.at(i).meshes.at(j).concentrations2.at(1) - cells.at(i).meshes.at(j).concentrations.at(1) )/(cells.at(i).meshes.at(j).concentrations.at(1) + 0.000001) > 0.000001
-                     ||  abs(cells.at(i).meshes.at(j).concentrations2.at(3) - cells.at(i).meshes.at(j).concentrations.at(3) )/(cells.at(i).meshes.at(j).concentrations.at(3) + 0.000001) > 0.000001
-                        || abs(cells.at(i).meshes.at(j).concentrations2.at(6) - cells.at(i).meshes.at(j).concentrations.at(6) )/(cells.at(i).meshes.at(j).concentrations.at(6) + 0.000001) > 0.000001
+                       abs(cells.at(i).meshes.at(j).concentrations2.at(1) - cells.at(i).meshes.at(j).concentrations.at(1) )/(cells.at(i).meshes.at(j).concentrations.at(1) + smallValue) > smallValue
+                     ||  abs(cells.at(i).meshes.at(j).concentrations2.at(3) - cells.at(i).meshes.at(j).concentrations.at(3) )/(cells.at(i).meshes.at(j).concentrations.at(3) + smallValue) > smallValue
+                        || abs(cells.at(i).meshes.at(j).concentrations2.at(6) - cells.at(i).meshes.at(j).concentrations.at(6) )/(cells.at(i).meshes.at(j).concentrations.at(6) + smallValue) > smallValue
                        )
                     {
                         state = false ;
@@ -1602,8 +1607,8 @@ void MeshTissue::FullModelEulerMethod()
                 else if (cellType== wingDisc)
                 {
                     //condition is not finilized
-                    if (abs(cells.at(i).meshes.at(j).concentrations2.at(4) - cells.at(i).meshes.at(j).concentrations.at(4) )/(cells.at(i).meshes.at(j).concentrations.at(4) + 0.000001) > 0.000001 ||
-                        abs(cells.at(i).meshes.at(j).concentrations2.at(7) - cells.at(i).meshes.at(j).concentrations.at(7) )/(cells.at(i).meshes.at(j).concentrations.at(7) + 0.000001) > 0.000001
+                    if (abs(cells.at(i).meshes.at(j).concentrations2.at(4) - cells.at(i).meshes.at(j).concentrations.at(4) )/(cells.at(i).meshes.at(j).concentrations.at(4) + smallValue) > smallValue ||
+                        abs(cells.at(i).meshes.at(j).concentrations2.at(7) - cells.at(i).meshes.at(j).concentrations.at(7) )/(cells.at(i).meshes.at(j).concentrations.at(7) + smallValue) > smallValue
                         )
                     {
                         state = false ;
@@ -1621,32 +1626,37 @@ void MeshTissue::FullModelEulerMethod()
                 cells.at(i).meshes.at(j).UpdateU() ;
             }
         }
-        
-        
+        /*
+        Cal_AllCellConcentration() ;
+        histagram<<l<<'\t'<<accumulate(tissueLevelU.begin(), tissueLevelU.end(), 0.0)<<endl ;
+        */
+         
         l++ ;
     }
     ParaViewMesh(frameIndex) ;
     cout<<"l is equal to "<<l << endl ;
-    /*
     double value = 0 ;
     for (int j =0 ; j < cells.size();j++)
     {
         for (int i =0; i< cells.at(j).meshes.size(); i++)
         {
-            value += cells.at(j).meshes.at(i).u1 ;
+            value += cells.at(j).meshes.at(i).concentrations.at(4) ;
         }
     }
     cout<< "value is "<<value<<endl ;
-    cout<< "number of steps needed is " << l <<endl ;
-     */
+  //  cout<< "number of steps needed is " << l <<endl ;
+     
 }
 //---------------------------------------------------------------------------------------------
 
 void MeshTissue::Cal_AllCellConcentration()
 {
+    tissueLevelConcentration.clear() ;
+    tissueLevelU.clear() ;
     for (int i =0; i<cells.size(); i++)
     {
-        cells.at(i).CellLevelConcentration(cellType) ;
+       // cells.at(i).CellLevelConcentration(cellType) ;
+        cells.at(i).CellLevelConcentration2(cellType) ;
         if (equationsType== simpleODE)
         {
             tissueLevelU.push_back(cells.at(i).cellU ) ;
@@ -1654,8 +1664,10 @@ void MeshTissue::Cal_AllCellConcentration()
         else
         {
             tissueLevelConcentration.push_back(cells.at(i).cellConcentration ) ;
+            tissueLevelU.push_back(cells.at(i).cellConcentration.at(0) ) ;
         }
     }
+    
 }
 //---------------------------------------------------------------------------------------------
 void MeshTissue::Cal_ReturnSignal()
@@ -1675,6 +1687,114 @@ void MeshTissue::Cal_ReturnSignal()
         for (int i=0 ; i < cells.size() ; i++)
         {
             tissueLevelU.push_back( tissueLevelConcentration.at(i).at(sgnl) ) ;
+        }
+    }
+}
+//---------------------------------------------------------------------------------------------
+void MeshTissue:: Initialize_Concentrations(vector<vector<double> > oldConcentrations )
+{
+    for (int i=0; i<oldConcentrations.size() ; i++)
+    {
+        for (int j=0; j< oldConcentrations.at(i).size() ; j++)
+        {
+             if( isfinite(oldConcentrations.at(i).at(j) )== false  )
+                {
+                    return ;
+                }
+        }
+    }
+    
+    // for now, concentrations have nothing to do with volume
+    for (int i=0; i< cells.size(); i++)
+    {
+        int meshSize = static_cast<int>( cells.at(i).meshes.size() ) ;
+        for (int j=0; j< cells.at(i).meshes.size(); j++)
+        {
+            if (cellType== plant)
+            {
+                transform(cells.at(i).meshes.at(j).concentrations.begin(), cells.at(i).meshes.at(j).concentrations.end()-1,
+                          oldConcentrations.at(i).begin() , cells.at(i).meshes.at(j).concentrations.begin(), linearConfig(0.0,1.0) ) ;
+                transform(cells.at(i).meshes.at(j).concentrations2.begin(), cells.at(i).meshes.at(j).concentrations2.end()-1,
+                          oldConcentrations.at(i).begin() , cells.at(i).meshes.at(j).concentrations2.begin(), linearConfig(0.0,1.0) ) ;
+            }
+            // cellType == wingDisc
+            else
+            {
+                transform(cells.at(i).meshes.at(j).concentrations.begin()+4, cells.at(i).meshes.at(j).concentrations.end() ,
+                          oldConcentrations.at(i).begin() , cells.at(i).meshes.at(j).concentrations.begin()+4 , linearConfig(0.0,1.0) ) ;
+                transform(cells.at(i).meshes.at(j).concentrations2.begin()+4, cells.at(i).meshes.at(j).concentrations2.end() ,
+                          oldConcentrations.at(i).begin() , cells.at(i).meshes.at(j).concentrations2.begin()+4 , linearConfig(0.0,1.0) ) ;
+            }
+        }
+    }
+}
+
+//---------------------------------------------------------------------------------------------
+
+void MeshTissue::WriteConcentrations(string timer)
+{
+    string number = to_string(frameIndex) ;
+    ofstream concentrationsData (timer + "concentrations_"+ number +".txt") ;
+    concentrationsData << cells.size()<<endl ;
+    for (int i=0; i<tissueLevelConcentration.size(); i++)
+    {
+        concentrationsData<<i ;
+        for (int j=0; j<tissueLevelConcentration.at(i).size(); j++)
+        {
+            concentrationsData<<'\t'<<tissueLevelConcentration.at(i).at(j) ;
+        }
+        concentrationsData<<endl ;
+    }
+    concentrationsData.close() ;
+}
+//---------------------------------------------------------------------------------------------
+void MeshTissue::ReadConcentrations()
+{
+    
+    if (cellType==wingDisc)
+    {
+        int a ;
+        double b,c,d,e ;
+        vector<double> data ;
+        string number = to_string(frameIndex) ;
+        ifstream concentrationsData ("concentrations_"+ number +".txt") ;
+        if (concentrationsData.is_open())
+        {
+            concentrationsData >> a ;
+            if (a==cells.size())
+            {
+                
+                cout<<"concentrationsData is open"<<endl ;
+                while (concentrationsData >> a >> b >> c >> d >> e)
+                {
+                    data = {b, c, d, e } ;
+                    tissueLevelConcentration.push_back(data) ;
+                }
+                Initialize_Concentrations(tissueLevelConcentration) ;
+            }
+        }
+            
+    }
+    else
+    {
+        cout<< "ReadConcentrations is not written for plant" <<endl ;
+    }
+    
+    
+}
+//---------------------------------------------------------------------------------------------
+
+void MeshTissue::UpdateNanStatus()
+{
+    for (int i=0; i<tissueLevelConcentration.size() ; i++)
+    {
+        for (int j=0; j< tissueLevelConcentration.at(i).size() ; j++)
+        {
+            if( isfinite(tissueLevelConcentration.at(i).at(j) )== false  )
+            {
+                frameIsNan = true ;
+                return ;
+            }
         }
     }
 }

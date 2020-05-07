@@ -95,6 +95,7 @@ class MeshCell
     void FullModel_SelfDiffusion (bool type) ;
     void FullModel_ProductionCell () ;
     void CellLevelConcentration (bool type) ;
+    void CellLevelConcentration2(bool type) ;
     
     void FullModel_WingDisc_SelfDiffusion () ;
     

@@ -421,13 +421,13 @@ void MeshCell::FullModel_SelfDiffusion (bool type)
             vector<double> deltaU ;
             deltaU.resize(meshes.at(i).concentrations.size() ) ;
             transform( meshes.at((i+1)% size ).concentrations.begin()+1, meshes.at((i+1)% size ).concentrations.begin()+5,
-                      meshes.at(i).concentrations.begin()+1, deltaU.begin()+1, linearConfig(1 ,-1) );
+                      meshes.at(i).concentrations.begin()+1, deltaU.begin()+1, linearConfig(1.0 ,-1.0) );
             vector<double> flux ;
             flux.resize(deltaU.size() ) ;
             transform(deltaU.begin()+1, deltaU.begin()+5, flux.begin()+1, productNum(tmpChannel/length ) ) ;
-            transform(flux.begin()+1, flux.begin()+5, meshes.at(i).diffusions.begin()+1, flux.begin()+1, productVec() ) ;
+            transform(flux.begin()+1, flux.begin()+5, meshes.at(i).selfDiffusions.begin()+1, flux.begin()+1, productVec() ) ;
             meshes.at(i).Flux.push_back(flux) ;
-            transform(flux.begin()+1, flux.begin()+5, flux.begin()+1, productNum(-1) ) ;
+            transform(flux.begin()+1, flux.begin()+5, flux.begin()+1, productNum(-1.0) ) ;
             meshes.at((i+1) % size).Flux.push_back( flux ) ;
             
         }
@@ -442,13 +442,13 @@ void MeshCell::FullModel_SelfDiffusion (bool type)
             vector<double> deltaU ;
             deltaU.resize(meshes.at(i).concentrations.size() ) ;
             transform( meshes.at((i+1)% size ).concentrations.begin()+4, meshes.at((i+1)% size ).concentrations.begin()+5,
-                      meshes.at(i).concentrations.begin()+4, deltaU.begin()+4, linearConfig(1 ,-1) );
+                      meshes.at(i).concentrations.begin()+4, deltaU.begin()+4, linearConfig(1.0 ,-1.0) );
             vector<double> flux ;
             flux.resize(deltaU.size() ) ;
             transform(deltaU.begin()+4, deltaU.begin()+5, flux.begin()+4, productNum(tmpChannel/length ) ) ;
-            transform(flux.begin()+4, flux.begin()+5, meshes.at(i).diffusions.begin()+4, flux.begin()+4, productVec() ) ;
+            transform(flux.begin()+4, flux.begin()+5, meshes.at(i).selfDiffusions.begin()+4, flux.begin()+4, productVec() ) ;
             meshes.at(i).Flux.push_back(flux) ;
-            transform(flux.begin()+4, flux.begin()+5, flux.begin()+4, productNum(-1) ) ;
+            transform(flux.begin()+4, flux.begin()+5, flux.begin()+4, productNum(-1.0) ) ;
             meshes.at((i+1) % size).Flux.push_back( flux ) ;
         }
     }
@@ -459,14 +459,14 @@ void MeshCell:: FullModel_ProductionCell()
 {
     for (int j=0; j< meshes.size(); j++)
     {
-        meshes.at(j).productions = { productionW , 0, 0, productionC, productionCk, productionCkR, 0 , productionPMad } ;
+        meshes.at(j).productions = { productionW , 0.0, 0.0, productionC, productionCk, productionCkR, 0.0 , productionPMad } ;
     }
 }
 //---------------------------------------------------------------------------------------------
 void MeshCell:: CellLevelConcentration(bool type)
 {
     cellConcentration.clear() ;
-    cellU = 0 ;
+    cellU = 0.0 ;
   //  cellConcentration.resize(meshes.at(0).concentrations.size() ) ;
     if (type == false)  //plant
     {
@@ -482,11 +482,43 @@ void MeshCell:: CellLevelConcentration(bool type)
         cellU += meshes.at(j).u1 ;
         if (type == false)  //plant
         {
-        transform(meshes.at(j).concentrations.begin(), meshes.at(j).concentrations.end()-1 , cellConcentration.begin(), cellConcentration.begin() , linearConfig (1,1) ) ;
+        transform(meshes.at(j).concentrations.begin(), meshes.at(j).concentrations.end()-1 , cellConcentration.begin(), cellConcentration.begin() , linearConfig (meshes.at(j).area,1.0) ) ;
         }
         else    //wingDisc
         {
-            transform(meshes.at(j).concentrations.begin()+4, meshes.at(j).concentrations.end() , cellConcentration.begin(), cellConcentration.begin() , linearConfig (1,1) ) ;
+            transform(meshes.at(j).concentrations.begin()+4, meshes.at(j).concentrations.end() , cellConcentration.begin(), cellConcentration.begin() , linearConfig (meshes.at(j).area, 1.0) ) ;
         }
     }
+    transform(cellConcentration.begin(), cellConcentration.end(), cellConcentration.begin(), productNum(1.0/areaCell ) ) ;
+}
+
+//---------------------------------------------------------------------------------------------
+void MeshCell:: CellLevelConcentration2(bool type)
+{
+    cellConcentration.clear() ;
+    cellU = 0.0 ;
+    //  cellConcentration.resize(meshes.at(0).concentrations.size() ) ;
+    if (type == false)  //plant
+    {
+        cellConcentration.resize(meshes.at(0).concentrations.size() -1 ) ;
+    }
+    else
+    {
+        cellConcentration.resize(meshes.at(0).concentrations.size() -4  ) ;
+    }
+    
+    for (int j=0 ; j< meshes.size() ; j++ )
+    {
+        cellU += meshes.at(j).u1 ;
+        if (type == false)  //plant
+        {
+            transform(meshes.at(j).concentrations.begin(), meshes.at(j).concentrations.end()-1 , cellConcentration.begin(), cellConcentration.begin() , linearConfig (1.0,1.0) ) ;
+        }
+        else    //wingDisc
+        {
+            transform(meshes.at(j).concentrations.begin()+4, meshes.at(j).concentrations.end() , cellConcentration.begin(), cellConcentration.begin() , linearConfig (1.0, 1.0) ) ;
+           
+        }
+    }
+    transform(cellConcentration.begin(), cellConcentration.end(), cellConcentration.begin(), productNum(1.0/meshes.size() ) ) ;
 }

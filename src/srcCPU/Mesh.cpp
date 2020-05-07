@@ -14,7 +14,8 @@ Mesh::Mesh()
     productions.resize(8) ;
     rates.resize(8) ;
     diffusions = {0,1,0,1,1,0,0,0} ;
-    degradations = {0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5 } ;
+    selfDiffusions = {0,10,0,10,10,0,0,0} ;
+    degradations = {0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1 } ;
     concentrations = {0,0,0,0,0,0,0,0} ;
     concentrations2 = {0,0,0,0,0,0,0,0} ;
   //  productions = {1,0,0,1,1,1,0,1} ;
@@ -91,11 +92,11 @@ void Mesh::FullModel_Euler(bool type, double radius)
     {
     
         // Diffusion changes from 1st to 4th
-        transform(concentrations.begin()+1, concentrations.begin()+5, totalFlux.begin()+1, concentrations2.begin()+1, linearConfig (1, dt ) ) ;
+        transform(concentrations.begin()+1, concentrations.begin()+5, totalFlux.begin()+1, concentrations2.begin()+1, linearConfig (1.0, dt ) ) ;
         // degradation changes
-        transform(concentrations2.begin(), concentrations2.end()-1, degradationChanges.begin() ,concentrations2.begin(), linearConfig( 1,-dt )  ) ;
+        transform(concentrations2.begin(), concentrations2.end()-1, degradationChanges.begin() ,concentrations2.begin(), linearConfig( 1.0,-dt )  ) ;
         //rate changes
-        transform(concentrations2.begin()+1 , concentrations2.end()-1, rateChanges.begin()+1 , concentrations2.begin()+1 , linearConfig(1 , -dt ) ) ;
+        transform(concentrations2.begin()+1 , concentrations2.end()-1, rateChanges.begin()+1 , concentrations2.begin()+1 , linearConfig(1.0 , -dt ) ) ;
         concentrations2.at(1) += (rateChanges.at(0) + rateChanges.at(2) ) * dt ;
         concentrations2.at(2) += rateChanges.at(1) * dt ;
         concentrations2.at(4) += rateChanges.at(6) * dt ;
@@ -106,16 +107,16 @@ void Mesh::FullModel_Euler(bool type, double radius)
         vector<double> tmpProduction = productions ;
         tmpProduction.at(0) *= 1/(1+ pow(concentrations.at(3)/kcw,powers.at(0) ) ) ;
         tmpProduction.at(3) *= UpdateCp() ;
-        transform(concentrations2.begin(), concentrations2.end()-1, tmpProduction.begin(), concentrations2.begin(),linearConfig(1,dt) ) ;
+        transform(concentrations2.begin(), concentrations2.end()-1, tmpProduction.begin(), concentrations2.begin(),linearConfig(1.0,dt) ) ;
     }
     else    // WingDisc
     {
         // Diffusion changes only 4th
-        transform(concentrations.begin()+4, concentrations.begin()+5, totalFlux.begin()+4, concentrations2.begin()+4, linearConfig (1, dt ) ) ;
+        transform(concentrations.begin()+4, concentrations.begin()+5, totalFlux.begin()+4, concentrations2.begin()+4, linearConfig (1.0, dt ) ) ;
         // degradation changes (from 4th to the end(7th)
-        transform(concentrations2.begin()+4, concentrations2.end(),degradationChanges.begin()+4 ,concentrations2.begin()+4, linearConfig( 1,-dt )  ) ;
+        transform(concentrations2.begin()+4, concentrations2.end(),degradationChanges.begin()+4 ,concentrations2.begin()+4, linearConfig( 1.0,-dt )  ) ;
         //rate changes
-        transform(concentrations2.begin()+4 , concentrations2.end()-1, rateChanges.begin()+4 , concentrations2.begin()+4 , linearConfig(1 , - dt ) ) ;
+        transform(concentrations2.begin()+4 , concentrations2.end()-1, rateChanges.begin()+4 , concentrations2.begin()+4 , linearConfig(1.0 , - dt ) ) ;
         concentrations2.at(4) += rateChanges.at(6) * dt ;
         concentrations2.at(5) += rateChanges.at(6) * dt ;
         concentrations2.at(6) += rateChanges.at(4) * dt ;
@@ -131,7 +132,7 @@ void Mesh::FullModel_Euler(bool type, double radius)
         tmpProduction.at(5) *= 1/(1+ pow(abs(triangleX.at(0)-cntX )/(rs * radius) , -ns ) ) ;        //check power
         tmpProduction.at(5) += productions.at(5) ;
         tmpProduction.at(7) *= 1/(1+ pow(concentrations.at(6)/kLR , powers.at(0) ) ) ;        //check power
-        transform(concentrations2.begin()+4 , concentrations2.end(), tmpProduction.begin()+4, concentrations2.begin()+4, linearConfig(1 , dt ) ) ;
+        transform(concentrations2.begin()+4 , concentrations2.end(), tmpProduction.begin()+4, concentrations2.begin()+4, linearConfig(1.0 , dt ) ) ;
         
     }
     
