@@ -126,6 +126,7 @@ int main ()
      if (tissue.frameIsNan)
      {
          nanIndex <<"This is a Nan frame :" <<tissue.frameIndex<<endl ;
+         return oldConcentrations ;
      }
      nanIndex.close() ;
      
