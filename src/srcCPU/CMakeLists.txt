@@ -5,8 +5,8 @@ include_directories(${COMMON_INCLUDES})
 add_library(SceInit STATIC
         CellInitHelper.h
         CellInitHelper.cpp
-        Signal2D.h
-		Signal2D.cpp
+        Signal_MakeInterface.h
+		Signal_MakeInterface.cpp
 		Signal_Calculator.h
 		Signal_Calculator.cpp
 		SignalTissue.hpp
