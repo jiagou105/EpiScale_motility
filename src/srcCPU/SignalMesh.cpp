@@ -1,5 +1,5 @@
 
-#include "Mesh.hpp"
+#include "SignalMesh.hpp"
 
 Mesh::Mesh()
 {

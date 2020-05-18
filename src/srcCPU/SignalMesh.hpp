@@ -1,5 +1,5 @@
 
-#include "common.hpp"
+#include "SignalCommon.hpp"
 class Mesh
 {
 public:

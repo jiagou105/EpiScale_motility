@@ -1,11 +1,11 @@
 
-#include "MeshTissue.hpp"
+#include "SignalTissue.hpp"
 #include "Signal_Calculator.h"
 #include <chrono>
 
 //---------------------------------------------------------------------------------------------
 /*
-vector<vector<double> > Signal_Calculator(vector< vector<double> > locX , vector< vector<double> > locY , vector<double > centX , vector<double > centY ,vector< vector<double> > oldConcentrations ,int index)
+vector<vector<double> > Signal_Calculator(vector< vector<double> > locX , vector< vector<double> > locY , vector<double > centX , vector<double > centY ,vector< vector<double> > oldConcentrations ,double index)
 {
     vector<vector<double > > a ;
     return a ;
@@ -20,7 +20,7 @@ int main ()
      int index = 100 ;
      vector<vector<double> > oldConcentrations ;
  */
- vector< vector<double> > Signal_Calculator ( vector< vector<double> > locX , vector< vector<double> > locY , vector<double > centX , vector<double > centY,vector< vector<double> > oldConcentrations , int index ){
+ vector< vector<double> > Signal_Calculator ( vector< vector<double> > locX , vector< vector<double> > locY , vector<double > centX , vector<double > centY,vector< vector<double> > oldConcentrations , double index ){
     
     ofstream nanIndex ("NanIndex.txt", ofstream::app) ;    //everything will be written at the end of the existing file
     ofstream sgnlCalculator ("sgnlCalculator.txt", ofstream::app) ;    //everything will be written at the end of the existing file
@@ -30,6 +30,7 @@ int main ()
     tissue.equationsType = fullModel ;
     tissue.readFileStatus = false ;
     tissue.frameIndex = index ;
+    tissue.writeVtk = ! fmod(index, 1.0) ;
     cout<<"current index in Signal_Calculator function is "<<index<<endl ;
     sgnlCalculator<<"current index in Signal_Calculator function is "<<index<<endl ;
     if (tissue.readFileStatus)
@@ -126,7 +127,6 @@ int main ()
      if (tissue.frameIsNan)
      {
          nanIndex <<"This is a Nan frame :" <<tissue.frameIndex<<endl ;
-         return oldConcentrations ;
      }
      nanIndex.close() ;
      
@@ -137,7 +137,7 @@ int main ()
      sgnlCalculator.close() ;
      
      // return tissue.tissueLevelU ;
-       return tissue.tissueLevelConcentration ;
+      return tissue.tissueLevelConcentration ;
    //  return 0 ;
 }
 

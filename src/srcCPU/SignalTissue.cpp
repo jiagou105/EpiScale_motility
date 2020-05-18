@@ -1,5 +1,5 @@
 
-#include "MeshTissue.hpp"
+#include "SignalTissue.hpp"
 
 void MeshTissue::Cal_AllCellCenters()
 {
@@ -533,7 +533,10 @@ void MeshTissue::Cal_AllCellVertices()
 //---------------------------------------------------------------------------------------------
 void MeshTissue::ParaViewVertices ()
 {
-    
+    if (writeVtk == false)
+    {
+        return ;
+    }
     vector<double> allNodesX ;
     vector<double> allNodesY ;
     vector<int> links ;         // link to the other vertices
@@ -610,6 +613,10 @@ void MeshTissue::ParaViewVertices ()
 
 void MeshTissue::ParaViewTissue ()
 {
+    if (writeVtk == false)
+    {
+        return ;
+    }
     vector<double> allNodesX ;
     vector<double> allNodesY ;
     for (int i=0 ; i< cells.size() ; i++)
@@ -903,6 +910,10 @@ void MeshTissue::AllCell_RefineNoBoundary ()
 //---------------------------------------------------------------------------------------------
 void MeshTissue::ParaViewBoundary ()
 {
+    if (writeVtk == false)
+    {
+        return ;
+    }
     vector<double> allNodesX ;
     vector<double> allNodesY ;
     for (int i=0 ; i< cells.size() ; i++)
@@ -934,6 +945,10 @@ void MeshTissue::ParaViewBoundary ()
 //---------------------------------------------------------------------------------------------
 void MeshTissue::ParaViewInitialConfiguration ()
 {
+    if (writeVtk == false)
+    {
+        return ;
+    }
     vector<double> allNodesX ;
     vector<double> allNodesY ;
     for (int i=0 ; i< cells.size() ; i++)
@@ -1301,6 +1316,10 @@ void MeshTissue::Find_SecretingCell()
 //---------------------------------------------------------------------------------------------
 void MeshTissue::ParaViewMesh(int number)
 {
+    if (writeVtk == false)
+    {
+        return ;
+    }
     vector<double> allNodesX ;
     vector<double> allNodesY ;
     int numberOfCells = 0 ;

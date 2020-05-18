@@ -1,5 +1,5 @@
 
-#include "MeshCell.hpp"
+#include "SignalCell.hpp"
 
 enum CellType
 {
@@ -24,6 +24,7 @@ public:
     double areaTissue ;
     double radius ;
     int frameIndex ;
+    bool writeVtk ;
     bool frameIsNan = false ;
     
     
@@ -82,8 +83,5 @@ public:
     void ReadConcentrations () ;
     void UpdateNanStatus () ;
     
-
-    
-    
-    
+ 
 };
