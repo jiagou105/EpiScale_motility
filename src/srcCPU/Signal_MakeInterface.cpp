@@ -1,7 +1,7 @@
 #include <fstream>
 #include <sstream>
 #include "Signal_Calculator.h"
-#include "Signal2D.h"
+#include "Signal_MakeInterface.h"
 #include <unistd.h>
 #include <time.h>  
 #include <stdlib.h>
