@@ -38,9 +38,9 @@ public:
 };
 
 
-class MeshCell
+class SignalCell
 {   public:
-    MeshCell() ;
+    SignalCell() ;
     vector<Mesh> meshes ;
     vector <Neighbor> neighbors ;
     int cellID ;

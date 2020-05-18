@@ -11,11 +11,11 @@ enum Equation
     simpleODE = 0 ,
     fullModel = 1
 };
-class MeshTissue
+class SignalTissue
 {
 public:
     
-    vector<MeshCell> cells;
+    vector<SignalCell> cells;
     CellType cellType ;
     Equation equationsType ;
     bool readFileStatus ;
@@ -34,9 +34,9 @@ public:
     void Find_AllCellNeighborCandidates () ;
     void Find_AllCellNeighbors () ;
     void FindInterfaceWithNeighbor() ;
-    vector<MeshCell> ReadFile ( ) ;
-    vector<MeshCell> ReadFile2 ( ) ;
-    vector<MeshCell> ReadFile3 ( ) ;
+    vector<SignalCell> ReadFile ( ) ;
+    vector<SignalCell> ReadFile2 ( ) ;
+    vector<SignalCell> ReadFile3 ( ) ;
     void Coupling (vector< vector<double> > locX , vector< vector<double> > locY ) ;
     void Find_AllCell_NeighborID_Cell () ;
     void Cal_AllCellNewEdge () ;

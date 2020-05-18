@@ -5,13 +5,13 @@
 
 
 //---------------------------------------------------------------------------------------------
-MeshCell::MeshCell ()
+SignalCell::SignalCell ()
 {
     centroid.resize(2) ;
 };
 //---------------------------------------------------------------------------------------------
 
-vector <vector<double> > MeshCell::Cal_NodeToNodeDist(vector <double> nodesXNeighbor, vector<double> nodesYNeighbor)
+vector <vector<double> > SignalCell::Cal_NodeToNodeDist(vector <double> nodesXNeighbor, vector<double> nodesYNeighbor)
 {
     vector<vector<double> > distNodeToNeighborNodes  ;
     for (int k=0; k < nodesX.size() ; k++)
@@ -29,7 +29,7 @@ vector <vector<double> > MeshCell::Cal_NodeToNodeDist(vector <double> nodesXNeig
 }
 //---------------------------------------------------------------------------------------------
 
-void MeshCell::Find_NghbrCandidate ()
+void SignalCell::Find_NghbrCandidate ()
 {
     double smallValue= 0.00001 ;
     for (int j = 0 ; j < cntrToCntr.size() ; j++)
@@ -43,7 +43,7 @@ void MeshCell::Find_NghbrCandidate ()
 
 
 //---------------------------------------------------------------------------------------------
-void MeshCell::Cal_Centroid()
+void SignalCell::Cal_Centroid()
 {
     
     centroid.at(0)= accumulate(nodesX.begin(), nodesX.end(), 0.0)/nodesX.size () ;
@@ -53,7 +53,7 @@ void MeshCell::Cal_Centroid()
 }
 
 //---------------------------------------------------------------------------------------------
-void MeshCell::Find_NghbrProperties ()
+void SignalCell::Find_NghbrProperties ()
 {
     for (int j = 0 ; j < nghbrCandidate.size(); j++)
     {
@@ -90,7 +90,7 @@ void MeshCell::Find_NghbrProperties ()
     
 }
 //---------------------------------------------------------------------------------------------
-void MeshCell::NewEdge()
+void SignalCell::NewEdge()
 {
     vector<int> removeNode ;
     vector<double> addNodeX ;
@@ -116,7 +116,7 @@ void MeshCell::NewEdge()
 }
 //---------------------------------------------------------------------------------------------
 
-void MeshCell::SortCCW () // vector<double> &verticesX , vector<double> &verticesY )
+void SignalCell::SortCCW () // vector<double> &verticesX , vector<double> &verticesY )
 {
     vector<double> angle ;
     for (int j = 0; j < verticesX.size() ; j++)
@@ -140,7 +140,7 @@ void MeshCell::SortCCW () // vector<double> &verticesX , vector<double> &vertice
     verticesY = tmpY ;
 }
 //---------------------------------------------------------------------------------------------
-void MeshCell::Cal_Vertices()
+void SignalCell::Cal_Vertices()
 {
     for (int j =0; j < neighbors.size(); j++)
     {   int offset = 0 ;
@@ -162,7 +162,7 @@ void MeshCell::Cal_Vertices()
     }
 }
 //---------------------------------------------------------------------------------------------
-void MeshCell::Cal_Connections()
+void SignalCell::Cal_Connections()
 {
     for (int j=0 ; j< verticesX.size(); j++)
     {
@@ -171,7 +171,7 @@ void MeshCell::Cal_Connections()
 }
 
 //---------------------------------------------------------------------------------------------
-void MeshCell::Add_BoundaryVertice()
+void SignalCell::Add_BoundaryVertice()
 {
     if (boundary && noNeighboringNodesX.size() > 6)
     {
@@ -187,7 +187,7 @@ void MeshCell::Add_BoundaryVertice()
     }
 }
 //---------------------------------------------------------------------------------------------
-void MeshCell::Add_BoundaryVertice2()
+void SignalCell::Add_BoundaryVertice2()
 {
     int thres = 15;
     if (noNeighboringNodesX.size() > thres)
@@ -226,7 +226,7 @@ void MeshCell::Add_BoundaryVertice2()
     
 }
 //---------------------------------------------------------------------------------------------
-void MeshCell::Add_BoundaryVertice3 ()
+void SignalCell::Add_BoundaryVertice3 ()
 {
     int thres = 5 ;
     vector<double> angle ;
@@ -296,7 +296,7 @@ void MeshCell::Add_BoundaryVertice3 ()
 }
 
 //---------------------------------------------------------------------------------------------
-void MeshCell::Refine_NoBoundary ()
+void SignalCell::Refine_NoBoundary ()
 {
     vector<double> tmp ;
     vector<int> removeNoBoundaryNode ;
@@ -324,7 +324,7 @@ void MeshCell::Refine_NoBoundary ()
     }
 }
 //---------------------------------------------------------------------------------------------
-void MeshCell::Refine_NodeXNew ()
+void SignalCell::Refine_NodeXNew ()
 {
     vector<double> tmp ;
     vector<int> removeNodeXNew ;
@@ -354,7 +354,7 @@ void MeshCell::Refine_NodeXNew ()
 
 //---------------------------------------Meshes------------------------------------------------
 //---------------------------------------------------------------------------------------------
-void MeshCell::Find_Mesh()
+void SignalCell::Find_Mesh()
 {
     int size = static_cast<int>(verticesX.size()) ;
     for (int i = 0; i < verticesX.size(); i++)
@@ -394,7 +394,7 @@ void MeshCell::Find_Mesh()
 }
 
 //---------------------------------------------------------------------------------------------
-void MeshCell::Self_Diffusion()
+void SignalCell::Self_Diffusion()
 {
     double dSelf = 4.0 ;
     for (int i =0; i< meshes.size(); i++)
@@ -409,7 +409,7 @@ void MeshCell::Self_Diffusion()
     }
 }
 //---------------------------------------------------------------------------------------------
-void MeshCell::FullModel_SelfDiffusion (bool type)
+void SignalCell::FullModel_SelfDiffusion (bool type)
 {
     if (type == false) //plant
     {
@@ -455,7 +455,7 @@ void MeshCell::FullModel_SelfDiffusion (bool type)
 }
 //---------------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------------------------
-void MeshCell:: FullModel_ProductionCell()
+void SignalCell:: FullModel_ProductionCell()
 {
     for (int j=0; j< meshes.size(); j++)
     {
@@ -463,7 +463,7 @@ void MeshCell:: FullModel_ProductionCell()
     }
 }
 //---------------------------------------------------------------------------------------------
-void MeshCell:: CellLevelConcentration(bool type)
+void SignalCell:: CellLevelConcentration(bool type)
 {
     cellConcentration.clear() ;
     cellU = 0.0 ;
@@ -493,7 +493,7 @@ void MeshCell:: CellLevelConcentration(bool type)
 }
 
 //---------------------------------------------------------------------------------------------
-void MeshCell:: CellLevelConcentration2(bool type)
+void SignalCell:: CellLevelConcentration2(bool type)
 {
     cellConcentration.clear() ;
     cellU = 0.0 ;

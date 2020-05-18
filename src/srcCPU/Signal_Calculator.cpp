@@ -25,7 +25,7 @@ int main ()
     ofstream nanIndex ("NanIndex.txt", ofstream::app) ;    //everything will be written at the end of the existing file
     ofstream sgnlCalculator ("sgnlCalculator.txt", ofstream::app) ;    //everything will be written at the end of the existing file
     auto start = std::chrono::high_resolution_clock::now() ;
-    MeshTissue tissue ;
+    SignalTissue tissue ;
     tissue.cellType = wingDisc ;
     tissue.equationsType = fullModel ;
     tissue.readFileStatus = false ;

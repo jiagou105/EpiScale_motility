@@ -1,7 +1,7 @@
 
 #include "SignalTissue.hpp"
 
-void MeshTissue::Cal_AllCellCenters()
+void SignalTissue::Cal_AllCellCenters()
 {
     for (int i = 0 ; i< cells.size(); i++)
     {
@@ -9,7 +9,7 @@ void MeshTissue::Cal_AllCellCenters()
     }
 }
 //---------------------------------------------------------------------------------------------
-void MeshTissue::Find_AllCellNeighborCandidates ()
+void SignalTissue::Find_AllCellNeighborCandidates ()
 {
     for (int i=0; i < cells.size(); i++)
     {
@@ -18,7 +18,7 @@ void MeshTissue::Find_AllCellNeighborCandidates ()
 }
 //---------------------------------------------------------------------------------------------
 
-void MeshTissue::Cal_AllCellCntrToCntr()
+void SignalTissue::Cal_AllCellCntrToCntr()
 {
     for (int i=0 ; i< cells.size() ; i++ )
     {
@@ -32,7 +32,7 @@ void MeshTissue::Cal_AllCellCntrToCntr()
 }
 
 //---------------------------------------------------------------------------------------------
-void MeshTissue::FindInterfaceWithNeighbor()
+void SignalTissue::FindInterfaceWithNeighbor()
 {
     for (int i=0; i < cells.size(); i++)
     {
@@ -75,11 +75,11 @@ void MeshTissue::FindInterfaceWithNeighbor()
 
 //---------------------------------------------------------------------------------------------
 
-vector<MeshCell> MeshTissue::ReadFile ( )
+vector<SignalCell> SignalTissue::ReadFile ( )
 {
     double a,b,c ;
     double d ;
-    vector<MeshCell> tmpCell ;
+    vector<SignalCell> tmpCell ;
     string number = to_string(frameIndex) ;
     ifstream nodeData ("Locations_"+ number +".txt") ;
     if (nodeData.is_open())
@@ -94,7 +94,7 @@ vector<MeshCell> MeshTissue::ReadFile ( )
     {
         if (a==b)
         {
-            MeshCell cell ;
+            SignalCell cell ;
             tmpCell.push_back(cell) ;
             tmpCell.back().cellID = a ;
             continue ;
@@ -118,12 +118,12 @@ vector<MeshCell> MeshTissue::ReadFile ( )
     return tmpCell ;
 }
 //---------------------------------------------------------------------------------------------
-vector<MeshCell> MeshTissue::ReadFile2 ( )
+vector<SignalCell> SignalTissue::ReadFile2 ( )
 {
     int cellLayer = 0 ;
     int a,b ;
     double c,d ;
-    vector<MeshCell> tmpCell ;
+    vector<SignalCell> tmpCell ;
     string number = to_string(frameIndex) ;
     ifstream nodeData ("Locations_"+ number +".txt") ;
     if (nodeData.is_open())
@@ -139,7 +139,7 @@ vector<MeshCell> MeshTissue::ReadFile2 ( )
         if (static_cast<int>( tmpCell.size() ) == b)
         {
             cellLayer = a ;
-            MeshCell cell ;
+            SignalCell cell ;
             tmpCell.push_back(cell) ;
         }
         
@@ -157,11 +157,11 @@ vector<MeshCell> MeshTissue::ReadFile2 ( )
     return tmpCell ;
 }
 //---------------------------------------------------------------------------------------------
-vector<MeshCell> MeshTissue::ReadFile3 ( )
+vector<SignalCell> SignalTissue::ReadFile3 ( )
 {
     int b ;
     double c,d ;
-    vector<MeshCell> tmpCell ;
+    vector<SignalCell> tmpCell ;
     string number = to_string(frameIndex) ;
     ifstream nodeData ("ExportCellProp_"+ number +".txt") ;
     if (nodeData.is_open())
@@ -176,7 +176,7 @@ vector<MeshCell> MeshTissue::ReadFile3 ( )
     {
         if (static_cast<int>( tmpCell.end() - tmpCell.begin() ) == b )
         {
-            MeshCell cell ;
+            SignalCell cell ;
             tmpCell.push_back(cell) ;
         }
         
@@ -194,12 +194,12 @@ vector<MeshCell> MeshTissue::ReadFile3 ( )
 }
 //---------------------------------------------------------------------------------------------
 
-void MeshTissue::Coupling (vector< vector<double> > locX , vector< vector<double> > locY)
+void SignalTissue::Coupling (vector< vector<double> > locX , vector< vector<double> > locY)
 {
     int cellSize = static_cast<int>( locX.size() ) ;
     for (int i =0 ; i< cellSize ; i++)
     {
-        MeshCell tmpCell ;
+        SignalCell tmpCell ;
         tmpCell.nodesX = locX.at(i) ;
         tmpCell.nodesXNew = locX.at(i) ;
         tmpCell.noNeighboringNodesX = locX.at(i) ;
@@ -215,7 +215,7 @@ void MeshTissue::Coupling (vector< vector<double> > locX , vector< vector<double
 
 //---------------------------------------------------------------------------------------------
 
-void MeshTissue::Find_AllCellNeighbors()
+void SignalTissue::Find_AllCellNeighbors()
 {
     for (int i=0; i < cells.size(); i++)
     {
@@ -233,7 +233,7 @@ void MeshTissue::Find_AllCellNeighbors()
 }
 
 //---------------------------------------------------------------------------------------------
-void MeshTissue::Find_AllCell_NeighborID_Cell()
+void SignalTissue::Find_AllCell_NeighborID_Cell()
 {
     for (int i=0 ; i< cells.size(); i++)
     {
@@ -254,7 +254,7 @@ void MeshTissue::Find_AllCell_NeighborID_Cell()
 }
 //---------------------------------------------------------------------------------------------
 
-void MeshTissue::Cal_AllCellNewEdge()
+void SignalTissue::Cal_AllCellNewEdge()
 {
     for (int i=0 ; i < cells.size(); i++)
     {
@@ -264,7 +264,7 @@ void MeshTissue::Cal_AllCellNewEdge()
 }
 //---------------------------------------------------------------------------------------------
 
-void MeshTissue::Find_CommonNeighbors()
+void SignalTissue::Find_CommonNeighbors()
 {
     for (int i = 0; i < cells.size(); i++)
     {
@@ -344,7 +344,7 @@ void MeshTissue::Find_CommonNeighbors()
 
 }
 //---------------------------------------------------------------------------------------------
-void MeshTissue::Print_CommonNeighbors()
+void SignalTissue::Print_CommonNeighbors()
 {
     for (int i=0; i < cells.size(); i++)
     {
@@ -361,7 +361,7 @@ void MeshTissue::Print_CommonNeighbors()
 }
 //---------------------------------------------------------------------------------------------
 
-void MeshTissue::Cal_Intersect()
+void SignalTissue::Cal_Intersect()
 {
     for (int i=0; i < cells.size(); i++)
     {
@@ -454,7 +454,7 @@ void MeshTissue::Cal_Intersect()
     }
 }
 //---------------------------------------------------------------------------------------------
-void MeshTissue::Find_boundaries()
+void SignalTissue::Find_boundaries()
 {
     vector<double> allNodesX ;
     vector<double> allNodesY ;
@@ -511,7 +511,7 @@ void MeshTissue::Find_boundaries()
     }
 }
 //---------------------------------------------------------------------------------------------
-void MeshTissue::Count_IntersectPoints()
+void SignalTissue::Count_IntersectPoints()
 {
     for (int i = 0; i< cells.size(); i++)
     {
@@ -523,7 +523,7 @@ void MeshTissue::Count_IntersectPoints()
     
 }
 //---------------------------------------------------------------------------------------------
-void MeshTissue::Cal_AllCellVertices()
+void SignalTissue::Cal_AllCellVertices()
 {
     for (int i =0; i < cells.size(); i++)
     {
@@ -531,7 +531,7 @@ void MeshTissue::Cal_AllCellVertices()
     }
 }
 //---------------------------------------------------------------------------------------------
-void MeshTissue::ParaViewVertices ()
+void SignalTissue::ParaViewVertices ()
 {
     if (writeVtk == false)
     {
@@ -611,7 +611,7 @@ void MeshTissue::ParaViewVertices ()
 }
 //---------------------------------------------------------------------------------------------
 
-void MeshTissue::ParaViewTissue ()
+void SignalTissue::ParaViewTissue ()
 {
     if (writeVtk == false)
     {
@@ -672,7 +672,7 @@ void MeshTissue::ParaViewTissue ()
     TissueOut.close();
 }
 //---------------------------------------------------------------------------------------------
-void MeshTissue::Cal_AllCellConnections()
+void SignalTissue::Cal_AllCellConnections()
 {
      int tmpShift = 0 ;
     int counter = 0 ;
@@ -687,7 +687,7 @@ void MeshTissue::Cal_AllCellConnections()
     }
 }
 //---------------------------------------------------------------------------------------------
-void MeshTissue:: Test()
+void SignalTissue:: Test()
 {
     for (int i =0; i < cells.size(); i++)
     {
@@ -695,7 +695,7 @@ void MeshTissue:: Test()
     }
 }
 //---------------------------------------------------------------------------------------------
-void MeshTissue:: Add_NewVerticesToBoundaryEdges()
+void SignalTissue:: Add_NewVerticesToBoundaryEdges()
 {
     for (int i =0; i < cells.size(); i++)
     {
@@ -704,7 +704,7 @@ void MeshTissue:: Add_NewVerticesToBoundaryEdges()
 }
 
 //---------------------------------------------------------------------------------------------
-void MeshTissue:: Refine_VerticesInBoundaryCells ()
+void SignalTissue:: Refine_VerticesInBoundaryCells ()
 {
     // Add vertices for nodes that are shared only between two cells but not three.
     for (int i =0; i < cells.size(); i++)
@@ -772,7 +772,7 @@ void MeshTissue:: Refine_VerticesInBoundaryCells ()
 }
 //---------------------------------------------------------------------------------------------
 
-void MeshTissue::Cyclic4Correction()
+void SignalTissue::Cyclic4Correction()
 {
     for (int i =0 ; i< cells.size(); i++)
     {
@@ -831,7 +831,7 @@ void MeshTissue::Cyclic4Correction()
 }
 
 //---------------------------------------------------------------------------------------------
-void MeshTissue:: Find_Cyclic4()
+void SignalTissue:: Find_Cyclic4()
 {
     for (int i =0; i < cells.size(); i++)
     {
@@ -891,7 +891,7 @@ void MeshTissue:: Find_Cyclic4()
 
 //---------------------------------------------------------------------------------------------
 
-void MeshTissue::SortVertices()
+void SignalTissue::SortVertices()
 {
     for (int i =0; i < cells.size(); i++)
     {
@@ -899,7 +899,7 @@ void MeshTissue::SortVertices()
     }
 }
 //---------------------------------------------------------------------------------------------
-void MeshTissue::AllCell_RefineNoBoundary ()
+void SignalTissue::AllCell_RefineNoBoundary ()
 {
     for (int i=0; i< cells.size(); i++)
     {
@@ -908,7 +908,7 @@ void MeshTissue::AllCell_RefineNoBoundary ()
     }
 }
 //---------------------------------------------------------------------------------------------
-void MeshTissue::ParaViewBoundary ()
+void SignalTissue::ParaViewBoundary ()
 {
     if (writeVtk == false)
     {
@@ -943,7 +943,7 @@ void MeshTissue::ParaViewBoundary ()
     BoundaryOut.close();
 }
 //---------------------------------------------------------------------------------------------
-void MeshTissue::ParaViewInitialConfiguration ()
+void SignalTissue::ParaViewInitialConfiguration ()
 {
     if (writeVtk == false)
     {
@@ -979,7 +979,7 @@ void MeshTissue::ParaViewInitialConfiguration ()
     InitialOut.close();
 }
 //---------------------------------------------------------------------------------------------
-void MeshTissue::Refine_CurvedInterface ()
+void SignalTissue::Refine_CurvedInterface ()
 {
     for (int i = 0; i< cells.size(); i++)
     {
@@ -1074,7 +1074,7 @@ void MeshTissue::Refine_CurvedInterface ()
 }
 
 //---------------------------------------------------------------------------------------------
-void MeshTissue::Print_VeritcesSize()
+void SignalTissue::Print_VeritcesSize()
 {
     for (int i=0; i<cells.size(); i++)
     {
@@ -1088,7 +1088,7 @@ void MeshTissue::Print_VeritcesSize()
 
 //--------------------------------------Meshes----------------=--------------------------------
 //---------------------------------------------------------------------------------------------
-void MeshTissue::Find_AllMeshes()
+void SignalTissue::Find_AllMeshes()
 {
     for (int i =0 ; i < cells.size(); i++)
     {
@@ -1096,7 +1096,7 @@ void MeshTissue::Find_AllMeshes()
     }
 }
 //---------------------------------------------------------------------------------------------
-void MeshTissue::Cal_AreaOfTissue()
+void SignalTissue::Cal_AreaOfTissue()
 {
     areaTissue = 0.0 ;
     for (int i =0; i<cells.size(); i++)
@@ -1112,7 +1112,7 @@ void MeshTissue::Cal_AreaOfTissue()
     radius = sqrt(areaTissue/ pi ) ;
 }
 //---------------------------------------------------------------------------------------------
-void MeshTissue::Cal_AllSelfDiffusion()
+void SignalTissue::Cal_AllSelfDiffusion()
 {
     for (int i =0 ; i < cells.size(); i++)
     {
@@ -1120,7 +1120,7 @@ void MeshTissue::Cal_AllSelfDiffusion()
     }
 }
 //---------------------------------------------------------------------------------------------
-void MeshTissue::Find_IntercellularMeshConnection()
+void SignalTissue::Find_IntercellularMeshConnection()
 {
     for (int i =0; i < cells.size(); i++)
     {
@@ -1174,7 +1174,7 @@ void MeshTissue::Find_IntercellularMeshConnection()
 
 //---------------------------------------------------------------------------------------------
 
-void MeshTissue::IntercellularDiffusion()
+void SignalTissue::IntercellularDiffusion()
 {
     double dInter = 1.0 ;
     for (int i =0 ; i < cells.size(); i++)
@@ -1197,7 +1197,7 @@ void MeshTissue::IntercellularDiffusion()
     }
 }
 //---------------------------------------------------------------------------------------------
-void MeshTissue::EulerMethod()
+void SignalTissue::EulerMethod()
 {
     bool state = false ;
     int l = 0 ;
@@ -1255,7 +1255,7 @@ void MeshTissue::EulerMethod()
     cout<< "number of steps needed is " << l <<endl ;
 }
 //---------------------------------------------------------------------------------------------
-void MeshTissue::EulerMethod2 ()
+void SignalTissue::EulerMethod2 ()
 {
     
     for (int l =0 ; l <= 100000; l++)
@@ -1280,7 +1280,7 @@ void MeshTissue::EulerMethod2 ()
     }
 }
 //---------------------------------------------------------------------------------------------
-void MeshTissue::Find_SecretingCell()
+void SignalTissue::Find_SecretingCell()
 {
     double cntX ;
     double cntY ;
@@ -1314,7 +1314,7 @@ void MeshTissue::Find_SecretingCell()
     }
 }
 //---------------------------------------------------------------------------------------------
-void MeshTissue::ParaViewMesh(int number)
+void SignalTissue::ParaViewMesh(int number)
 {
     if (writeVtk == false)
     {
@@ -1452,7 +1452,7 @@ void MeshTissue::ParaViewMesh(int number)
     MeshOut.close();
 }
  //---------------------------------------------------------------------------------------------
-void MeshTissue::FullModel_Diffusion()
+void SignalTissue::FullModel_Diffusion()
 {
     for (int i=0; i<cells.size(); i++)
     {
@@ -1543,7 +1543,7 @@ void MeshTissue::FullModel_Diffusion()
 
 //---------------------------------------------------------------------------------------------
 
-void MeshTissue::FullModel_AllCellProductions()         //call once, initialize the constants
+void SignalTissue::FullModel_AllCellProductions()         //call once, initialize the constants
 {
     for (int i=0; i<cells.size(); i++)
     {
@@ -1580,7 +1580,7 @@ void MeshTissue::FullModel_AllCellProductions()         //call once, initialize 
     }
 }
 //---------------------------------------------------------------------------------------------
-void MeshTissue::FullModelEulerMethod()
+void SignalTissue::FullModelEulerMethod()
 {
     /*
     string txtFileName = "Histagram_"+ to_string(frameIndex)+ ".txt" ;
@@ -1668,7 +1668,7 @@ void MeshTissue::FullModelEulerMethod()
 }
 //---------------------------------------------------------------------------------------------
 
-void MeshTissue::Cal_AllCellConcentration()
+void SignalTissue::Cal_AllCellConcentration()
 {
     tissueLevelConcentration.clear() ;
     tissueLevelU.clear() ;
@@ -1689,7 +1689,7 @@ void MeshTissue::Cal_AllCellConcentration()
     
 }
 //---------------------------------------------------------------------------------------------
-void MeshTissue::Cal_ReturnSignal()
+void SignalTissue::Cal_ReturnSignal()
 {
     if (equationsType == fullModel)
     {
@@ -1710,7 +1710,7 @@ void MeshTissue::Cal_ReturnSignal()
     }
 }
 //---------------------------------------------------------------------------------------------
-void MeshTissue:: Initialize_Concentrations(vector<vector<double> > oldConcentrations )
+void SignalTissue:: Initialize_Concentrations(vector<vector<double> > oldConcentrations )
 {
     for (int i=0; i<oldConcentrations.size() ; i++)
     {
@@ -1750,8 +1750,12 @@ void MeshTissue:: Initialize_Concentrations(vector<vector<double> > oldConcentra
 
 //---------------------------------------------------------------------------------------------
 
-void MeshTissue::WriteConcentrations(string timer)
+void SignalTissue::WriteConcentrations(string timer)
 {
+    if( writeVtk == false )
+    {
+        return ;
+    }
     string number = to_string(frameIndex) ;
     ofstream concentrationsData (timer + "concentrations_"+ number +".txt") ;
     concentrationsData << cells.size()<<endl ;
@@ -1767,7 +1771,7 @@ void MeshTissue::WriteConcentrations(string timer)
     concentrationsData.close() ;
 }
 //---------------------------------------------------------------------------------------------
-void MeshTissue::ReadConcentrations()
+void SignalTissue::ReadConcentrations()
 {
     
     if (cellType==wingDisc)
@@ -1803,7 +1807,7 @@ void MeshTissue::ReadConcentrations()
 }
 //---------------------------------------------------------------------------------------------
 
-void MeshTissue::UpdateNanStatus()
+void SignalTissue::UpdateNanStatus()
 {
     for (int i=0; i<tissueLevelConcentration.size() ; i++)
     {
