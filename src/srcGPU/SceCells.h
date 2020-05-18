@@ -2,7 +2,7 @@
 #define SCECELLS_H_
 
 #include "SceNodes.h"
-#include "../srcCPU/Signal2D.h"
+#include "../srcCPU/Signal_MakeInterface.h"
 #include <time.h>
 #include <thrust/tabulate.h>
 #define PI 3.14159265358979
