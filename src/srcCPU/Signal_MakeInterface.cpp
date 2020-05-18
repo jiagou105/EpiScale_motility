@@ -133,7 +133,7 @@ void Signal::exportGeometryInfo() {
 	//Ali code: writing nodes locations in a file, needed for debuging
 	srand(time(NULL));
 	bool writeLoc ;
-	writeLoc = !fmod(static_cast<int>(round ( 100 * frameNumber) ), 100)
+	writeLoc = !fmod(static_cast<int>(round ( 100 * frameNumber) ), 100) ;
 	if (writeLoc==true)
 	{
 		double max_Rx=max (maxX-Center_X,Center_X-minX) ; 
