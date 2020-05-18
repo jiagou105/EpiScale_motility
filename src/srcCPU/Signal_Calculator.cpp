@@ -29,8 +29,8 @@ int main ()
     tissue.cellType = wingDisc ;
     tissue.equationsType = fullModel ;
     tissue.readFileStatus = false ;
-    tissue.frameIndex = index ;
-    tissue.writeVtk = ! fmod(index, 1.0) ;
+    tissue.frameIndex = static_cast<int>(round ( 100 * index) ) / 100 ;
+    tissue.writeVtk = ! fmod(static_cast<int>(round ( 100 * index) ), 100) ;
     cout<<"current index in Signal_Calculator function is "<<index<<endl ;
     sgnlCalculator<<"current index in Signal_Calculator function is "<<index<<endl ;
     if (tissue.readFileStatus)
