@@ -359,7 +359,7 @@ void SignalCell::Find_Mesh()
     int size = static_cast<int>(verticesX.size()) ;
     for (int i = 0; i < verticesX.size(); i++)
     {
-        Mesh tmpMesh ;
+        SignalMesh tmpMesh ;
         tmpMesh.triangleX.push_back( centroid.at(0) ) ;
         tmpMesh.triangleY.push_back( centroid.at(1) ) ;
         

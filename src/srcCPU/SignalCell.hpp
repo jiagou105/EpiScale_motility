@@ -41,7 +41,7 @@ public:
 class SignalCell
 {   public:
     SignalCell() ;
-    vector<Mesh> meshes ;
+    vector<SignalMesh> meshes ;
     vector <Neighbor> neighbors ;
     int cellID ;
     int layer ;

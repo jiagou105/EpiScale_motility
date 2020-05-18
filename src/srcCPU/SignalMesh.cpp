@@ -1,7 +1,7 @@
 
 #include "SignalMesh.hpp"
 
-Mesh::Mesh()
+SignalMesh::SignalMesh()
 {
     connection.first = -1 ;
     connection.second = -1 ;
@@ -32,7 +32,7 @@ Mesh::Mesh()
 }
 
 //--------------------------------------------------------------------------------------------
-void Mesh::Cal_MeshCenter()
+void SignalMesh::Cal_MeshCenter()
 {
     
     center.push_back(accumulate(triangleX.begin(), triangleX.end(), 0.0)/triangleX.size ()) ;
@@ -40,7 +40,7 @@ void Mesh::Cal_MeshCenter()
     
 }
 //---------------------------------------------------------------------------------------------
-double Mesh::Cal_MeshArea()
+double SignalMesh::Cal_MeshArea()
 {
     pair<double, double> vec1 ;
     vec1.first = triangleX.at(1) - triangleX.at(0) ;
@@ -54,26 +54,26 @@ double Mesh::Cal_MeshArea()
     
 }
 //---------------------------------------------------------------------------------------------
-void Mesh::Cal_UStar ()
+void SignalMesh::Cal_UStar ()
 {
     double totalFlux = accumulate(flux.begin(), flux.end(), 0.0) ;
     uStar = u1 + dt * (totalFlux + c - d*u1) ;
 }
 //---------------------------------------------------------------------------------------------
-void Mesh::Euler()
+void SignalMesh::Euler()
 {
     double totalFlux = accumulate(flux.begin(), flux.end(), 0.0) ;
     u2 = u1 + dt * (totalFlux + c - d * u1 ) ;
     flux.clear() ;
 }
 //---------------------------------------------------------------------------------------------
-void Mesh::UpdateU()
+void SignalMesh::UpdateU()
 {
     u1 = u2   ;
     concentrations = concentrations2 ;
 }
 //---------------------------------------------------------------------------------------------
-void Mesh::FullModel_Euler(bool type, double radius)
+void SignalMesh::FullModel_Euler(bool type, double radius)
 {
     
     vector<double> degradationChanges = UpdateDegradation(type, radius) ;
@@ -139,7 +139,7 @@ void Mesh::FullModel_Euler(bool type, double radius)
     
 }
 //---------------------------------------------------------------------------------------------
-vector<double> Mesh::UpdateDegradation(bool type , double radius)
+vector<double> SignalMesh::UpdateDegradation(bool type , double radius)
 {
     int ns=20 ;
     double rs = 0.12 ;
@@ -167,7 +167,7 @@ vector<double> Mesh::UpdateDegradation(bool type , double radius)
 }
 //---------------------------------------------------------------------------------------------
 
-vector<double> Mesh:: UpdateRates(bool type )
+vector<double> SignalMesh:: UpdateRates(bool type )
 {
     vector<double> tmp ;
     tmp.resize(concentrations.size()) ;
@@ -191,7 +191,7 @@ vector<double> Mesh:: UpdateRates(bool type )
     return tmp ;
 }
 //---------------------------------------------------------------------------------------------
-double Mesh::UpdateCp ()
+double SignalMesh::UpdateCp ()
 {
     double w1 = 10 ;
     double w2 = 100 ;

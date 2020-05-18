@@ -1,9 +1,9 @@
 
 #include "SignalCommon.hpp"
-class Mesh
+class SignalMesh
 {
 public:
-    Mesh () ;
+    SignalMesh () ;
     vector<double> triangleX ;
     vector<double> triangleY ;
     vector<double> center ;
