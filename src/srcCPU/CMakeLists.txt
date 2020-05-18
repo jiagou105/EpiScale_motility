@@ -9,14 +9,14 @@ add_library(SceInit STATIC
 		Signal2D.cpp
 		Signal_Calculator.h
 		Signal_Calculator.cpp
-		MeshTissue.hpp
-		MeshTissue.cpp
-		Mesh.hpp
-		Mesh.cpp
-		MeshCell.hpp
-		MeshCell.cpp
-		common.cpp
-		common.hpp
+		SignalTissue.hpp
+		SignalTissue.cpp
+		SignalMesh.hpp
+		SignalMesh.cpp
+		SignalCell.hpp
+		SignalCell.cpp
+		SignalCommon.cpp
+		SignalCommon.hpp
         ${COMMON_INCLUDES}/Point2D.cpp
         ${COMMON_INCLUDES}/Point2D.h
         ${COMMON_INCLUDES}/ConfigParser.h
