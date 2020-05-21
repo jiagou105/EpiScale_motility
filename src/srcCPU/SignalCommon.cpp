@@ -1,5 +1,5 @@
 
-#include "common.hpp"
+#include "SignalCommon.hpp"
 
 
 
@@ -89,6 +89,17 @@ double DotProduct (double x1 , double y1 , double x2 , double y2)
 double MagnitudeVec (double x , double y)
 {
     return sqrt(DotProduct(x, y, x, y)) ;
+}
+//---------------------------------------------------------------------------------------------
+double TriangleArea (double x1, double y1, double x2 , double y2)
+{
+    double tetta1 = atan2(y1 , x1 ) ;
+    double tetta2 = atan2(y2 , x2 ) ;
+    double dTetta = fmod( abs( tetta2 -tetta1 ),2 * pi ) ;
+    
+    double area = 0.5 * MagnitudeVec(x1, y1 ) * MagnitudeVec(x2, y2 ) * abs( sin( dTetta ) ) ;
+    return area ;
+    
 }
 //---------------------------------------------------------------------------------------------
 double AngleOfTwoVectors (double x1 , double y1 , double x2 , double y2)

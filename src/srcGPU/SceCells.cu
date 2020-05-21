@@ -681,6 +681,10 @@ void SceCells::initCellInfoVecs_M() {
 	cellInfoVecs.Cell_Damp.resize(allocPara_m.maxCellCount, 36.0);   //Ali
 	cellInfoVecs.cell_Dpp.resize(allocPara_m.maxCellCount, 0.0);   //Ali
 	cellInfoVecs.cell_DppOld.resize(allocPara_m.maxCellCount, 0.0);   //Ali
+	cellInfoVecs.cell_Tkv.resize(allocPara_m.maxCellCount, 0.0);   //Alireza
+	cellInfoVecs.cell_DppTkv.resize(allocPara_m.maxCellCount, 0.0);   //Alireza
+	cellInfoVecs.cell_pMad.resize(allocPara_m.maxCellCount, 0.0);   //Alireza
+	
         //cout<< "size of dpp in init is "<< cellInfoVecs.cell_Dpp.size() << endl ;          
 	cellInfoVecs.growthProgress.resize(allocPara_m.maxCellCount, 0.0); //A&A
         cellInfoVecs.growthProgressOld.resize(allocPara_m.maxCellCount, 0.0);//Ali
@@ -1452,7 +1456,7 @@ if (firstTimeReadDpp) {
    	lastTimeExchange=lastTimeExchange+dt ;
 	cout << "last time exchange is " << lastTimeExchange << endl ; 
 	cout << "dt is " << dt << endl ;  
-   	double exchPeriod=1 ; 
+   	double exchPeriod=20 ; 
 	if ( lastTimeExchange>exchPeriod) {
 		lastTimeExchange=0 ; 
 		//vector<CVector> cellCentersHost ; 
@@ -1482,11 +1486,19 @@ if (firstTimeReadDpp) {
 		thrust:: copy (nodes->getInfoVecs().nodeLocX.begin(),nodes->getInfoVecs().nodeLocX.begin()+  totalNodeCountForActiveCells, signal.nodeLocXHost.begin()); 
 		thrust:: copy (nodes->getInfoVecs().nodeLocY.begin(),nodes->getInfoVecs().nodeLocY.begin()+  totalNodeCountForActiveCells, signal.nodeLocYHost.begin()); 
 		thrust:: copy (cellInfoVecs.centerCoordX.begin(),cellInfoVecs.centerCoordX.begin()+allocPara_m.currentActiveCellCount, signal.cellCenterX.begin()); 
-		thrust:: copy (cellInfoVecs.centerCoordY.begin(),cellInfoVecs.centerCoordY.begin()+allocPara_m.currentActiveCellCount, signal.cellCenterY.begin()); 
+		thrust:: copy (cellInfoVecs.centerCoordY.begin(),cellInfoVecs.centerCoordY.begin()+allocPara_m.currentActiveCellCount, signal.cellCenterY.begin());
+		
+		thrust:: copy (cellInfoVecs.cell_Dpp.begin(),cellInfoVecs.cell_Dpp.begin()+allocPara_m.currentActiveCellCount, signal.dppLevel.begin());		//Alireza
+		thrust:: copy (cellInfoVecs.cell_Tkv.begin(),cellInfoVecs.cell_Tkv.begin()+allocPara_m.currentActiveCellCount, signal.tkvLevel.begin());		//Alireza
+		thrust:: copy (cellInfoVecs.cell_DppTkv.begin(),cellInfoVecs.cell_DppTkv.begin()+allocPara_m.currentActiveCellCount, signal.dppTkvLevel.begin());	//Alireza
+		thrust:: copy (cellInfoVecs.cell_pMad.begin(),cellInfoVecs.cell_pMad.begin()+allocPara_m.currentActiveCellCount, signal.pMadLevel.begin());		//Alireza
 		
         	signal.updateSignal(Tisu_MinX,Tisu_MaxX,Tisu_MinY,Tisu_MaxY,curTime,totalNodeCountForActiveCells,allocPara_m.currentActiveCellCount) ; //Ali
         	assert(cellInfoVecs.cell_Dpp.size()==signal.dppLevel.size());
-        	thrust::copy(signal.dppLevel.begin(),signal.dppLevel.end(),cellInfoVecs.cell_Dpp.begin()) ;
+        	thrust::copy(signal.dppLevel.begin(),signal.dppLevel.begin() + allocPara_m.currentActiveCellCount,cellInfoVecs.cell_Dpp.begin()) ;
+		thrust::copy(signal.tkvLevel.begin(),signal.tkvLevel.begin() + allocPara_m.currentActiveCellCount,cellInfoVecs.cell_Tkv.begin()) ;		//Alireza
+		thrust::copy(signal.dppTkvLevel.begin(),signal.dppTkvLevel.begin() + allocPara_m.currentActiveCellCount,cellInfoVecs.cell_DppTkv.begin()) ;	//Alireza
+		thrust::copy(signal.pMadLevel.begin(),signal.pMadLevel.begin() + allocPara_m.currentActiveCellCount,cellInfoVecs.cell_pMad.begin()) ;		//Alireza
 		//currentActiveCellCountOld=allocPara_m.currentActiveCellCount;
  
 	}
@@ -1955,6 +1967,9 @@ void SceCells::copySecondCellArr_M() {
 		cellInfoVecs.lastCheckPoint[cellRank] = 0;
 		cellInfoVecs.cell_DppOld[cellRank] = cellInfoVecs.cell_Dpp[cellRankMother];
 		cellInfoVecs.cell_Dpp[cellRank]    = cellInfoVecs.cell_Dpp[cellRankMother];
+		cellInfoVecs.cell_Tkv[cellRank]    = cellInfoVecs.cell_Tkv[cellRankMother];	//Alireza
+		cellInfoVecs.cell_DppTkv[cellRank]    = cellInfoVecs.cell_DppTkv[cellRankMother];	//Alireza
+		cellInfoVecs.cell_pMad[cellRank]    = cellInfoVecs.cell_pMad[cellRankMother];	//Alireza
 	}
 }
 

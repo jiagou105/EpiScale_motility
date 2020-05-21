@@ -1,17 +1,17 @@
-#include "Cell.hpp"
+#include "SignalCell.hpp"
 
 
 
 
 
 //---------------------------------------------------------------------------------------------
-Cell::Cell ()
+SignalCell::SignalCell ()
 {
     centroid.resize(2) ;
 };
 //---------------------------------------------------------------------------------------------
 
-vector <vector<double> > Cell::Cal_NodeToNodeDist(vector <double> nodesXNeighbor, vector<double> nodesYNeighbor)
+vector <vector<double> > SignalCell::Cal_NodeToNodeDist(vector <double> nodesXNeighbor, vector<double> nodesYNeighbor)
 {
     vector<vector<double> > distNodeToNeighborNodes  ;
     for (int k=0; k < nodesX.size() ; k++)
@@ -29,7 +29,7 @@ vector <vector<double> > Cell::Cal_NodeToNodeDist(vector <double> nodesXNeighbor
 }
 //---------------------------------------------------------------------------------------------
 
-void Cell::Find_NghbrCandidate ()
+void SignalCell::Find_NghbrCandidate ()
 {
     double smallValue= 0.00001 ;
     for (int j = 0 ; j < cntrToCntr.size() ; j++)
@@ -43,7 +43,7 @@ void Cell::Find_NghbrCandidate ()
 
 
 //---------------------------------------------------------------------------------------------
-void Cell::Cal_Centroid()
+void SignalCell::Cal_Centroid()
 {
     
     centroid.at(0)= accumulate(nodesX.begin(), nodesX.end(), 0.0)/nodesX.size () ;
@@ -53,7 +53,7 @@ void Cell::Cal_Centroid()
 }
 
 //---------------------------------------------------------------------------------------------
-void Cell::Find_NghbrProperties ()
+void SignalCell::Find_NghbrProperties ()
 {
     for (int j = 0 ; j < nghbrCandidate.size(); j++)
     {
@@ -90,7 +90,7 @@ void Cell::Find_NghbrProperties ()
     
 }
 //---------------------------------------------------------------------------------------------
-void Cell::NewEdge()
+void SignalCell::NewEdge()
 {
     vector<int> removeNode ;
     vector<double> addNodeX ;
@@ -116,7 +116,7 @@ void Cell::NewEdge()
 }
 //---------------------------------------------------------------------------------------------
 
-void Cell::SortCCW () // vector<double> &verticesX , vector<double> &verticesY )
+void SignalCell::SortCCW () // vector<double> &verticesX , vector<double> &verticesY )
 {
     vector<double> angle ;
     for (int j = 0; j < verticesX.size() ; j++)
@@ -140,7 +140,7 @@ void Cell::SortCCW () // vector<double> &verticesX , vector<double> &verticesY )
     verticesY = tmpY ;
 }
 //---------------------------------------------------------------------------------------------
-void Cell::Cal_Vertices()
+void SignalCell::Cal_Vertices()
 {
     for (int j =0; j < neighbors.size(); j++)
     {   int offset = 0 ;
@@ -162,7 +162,7 @@ void Cell::Cal_Vertices()
     }
 }
 //---------------------------------------------------------------------------------------------
-void Cell::Cal_Connections()
+void SignalCell::Cal_Connections()
 {
     for (int j=0 ; j< verticesX.size(); j++)
     {
@@ -171,7 +171,7 @@ void Cell::Cal_Connections()
 }
 
 //---------------------------------------------------------------------------------------------
-void Cell::Add_BoundaryVertice()
+void SignalCell::Add_BoundaryVertice()
 {
     if (boundary && noNeighboringNodesX.size() > 6)
     {
@@ -187,7 +187,7 @@ void Cell::Add_BoundaryVertice()
     }
 }
 //---------------------------------------------------------------------------------------------
-void Cell::Add_BoundaryVertice2()
+void SignalCell::Add_BoundaryVertice2()
 {
     int thres = 15;
     if (noNeighboringNodesX.size() > thres)
@@ -226,7 +226,7 @@ void Cell::Add_BoundaryVertice2()
     
 }
 //---------------------------------------------------------------------------------------------
-void Cell::Add_BoundaryVertice3 ()
+void SignalCell::Add_BoundaryVertice3 ()
 {
     int thres = 5 ;
     vector<double> angle ;
@@ -277,6 +277,10 @@ void Cell::Add_BoundaryVertice3 ()
                 deltaTetta += 2*pi ;
             }
         }
+        if (deltaTetta < 0.0)
+        {
+            cout<< "OMG!!! deltaTetta is negative :"<<deltaTetta<<endl ;
+        }
         int number = round(deltaTetta / preferedAngle);
         double step = deltaTetta / number ;
         for (int i =1; i< number; i++)
@@ -292,7 +296,7 @@ void Cell::Add_BoundaryVertice3 ()
 }
 
 //---------------------------------------------------------------------------------------------
-void Cell::Refine_NoBoundary ()
+void SignalCell::Refine_NoBoundary ()
 {
     vector<double> tmp ;
     vector<int> removeNoBoundaryNode ;
@@ -303,7 +307,7 @@ void Cell::Refine_NoBoundary ()
         {
             tmp = Dist_PointToVec2D(noNeighboringNodesX.at(i), noNeighboringNodesY.at(i), verticesX, verticesY) ;
             double tmpMin = *min_element(tmp.begin(), tmp.end()) ;
-            if (tmpMin < thres_intersect)
+            if (tmpMin < thres_refineNodes )
             {
                 removeNoBoundaryNode.push_back(i) ;
             }
@@ -320,7 +324,7 @@ void Cell::Refine_NoBoundary ()
     }
 }
 //---------------------------------------------------------------------------------------------
-void Cell::Refine_NodeXNew ()
+void SignalCell::Refine_NodeXNew ()
 {
     vector<double> tmp ;
     vector<int> removeNodeXNew ;
@@ -331,7 +335,7 @@ void Cell::Refine_NodeXNew ()
         {
             tmp = Dist_PointToVec2D(nodesXNew.at(i), nodesYNew.at(i), verticesX, verticesY) ;
             double tmpMin = *min_element(tmp.begin(), tmp.end()) ;
-            if (tmpMin < thres_intersect)
+            if (tmpMin < thres_refineNodes )
             {
                 removeNodeXNew.push_back(i) ;
             }
@@ -350,12 +354,12 @@ void Cell::Refine_NodeXNew ()
 
 //---------------------------------------Meshes------------------------------------------------
 //---------------------------------------------------------------------------------------------
-void Cell::Find_Mesh()
+void SignalCell::Find_Mesh()
 {
     int size = static_cast<int>(verticesX.size()) ;
     for (int i = 0; i < verticesX.size(); i++)
     {
-        Mesh tmpMesh ;
+        SignalMesh tmpMesh ;
         tmpMesh.triangleX.push_back( centroid.at(0) ) ;
         tmpMesh.triangleY.push_back( centroid.at(1) ) ;
         
@@ -365,72 +369,156 @@ void Cell::Find_Mesh()
         tmpMesh.triangleX.push_back(verticesX.at( (i+1) % size )) ;
         tmpMesh.triangleY.push_back(verticesY.at( (i+1) % size )) ;
         
-        tmpMesh.Cal_Center() ;
+        tmpMesh.Cal_MeshCenter() ;
         meshes.push_back(tmpMesh) ;
         
     }
     for (int i =0; i< meshes.size(); i++)
     {
         int size = static_cast<int>(meshes.size()) ;
-        double area = Dist2D(meshes.at(i).triangleX.at(0), meshes.at(i).triangleY.at(0),
+        double tmpChannel = Dist2D(meshes.at(i).triangleX.at(0), meshes.at(i).triangleY.at(0),
                              meshes.at(i).triangleX.at(2), meshes.at(i).triangleY.at(2)) ;
         double length = Dist2D(meshes.at(i).center.at(0), meshes.at(i).center.at(1),
                                meshes.at((i+1) % size ).center.at(0), meshes.at((i+1) % size).center.at(1)) ;
-        meshes.at(i).area.at(0) = area ;
-        meshes.at((i+1) % size).area.at(1) = area ;
+        meshes.at(i).channel.at(0) = tmpChannel ;
+        meshes.at((i+1) % size).channel.at(1) = tmpChannel ;
         meshes.at(i).length.at(0)= length ;
         meshes.at((i+1) % size).length.at(1) = length ;
     }
     for (int i = 0; i < meshes.size(); i++)
     {
-        double area = Dist2D(meshes.at(i).triangleX.at(1), meshes.at(i).triangleY.at(1),
+        double tmpChannel = Dist2D(meshes.at(i).triangleX.at(1), meshes.at(i).triangleY.at(1),
                              meshes.at(i).triangleX.at(2), meshes.at(i).triangleY.at(2)) ;
-        meshes.at(i).area.at(2) = area ;
+        meshes.at(i).channel.at(2) = tmpChannel ;
     }
 }
 
 //---------------------------------------------------------------------------------------------
-void Cell::Self_Diffusion()
+void SignalCell::Self_Diffusion()
 {
     double dSelf = 4.0 ;
     for (int i =0; i< meshes.size(); i++)
     {
         int size = static_cast<int>(meshes.size()) ;
-        double area = meshes.at(i).area.at(0) ;
+        double tmpChannel = meshes.at(i).channel.at(0) ;
         double length = meshes.at(i).length.at(0) ;
         double deltaU = meshes.at((i+1) % size).u1 - meshes.at(i).u1 ;
-        double flux = dSelf * area * deltaU / length ;
+        double flux = dSelf * tmpChannel * deltaU / length ;
         meshes.at(i).flux.push_back( flux ) ;
         meshes.at((i+1) % size).flux.push_back(- flux ) ;
     }
 }
 //---------------------------------------------------------------------------------------------
-void Cell::FullModel_SelfDiffusion ()
+void SignalCell::FullModel_SelfDiffusion (bool type)
 {
-    for (int i =0; i< meshes.size(); i++)
+    if (type == false) //plant
     {
-        int size = static_cast<int>(meshes.size()) ;
-        double area = meshes.at(i).area.at(0) ;
-        double length = meshes.at(i).length.at(0) ;
-        vector<double> deltaU ;
-        deltaU.resize(meshes.at(i).concentrations.size() ) ;
-        transform( meshes.at((i+1)% size ).concentrations.begin(), meshes.at((i+1)% size ).concentrations.end(),
-                  meshes.at(i).concentrations.begin(), deltaU.begin(), linearConfig(1 ,-1) );
-        vector<double> flux ;
-        flux.resize(deltaU.size() ) ;
-        transform(deltaU.begin(), deltaU.end(), flux.begin(), productNum(area/length ) ) ;
-        transform(flux.begin(), flux.end(), meshes.at(i).diffusions.begin(), flux.begin(), productVec() ) ;
-        meshes.at(i).Flux.push_back(flux) ;
-        transform(flux.begin(), flux.end(), flux.begin(), productNum(-1) ) ;
-        meshes.at((i+1) % size).Flux.push_back( flux ) ;
-        
+        for (int i =0; i< meshes.size(); i++)
+        {
+            int size = static_cast<int>(meshes.size()) ;
+            double tmpChannel = meshes.at(i).channel.at(0) ;
+            double length = meshes.at(i).length.at(0) ;
+            vector<double> deltaU ;
+            deltaU.resize(meshes.at(i).concentrations.size() ) ;
+            transform( meshes.at((i+1)% size ).concentrations.begin()+1, meshes.at((i+1)% size ).concentrations.begin()+5,
+                      meshes.at(i).concentrations.begin()+1, deltaU.begin()+1, linearConfig(1.0 ,-1.0) );
+            vector<double> flux ;
+            flux.resize(deltaU.size() ) ;
+            transform(deltaU.begin()+1, deltaU.begin()+5, flux.begin()+1, productNum(tmpChannel/length ) ) ;
+            transform(flux.begin()+1, flux.begin()+5, meshes.at(i).selfDiffusions.begin()+1, flux.begin()+1, productVec() ) ;
+            meshes.at(i).Flux.push_back(flux) ;
+            transform(flux.begin()+1, flux.begin()+5, flux.begin()+1, productNum(-1.0) ) ;
+            meshes.at((i+1) % size).Flux.push_back( flux ) ;
+            
+        }
+    }
+    else
+    {
+        for (int i =0; i< meshes.size(); i++)
+        {
+            int size = static_cast<int>(meshes.size()) ;
+            double tmpChannel = meshes.at(i).channel.at(0) ;
+            double length = meshes.at(i).length.at(0) ;
+            vector<double> deltaU ;
+            deltaU.resize(meshes.at(i).concentrations.size() ) ;
+            transform( meshes.at((i+1)% size ).concentrations.begin()+4, meshes.at((i+1)% size ).concentrations.begin()+5,
+                      meshes.at(i).concentrations.begin()+4, deltaU.begin()+4, linearConfig(1.0 ,-1.0) );
+            vector<double> flux ;
+            flux.resize(deltaU.size() ) ;
+            transform(deltaU.begin()+4, deltaU.begin()+5, flux.begin()+4, productNum(tmpChannel/length ) ) ;
+            transform(flux.begin()+4, flux.begin()+5, meshes.at(i).selfDiffusions.begin()+4, flux.begin()+4, productVec() ) ;
+            meshes.at(i).Flux.push_back(flux) ;
+            transform(flux.begin()+4, flux.begin()+5, flux.begin()+4, productNum(-1.0) ) ;
+            meshes.at((i+1) % size).Flux.push_back( flux ) ;
+        }
     }
 }
 //---------------------------------------------------------------------------------------------
-void Cell:: FullModel_ProductionCell()
+//---------------------------------------------------------------------------------------------
+void SignalCell:: FullModel_ProductionCell()
 {
     for (int j=0; j< meshes.size(); j++)
     {
-        meshes.at(j).productions = { productionW , 0, 0, productionC, productionCk, productionCk, 0 } ;
+        meshes.at(j).productions = { productionW , 0.0, 0.0, productionC, productionCk, productionCkR, 0.0 , productionPMad } ;
     }
+}
+//---------------------------------------------------------------------------------------------
+void SignalCell:: CellLevelConcentration(bool type)
+{
+    cellConcentration.clear() ;
+    cellU = 0.0 ;
+  //  cellConcentration.resize(meshes.at(0).concentrations.size() ) ;
+    if (type == false)  //plant
+    {
+        cellConcentration.resize(meshes.at(0).concentrations.size() -1 ) ;
+    }
+    else
+    {
+        cellConcentration.resize(meshes.at(0).concentrations.size() -4  ) ;
+    }
+    
+    for (int j=0 ; j< meshes.size() ; j++ )
+    {
+        cellU += meshes.at(j).u1 ;
+        if (type == false)  //plant
+        {
+        transform(meshes.at(j).concentrations.begin(), meshes.at(j).concentrations.end()-1 , cellConcentration.begin(), cellConcentration.begin() , linearConfig (meshes.at(j).area,1.0) ) ;
+        }
+        else    //wingDisc
+        {
+            transform(meshes.at(j).concentrations.begin()+4, meshes.at(j).concentrations.end() , cellConcentration.begin(), cellConcentration.begin() , linearConfig (meshes.at(j).area, 1.0) ) ;
+        }
+    }
+    transform(cellConcentration.begin(), cellConcentration.end(), cellConcentration.begin(), productNum(1.0/areaCell ) ) ;
+}
+
+//---------------------------------------------------------------------------------------------
+void SignalCell:: CellLevelConcentration2(bool type)
+{
+    cellConcentration.clear() ;
+    cellU = 0.0 ;
+    //  cellConcentration.resize(meshes.at(0).concentrations.size() ) ;
+    if (type == false)  //plant
+    {
+        cellConcentration.resize(meshes.at(0).concentrations.size() -1 ) ;
+    }
+    else
+    {
+        cellConcentration.resize(meshes.at(0).concentrations.size() -4  ) ;
+    }
+    
+    for (int j=0 ; j< meshes.size() ; j++ )
+    {
+        cellU += meshes.at(j).u1 ;
+        if (type == false)  //plant
+        {
+            transform(meshes.at(j).concentrations.begin(), meshes.at(j).concentrations.end()-1 , cellConcentration.begin(), cellConcentration.begin() , linearConfig (1.0,1.0) ) ;
+        }
+        else    //wingDisc
+        {
+            transform(meshes.at(j).concentrations.begin()+4, meshes.at(j).concentrations.end() , cellConcentration.begin(), cellConcentration.begin() , linearConfig (1.0, 1.0) ) ;
+           
+        }
+    }
+    transform(cellConcentration.begin(), cellConcentration.end(), cellConcentration.begin(), productNum(1.0/meshes.size() ) ) ;
 }

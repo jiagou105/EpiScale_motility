@@ -1,7 +1,10 @@
-#ifndef SIGNAL_CALCULATOR_H_
-#define SIGNAL_CALCULATOR_H_
 
+#ifndef Signal_Calculator_h
+#define Signal_Calculator_h
 
-int Signal_Calculator ();
+using namespace std ;
+#include <vector>
 
-#endif
+vector< vector<double> > Signal_Calculator (vector< vector<double> > locX , vector< vector<double> > locY , vector<double > centX , vector<double > centY ,vector< vector<double> > oldConcentrations , double index ) ;
+
+#endif /* Signal_Calculator_h */

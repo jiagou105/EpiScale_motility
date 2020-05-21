@@ -2,7 +2,7 @@
 #define SCECELLS_H_
 
 #include "SceNodes.h"
-#include "../srcCPU/Signal2D.h"
+#include "../srcCPU/Signal_MakeInterface.h"
 #include <time.h>
 #include <thrust/tabulate.h>
 #define PI 3.14159265358979
@@ -2043,6 +2043,7 @@ struct DppGrowRegulator: public thrust::unary_function<DDDD, double> {
 		double progressNew ; 
 
 		progressNew=progress+speed*_dt ; 
+		return progressNew ;	// Alireza : bypass if conditions
 		if ((progress <= _mitoticCheckPoint) && (progressNew>_mitoticCheckPoint)) {
 			if (dpp/(dpp_Old+0.0005)>1.5) {
 				return (progressNew) ; 
@@ -2269,6 +2270,9 @@ struct CellInfoVecs {
 	thrust::device_vector<double> Cell_Damp;//Ali
 	thrust::device_vector<double> cell_Dpp;//Ali
 	thrust::device_vector<double> cell_DppOld;//Ali
+	thrust::device_vector<double> cell_Tkv;//Alireza
+	thrust::device_vector<double> cell_DppTkv;//Alireza
+	thrust::device_vector<double> cell_pMad;//Alireza
        
 	thrust::device_vector<double> growthProgressOld;  //A&A
 //Ali

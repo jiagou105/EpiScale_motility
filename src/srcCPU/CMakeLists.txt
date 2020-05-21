@@ -5,18 +5,18 @@ include_directories(${COMMON_INCLUDES})
 add_library(SceInit STATIC
         CellInitHelper.h
         CellInitHelper.cpp
-        Signal2D.h
-		Signal2D.cpp
-		Signal_Calculator.hpp
+        Signal_MakeInterface.h
+		Signal_MakeInterface.cpp
+		Signal_Calculator.h
 		Signal_Calculator.cpp
-		Tissue.hpp
-		Tissue.cpp
-		Mesh.hpp
-		Mesh.cpp
-		Cell.hpp
-		Cell.cpp
-		common.cpp
-		common.hpp
+		SignalTissue.hpp
+		SignalTissue.cpp
+		SignalMesh.hpp
+		SignalMesh.cpp
+		SignalCell.hpp
+		SignalCell.cpp
+		SignalCommon.cpp
+		SignalCommon.hpp
         ${COMMON_INCLUDES}/Point2D.cpp
         ${COMMON_INCLUDES}/Point2D.h
         ${COMMON_INCLUDES}/ConfigParser.h

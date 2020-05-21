@@ -7,8 +7,7 @@
 #$ -N  run_test	 # Specify job name
 
 
-module load slurm/16.05.4
-module load openmpi/2.0.1-slurm-16.05.4
+module load slurm/19.05.0
 module load cmake
 module load cuda/9.1
 module load extra

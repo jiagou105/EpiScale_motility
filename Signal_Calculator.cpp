@@ -1,11 +1,11 @@
 
-#include "SignalTissue.hpp"
+#include "MeshTissue.hpp"
 #include "Signal_Calculator.h"
 #include <chrono>
 
 //---------------------------------------------------------------------------------------------
 /*
-vector<vector<double> > Signal_Calculator(vector< vector<double> > locX , vector< vector<double> > locY , vector<double > centX , vector<double > centY ,vector< vector<double> > oldConcentrations ,double index)
+vector<vector<double> > Signal_Calculator(vector< vector<double> > locX , vector< vector<double> > locY , vector<double > centX , vector<double > centY ,vector< vector<double> > oldConcentrations ,int index)
 {
     vector<vector<double > > a ;
     return a ;
@@ -20,17 +20,16 @@ int main ()
      int index = 100 ;
      vector<vector<double> > oldConcentrations ;
  */
- vector< vector<double> > Signal_Calculator ( vector< vector<double> > locX , vector< vector<double> > locY , vector<double > centX , vector<double > centY,vector< vector<double> > oldConcentrations , double index ){
+ vector< vector<double> > Signal_Calculator ( vector< vector<double> > locX , vector< vector<double> > locY , vector<double > centX , vector<double > centY,vector< vector<double> > oldConcentrations , int index ){
     
     ofstream nanIndex ("NanIndex.txt", ofstream::app) ;    //everything will be written at the end of the existing file
     ofstream sgnlCalculator ("sgnlCalculator.txt", ofstream::app) ;    //everything will be written at the end of the existing file
     auto start = std::chrono::high_resolution_clock::now() ;
-    SignalTissue tissue ;
+    MeshTissue tissue ;
     tissue.cellType = wingDisc ;
     tissue.equationsType = fullModel ;
     tissue.readFileStatus = false ;
-    tissue.frameIndex = static_cast<int>(round ( 100 * index) ) / 100 ;
-    tissue.writeVtk = ! fmod(static_cast<int>(round ( 100 * index) ), 100) ;
+    tissue.frameIndex = index ;
     cout<<"current index in Signal_Calculator function is "<<index<<endl ;
     sgnlCalculator<<"current index in Signal_Calculator function is "<<index<<endl ;
     if (tissue.readFileStatus)
@@ -137,7 +136,7 @@ int main ()
      sgnlCalculator.close() ;
      
      // return tissue.tissueLevelU ;
-      return tissue.tissueLevelConcentration ;
+       return tissue.tissueLevelConcentration ;
    //  return 0 ;
 }
 
