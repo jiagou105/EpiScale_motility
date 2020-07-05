@@ -10,11 +10,12 @@
 #SBATCH -p gpu # This is the default partition, you can use any of the following; intel, batch, highmem, gpu
 
 
-module load slurm/19.05.0
+module load slurm/17.02.5
 module load cmake
-module load cuda/9.1
-module load extra
-module load GCCcore/6.3.0
-module load matlab/R2018b
+module load cuda/9.0
+module load gcc/6.3.0
+#module load extra
+#module load matlab/R2018b
 
-srun -p gpu --gres=gpu:1 ./bin/runDiscSimulation_M
+#srun -p gpu --gres=gpu:1 ./bin/runDiscSimulation_M
+srun ./bin/runDiscSimulation_M
