@@ -12,7 +12,7 @@ double Dist2D (double x1 , double y1 , double x2 , double y2 )
 vector<double> Dist_PointToVec2D (double x1, double y1, vector<double> X2, vector<double> Y2 )
 {
     vector<double> point_vecDist ;
-    for (int j =0 ; j < X2.size(); j++)
+    for (unsigned int j =0 ; j < X2.size(); j++)
     {
         point_vecDist.push_back( Dist2D(x1, y1 ,X2.at(j), Y2.at(j)) ) ;
     }
@@ -23,7 +23,7 @@ vector<double> Dist_PointToVec2D (double x1, double y1, vector<double> X2, vecto
 vector<vector <double> > Dist_VecToVec2D ( vector<double> X1 , vector<double> Y1 , vector<double> X2, vector<double> Y2 )
 {
     vector<vector<double> > vec_vecDist ;
-    for (int i=0 ; i < X1.size(); i ++)
+    for (unsigned int i=0 ; i < X1.size(); i ++)
     {
         vec_vecDist.push_back(Dist_PointToVec2D( X1.at(i) , Y1.at(i) ,X2 , Y2 ) ) ;
         
@@ -38,7 +38,7 @@ vector<int> Indices_MinMatrix (vector<vector<double> > A )
     int indexMin_Row ;
     int indexMin_Col ;
     vector<int> result ;
-    for (int l = 0; l < A.size(); l++)
+    for (unsigned int l = 0; l < A.size(); l++)
     {
         indexRow.push_back( static_cast<int>(min_element(A.at(l).begin(), A.at(l).end() ) -A.at(l).begin() ) ) ;
         minRow.push_back(*min_element(A.at(l).begin(), A.at(l).end())) ;
@@ -58,7 +58,7 @@ vector<int> Indices_MaxMatrix (vector<vector<double> > A )
     int indexMax_Row ;
     int indexMax_Col ;
     vector<int> result ;
-    for (int l = 0; l < A.size(); l++)
+    for (unsigned int l = 0; l < A.size(); l++)
     {
         indexRow.push_back( static_cast<int>(max_element(A.at(l).begin(), A.at(l).end() ) -A.at(l).begin() ) ) ;
         maxRow.push_back(*max_element(A.at(l).begin(), A.at(l).end())) ;
@@ -74,7 +74,7 @@ vector<int> Indices_MaxMatrix (vector<vector<double> > A )
 vector<double> Dist_pointToVec1D (double x1, vector<double> X2 )
 {
     vector<double> point_vecDist ;
-    for (int j =0 ; j < X2.size(); j++)
+    for (unsigned int j =0 ; j < X2.size(); j++)
     {
         point_vecDist.push_back( abs(X2.at(j)-x1) ) ;
     }

@@ -22,7 +22,8 @@ public:
     vector<double> tissueLevelU ;
     vector<vector<double> > tissueLevelConcentration ;
     double areaTissue ;
-    double radius ;
+    double TissueRadius ;
+    vector<double> tissueCenter ;
     int frameIndex ;
     bool writeVtk ;
     bool frameIsNan = false ;
@@ -30,6 +31,7 @@ public:
     
     
     void Cal_AllCellCenters () ;
+    void Cal_TissueCenter () ;
     void Cal_AllCellCntrToCntr () ;
     void Find_AllCellNeighborCandidates () ;
     void Find_AllCellNeighbors () ;
@@ -82,6 +84,7 @@ public:
     void WriteConcentrations (string ) ;
     void ReadConcentrations () ;
     void UpdateNanStatus () ;
+    void WriteSignalingProfile () ;
     
  
 };
