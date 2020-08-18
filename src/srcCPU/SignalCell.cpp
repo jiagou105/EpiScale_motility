@@ -298,12 +298,13 @@ void SignalCell::Add_BoundaryVertice3 ()
 //---------------------------------------------------------------------------------------------
 void SignalCell::Refine_NoBoundary ()
 {
+    
     vector<double> tmp ;
     vector<int> removeNoBoundaryNode ;
     int size = static_cast<int>(noNeighboringNodesX.size()) ;
     if (verticesX.size() > 0)
     {
-        for (unsigned int i = 0 ;i < size ; i++)
+        for (int i = 0 ;i < size ; i++)
         {
             tmp = Dist_PointToVec2D(noNeighboringNodesX.at(i), noNeighboringNodesY.at(i), verticesX, verticesY) ;
             double tmpMin = *min_element(tmp.begin(), tmp.end()) ;
@@ -315,7 +316,7 @@ void SignalCell::Refine_NoBoundary ()
         }
         sort(removeNoBoundaryNode.begin(), removeNoBoundaryNode.end()) ;
         removeNoBoundaryNode.erase(unique(removeNoBoundaryNode.begin(), removeNoBoundaryNode.end()), removeNoBoundaryNode.end()) ;
-        for (unsigned int j=removeNoBoundaryNode.size()-1 ; j>= 0 ; j--)
+        for (long j= removeNoBoundaryNode.size()-1 ; j>= 0 ; j--)
         {
             noNeighboringNodesX.erase(noNeighboringNodesX.begin() + removeNoBoundaryNode.at(j) ) ;
             noNeighboringNodesY.erase(noNeighboringNodesY.begin() + removeNoBoundaryNode.at(j) ) ;
@@ -343,7 +344,7 @@ void SignalCell::Refine_NodeXNew ()
         }
         sort(removeNodeXNew.begin(), removeNodeXNew.end()) ;
         removeNodeXNew.erase(unique(removeNodeXNew.begin(), removeNodeXNew.end()), removeNodeXNew.end()) ;
-        for (unsigned int j=removeNodeXNew.size()-1 ; j>= 0 ; j--)
+        for (long j=removeNodeXNew.size()-1 ; j>= 0 ; j--)
         {
             nodesXNew.erase(nodesXNew.begin() + removeNodeXNew.at(j) ) ;
             nodesYNew.erase(nodesYNew.begin() + removeNodeXNew.at(j) ) ;
