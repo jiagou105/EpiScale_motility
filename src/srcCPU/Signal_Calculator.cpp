@@ -23,7 +23,7 @@ int main ()
      //int index = 40 * tmpIndex ;
      int index = 160 ;
      vector<vector<double> > oldConcentrations ;
-  */
+ */
  vector< vector<double> > Signal_Calculator ( vector< vector<double> > locX , vector< vector<double> > locY , vector<double > centX , vector<double > centY,vector< vector<double> > oldConcentrations , double index ){
     
     ofstream nanIndex ("NanIndex.txt", ofstream::app) ;    //everything will be written at the end of the existing file
