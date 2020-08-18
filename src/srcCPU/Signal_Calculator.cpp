@@ -7,19 +7,23 @@
 /*
 vector<vector<double> > Signal_Calculator(vector< vector<double> > locX , vector< vector<double> > locY , vector<double > centX , vector<double > centY ,vector< vector<double> > oldConcentrations ,double index)
 {
+    
     vector<vector<double > > a ;
     return a ;
 }
 
 int main ()
  {
+    //for(int tmpIndex=1 ; tmpIndex<7 ; tmpIndex ++)
+     //{
      vector< vector<double> > locX ;
      vector< vector<double> > locY ;
      vector<double > centX ;
      vector<double > centY ;
-     int index = 100 ;
+     //int index = 40 * tmpIndex ;
+     int index = 160 ;
      vector<vector<double> > oldConcentrations ;
- */
+  */
  vector< vector<double> > Signal_Calculator ( vector< vector<double> > locX , vector< vector<double> > locY , vector<double > centX , vector<double > centY,vector< vector<double> > oldConcentrations , double index ){
     
     ofstream nanIndex ("NanIndex.txt", ofstream::app) ;    //everything will be written at the end of the existing file
@@ -37,11 +41,13 @@ int main ()
     {
         if (tissue.cellType == plant)
         {
-            tissue.cells = tissue.ReadFile( ) ;     //for old files
-         //   tissue.cells = tissue.ReadFile2( ) ;       // for new files
+         //   tissue.cells = tissue.ReadFile( ) ;     //for old files
+            tissue.cells = tissue.ReadFile2( ) ;       // for new files
         }
         else if (tissue.cellType == wingDisc)
         {
+            //testing wingDisc model for plant
+           // tissue.cells = tissue.ReadFile2( ) ;
             tissue.cells = tissue.ReadFile3( ) ;       // for Wing Disc files
         }
         tissue.Cal_AllCellCenters () ;
@@ -57,6 +63,7 @@ int main ()
      
   // // // // //  tissue.ParaViewInitialConfiguration() ;       // Bug when I run this early in the code!!!! intx.size()= 0 !!!!!!
     
+    tissue.Cal_TissueCenter() ;
     tissue.Cal_AllCellCntrToCntr();
     tissue.Find_AllCellNeighborCandidates() ;
     tissue.Find_AllCellNeighbors () ;
@@ -81,7 +88,6 @@ int main ()
     tissue.ParaViewTissue () ;
     tissue.ParaViewInitialConfiguration() ;
      
-    
     //Genetating meshes
     tissue.Find_AllMeshes () ;
     tissue.Find_IntercellularMeshConnection () ;
@@ -97,8 +103,8 @@ int main ()
     {
         if (tissue.readFileStatus)
         {
-            tissue.ReadConcentrations() ;
-            tissue.WriteConcentrations("old") ;
+           // tissue.ReadConcentrations() ;
+           // tissue.WriteConcentrations("old") ;
         }
         else if (oldConcentrations.size()== tissue.cells.size() )
         {
@@ -135,9 +141,10 @@ int main ()
      cout << "Time taken by Singnal_Calculator is : " << duration.count() << " seconds" << endl;
      sgnlCalculator << "Time taken by Singnal_Calculator is : " << duration.count() << " seconds" << endl;
      sgnlCalculator.close() ;
+     tissue.WriteSignalingProfile() ;
      
      // return tissue.tissueLevelU ;
-      return tissue.tissueLevelConcentration ;
+   return tissue.tissueLevelConcentration ;
    //  return 0 ;
 }
 

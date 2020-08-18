@@ -1,17 +1,33 @@
 
 #include "SignalTissue.hpp"
+#include <iomanip>
+#include <sstream>
 
 void SignalTissue::Cal_AllCellCenters()
 {
-    for (int i = 0 ; i< cells.size(); i++)
+    for (unsigned int i = 0 ; i< cells.size(); i++)
     {
         cells.at(i).Cal_Centroid() ;
     }
+    
+}
+//---------------------------------------------------------------------------------------------
+void SignalTissue::Cal_TissueCenter()
+{
+    double tissueCntrX = 0.0 ;
+    double tissueCntrY = 0.0 ;
+    for (unsigned int i=0; i< cells.size(); i++)
+    {
+        tissueCntrX += cells.at(i).centroid.at(0) ;
+        tissueCntrY += cells.at(i).centroid.at(1) ;
+    }
+    tissueCenter.push_back(tissueCntrX/cells.size() ) ;
+    tissueCenter.push_back(tissueCntrY/cells.size() ) ;
 }
 //---------------------------------------------------------------------------------------------
 void SignalTissue::Find_AllCellNeighborCandidates ()
 {
-    for (int i=0; i < cells.size(); i++)
+    for (unsigned int i=0; i < cells.size(); i++)
     {
         cells.at(i).Find_NghbrCandidate() ;
     }
@@ -20,9 +36,9 @@ void SignalTissue::Find_AllCellNeighborCandidates ()
 
 void SignalTissue::Cal_AllCellCntrToCntr()
 {
-    for (int i=0 ; i< cells.size() ; i++ )
+    for (unsigned int i=0 ; i< cells.size() ; i++ )
     {
-        for (int j=0 ; j< cells.size(); j++)
+        for (unsigned int j=0 ; j< cells.size(); j++)
         {
             cells.at(i).cntrToCntr.push_back(Dist2D(cells.at(i).centroid.at(0),cells.at(i).centroid.at(1),
                                                     cells.at(j).centroid.at(0),cells.at(j).centroid.at(1))) ;
@@ -34,9 +50,9 @@ void SignalTissue::Cal_AllCellCntrToCntr()
 //---------------------------------------------------------------------------------------------
 void SignalTissue::FindInterfaceWithNeighbor()
 {
-    for (int i=0; i < cells.size(); i++)
+    for (unsigned int i=0; i < cells.size(); i++)
     {
-        for (int j= 0; j < cells.at(i).neighbors.size(); j++)
+        for (unsigned int j= 0; j < cells.at(i).neighbors.size(); j++)
         {
             int cellIDNeighbor = cells.at(i).neighbors.at(j).CellID_Neighbor ;
             int neighborIDCell = cells.at(i).neighbors.at(j).NeighborID_Cell ;
@@ -44,7 +60,7 @@ void SignalTissue::FindInterfaceWithNeighbor()
             if (cells.at(i).neighbors.at(j).common_edge_ID == false )
             {
         
-                for (int k =0; k < cells.at(i).neighbors.at(j).indexCellNode.size() ; k++)
+                for (unsigned int k =0; k < cells.at(i).neighbors.at(j).indexCellNode.size() ; k++)
                 {
                     int nodeIDCell = cells.at(i).neighbors.at(j).indexCellNode.at(k) ;
                     int nodeIDNeighbor = cells.at(i).neighbors.at(j).indexMinDistNode.at(nodeIDCell) ;
@@ -123,6 +139,7 @@ vector<SignalCell> SignalTissue::ReadFile2 ( )
     int cellLayer = 0 ;
     int a,b ;
     double c,d ;
+    double e,f ;
     vector<SignalCell> tmpCell ;
     string number = to_string(frameIndex) ;
     ifstream nodeData ("Locations_"+ number +".txt") ;
@@ -134,7 +151,7 @@ vector<SignalCell> SignalTissue::ReadFile2 ( )
         cout << "Error in file"<<endl ;
     }
     
-    while (nodeData >> a >> b >> c >> d)
+    while (nodeData >> b >> a >> c >> d >> e >> f )
     {
         if (static_cast<int>( tmpCell.size() ) == b)
         {
@@ -197,7 +214,7 @@ vector<SignalCell> SignalTissue::ReadFile3 ( )
 void SignalTissue::Coupling (vector< vector<double> > locX , vector< vector<double> > locY)
 {
     int cellSize = static_cast<int>( locX.size() ) ;
-    for (int i =0 ; i< cellSize ; i++)
+    for (unsigned int i =0 ; i< cellSize ; i++)
     {
         SignalCell tmpCell ;
         tmpCell.nodesX = locX.at(i) ;
@@ -217,9 +234,9 @@ void SignalTissue::Coupling (vector< vector<double> > locX , vector< vector<doub
 
 void SignalTissue::Find_AllCellNeighbors()
 {
-    for (int i=0; i < cells.size(); i++)
+    for (unsigned int i=0; i < cells.size(); i++)
     {
-        for (int j= 0; j < cells.at(i).nghbrCandidate.size(); j++)
+        for (unsigned int j= 0; j < cells.at(i).nghbrCandidate.size(); j++)
         {
             int idNeighbor=cells.at(i).nghbrCandidate.at(j) ;
             
@@ -235,13 +252,13 @@ void SignalTissue::Find_AllCellNeighbors()
 //---------------------------------------------------------------------------------------------
 void SignalTissue::Find_AllCell_NeighborID_Cell()
 {
-    for (int i=0 ; i< cells.size(); i++)
+    for (unsigned int i=0 ; i< cells.size(); i++)
     {
-        for (int j=0; j< cells.at(i).neighbors.size(); j++)
+        for (unsigned int j=0; j< cells.at(i).neighbors.size(); j++)
         {
             int neighboringCell = cells.at(i).neighbors.at(j).CellID_Neighbor ;
             // search on all the neighbors of the neighboring cell
-            for (int k=0; k < cells.at(neighboringCell).neighbors.size(); k++)
+            for (unsigned int k=0; k < cells.at(neighboringCell).neighbors.size(); k++)
             {
               if (  cells.at(neighboringCell).neighbors.at(k).CellID_Neighbor == i )
               {
@@ -256,7 +273,7 @@ void SignalTissue::Find_AllCell_NeighborID_Cell()
 
 void SignalTissue::Cal_AllCellNewEdge()
 {
-    for (int i=0 ; i < cells.size(); i++)
+    for (unsigned int i=0 ; i < cells.size(); i++)
     {
         cells.at(i).NewEdge() ;
     }
@@ -266,18 +283,18 @@ void SignalTissue::Cal_AllCellNewEdge()
 
 void SignalTissue::Find_CommonNeighbors()
 {
-    for (int i = 0; i < cells.size(); i++)
+    for (unsigned int i = 0; i < cells.size(); i++)
     {
-        for (int j = 0; j < cells.at(i).neighbors.size(); j++)
+        for (unsigned int j = 0; j < cells.at(i).neighbors.size(); j++)
         {
             int cellIDNeighbor = cells.at(i).neighbors.at(j).CellID_Neighbor ;
             int neighborIDCell = cells.at(i).neighbors.at(j).NeighborID_Cell ;
             
             if (i < cellIDNeighbor)
             {
-                for (int k=j+1; k < cells.at(i).neighbors.size() ; k++)
+                for (unsigned int k=j+1; k < cells.at(i).neighbors.size() ; k++)
                 {
-                    for (int l= 0; l < cells.at(cellIDNeighbor).neighbors.size() ; l++)
+                    for (unsigned int l= 0; l < cells.at(cellIDNeighbor).neighbors.size() ; l++)
                     {
                         if ( cells.at(i).neighbors.at(k).CellID_Neighbor == cells.at(cellIDNeighbor).neighbors.at(l).CellID_Neighbor )
                         {
@@ -346,12 +363,12 @@ void SignalTissue::Find_CommonNeighbors()
 //---------------------------------------------------------------------------------------------
 void SignalTissue::Print_CommonNeighbors()
 {
-    for (int i=0; i < cells.size(); i++)
+    for (unsigned int i=0; i < cells.size(); i++)
     {
-        for (int j=0; j< cells.at(i).neighbors.size(); j++)
+        for (unsigned int j=0; j< cells.at(i).neighbors.size(); j++)
         {
             cout<<i<<'\t'<<cells.at(i).neighbors.at(j).CellID_Neighbor<<" : "<<'\t' ;
-            for (int k=0; k < cells.at(i).neighbors.at(j).commonNeighbors.size() ; k++)
+            for (unsigned int k=0; k < cells.at(i).neighbors.at(j).commonNeighbors.size() ; k++)
             {
                 cout<< cells.at(i).neighbors.at(j).commonNeighbors.at(k).cellIDCommonNeighbor <<'\t' ;
             }
@@ -363,15 +380,15 @@ void SignalTissue::Print_CommonNeighbors()
 
 void SignalTissue::Cal_Intersect()
 {
-    for (int i=0; i < cells.size(); i++)
+    for (unsigned int i=0; i < cells.size(); i++)
     {
-        for (int j=0; j< cells.at(i).neighbors.size(); j++)
+        for (unsigned int j=0; j< cells.at(i).neighbors.size(); j++)
         {
             int cellID_B = cells.at(i).neighbors.at(j).CellID_Neighbor ;
             int nghbrIDA_B = cells.at(i).neighbors.at(j).NeighborID_Cell ;
             if (i < cellID_B)
             {
-                for (int k=0; k < cells.at(i).neighbors.at(j).commonNeighbors.size() ; k++)
+                for (unsigned int k=0; k < cells.at(i).neighbors.at(j).commonNeighbors.size() ; k++)
                 {
                     int cellID_C = cells.at(i).neighbors.at(j).commonNeighbors.at(k).cellIDCommonNeighbor ;
                     if (cellID_B < cellID_C )
@@ -458,9 +475,9 @@ void SignalTissue::Find_boundaries()
 {
     vector<double> allNodesX ;
     vector<double> allNodesY ;
-    for (int i = 0; i< cells.size(); i++)
+    for (unsigned int i = 0; i< cells.size(); i++)
     {
-        for (int j =0; j < cells.at(i).neighbors.size(); j++)
+        for (unsigned int j =0; j < cells.at(i).neighbors.size(); j++)
         {
             int cellID_nghbr = cells.at(i).neighbors.at(j).CellID_Neighbor ;
             if (cells.at(i).neighbors.at(j).intersectX.size() < 2 || cells.at(i).noNeighboringNodesX.size() > 6 )
@@ -513,9 +530,9 @@ void SignalTissue::Find_boundaries()
 //---------------------------------------------------------------------------------------------
 void SignalTissue::Count_IntersectPoints()
 {
-    for (int i = 0; i< cells.size(); i++)
+    for (unsigned int i = 0; i< cells.size(); i++)
     {
-        for (int j = 0; j < cells.at(i).neighbors.size(); j++)
+        for (unsigned int j = 0; j < cells.at(i).neighbors.size(); j++)
         {
            cout<< cells.at(i).neighbors.at(j).intersectX.size()<< endl ;
         }
@@ -525,7 +542,7 @@ void SignalTissue::Count_IntersectPoints()
 //---------------------------------------------------------------------------------------------
 void SignalTissue::Cal_AllCellVertices()
 {
-    for (int i =0; i < cells.size(); i++)
+    for (unsigned int i =0; i < cells.size(); i++)
     {
         cells.at(i).Cal_Vertices() ;
     }
@@ -542,9 +559,9 @@ void SignalTissue::ParaViewVertices ()
     vector<int> links ;         // link to the other vertices
     vector<int > links2 ;       // link to the centroid of the cell
     int verticesSize ;
-    for (int i=0 ; i< cells.size() ; i++)
+    for (unsigned int i=0 ; i< cells.size() ; i++)
     {
-        for ( int j=0 ; j< cells.at(i).verticesX.size() ; j++)
+        for (unsigned int j=0 ; j< cells.at(i).verticesX.size() ; j++)
         {
             allNodesX.push_back( cells.at(i).verticesX.at(j))   ;
             allNodesY.push_back( cells.at(i).verticesY.at(j))   ;
@@ -552,11 +569,11 @@ void SignalTissue::ParaViewVertices ()
         }
     }
     verticesSize = allNodesX.size() ;       //centroids start from here in the vector
-    for (int i=0 ; i< cells.size() ; i++)
+    for (unsigned int i=0 ; i< cells.size() ; i++)
     {
         allNodesX.push_back(cells.at(i).centroid.at(0) )   ;
         allNodesY.push_back(cells.at(i).centroid.at(1) )   ;
-        for ( int j=0 ; j< cells.at(i).verticesX.size() ; j++)
+        for (unsigned int j=0 ; j< cells.at(i).verticesX.size() ; j++)
         {
             // (verticesSize + i) is equal to index of centroid of the i_th cell
             links2.push_back(verticesSize + i ) ;
@@ -571,7 +588,7 @@ void SignalTissue::ParaViewVertices ()
     VerticesOut << "DATASET UNSTRUCTURED_GRID" << endl;
     VerticesOut << "POINTS " << allNodesX.size()   << " float" << endl;
     
-    for (uint i = 0; i < allNodesX.size(); i++)
+    for (unsigned int i = 0; i < allNodesX.size(); i++)
     {
         
         VerticesOut << allNodesX.at(i) << " " << allNodesY.at(i) << " " << 0.0 << endl;
@@ -580,7 +597,7 @@ void SignalTissue::ParaViewVertices ()
     
     VerticesOut<< "CELLS " << links.size()+ links2.size() << " " << 3 *( links.size()+ links2.size() )<< endl;
     
-    for (uint i = 0; i < (links.size()); i++)           //number of connections per node
+    for (unsigned int i = 0; i < (links.size()); i++)           //number of connections per node
     {
         VerticesOut << 2 << " " << i << " " << links.at(i) << endl;
         VerticesOut << 2 << " " << i << " " << links2.at(i) << endl;
@@ -588,14 +605,14 @@ void SignalTissue::ParaViewVertices ()
     }
     
     VerticesOut << "CELL_TYPES " << links.size()+ links2.size()<< endl;             //connection type
-    for (uint i = 0; i < links.size()+ links2.size(); i++) {
+    for (unsigned int i = 0; i < links.size()+ links2.size(); i++) {
         VerticesOut << "3" << endl;
     }
     
     VerticesOut << "POINT_DATA "<<allNodesX.size() <<endl ;
     VerticesOut << "SCALARS Cell_ID " << "float"<< endl;
     VerticesOut << "LOOKUP_TABLE " << "default"<< endl;
-    for (uint i = 0; i < cells.size() ; i++)
+    for (unsigned int i = 0; i < cells.size() ; i++)
     {
         for ( uint j=0; j < cells.at(i).verticesX.size() ; j++)
         {
@@ -619,9 +636,9 @@ void SignalTissue::ParaViewTissue ()
     }
     vector<double> allNodesX ;
     vector<double> allNodesY ;
-    for (int i=0 ; i< cells.size() ; i++)
+    for (unsigned int i=0 ; i< cells.size() ; i++)
     {
-        for ( int j=0 ; j< cells.at(i).nodesXNew.size() ; j++)
+        for (unsigned int j=0 ; j< cells.at(i).nodesXNew.size() ; j++)
         {
             allNodesX.push_back(cells.at(i).nodesXNew.at(j))   ;
             allNodesY.push_back(cells.at(i).nodesYNew.at(j))   ;
@@ -676,10 +693,10 @@ void SignalTissue::Cal_AllCellConnections()
 {
      int tmpShift = 0 ;
     int counter = 0 ;
-    for (int i =0; i < cells.size(); i++)
+    for (unsigned int i =0; i < cells.size(); i++)
     {
         tmpShift = counter ;
-        for (int j=0 ; j< cells.at(i).verticesX.size(); j++)
+        for (unsigned int j=0 ; j< cells.at(i).verticesX.size(); j++)
         {
             cells.at(i).connections.push_back( (j+1) % cells.at(i).verticesX.size() + tmpShift ) ;
             counter += 1 ;
@@ -689,7 +706,7 @@ void SignalTissue::Cal_AllCellConnections()
 //---------------------------------------------------------------------------------------------
 void SignalTissue:: Test()
 {
-    for (int i =0; i < cells.size(); i++)
+    for (unsigned int i =0; i < cells.size(); i++)
     {
         cout<<cells.at(i).verticesX.size()<<endl ;
     }
@@ -697,7 +714,7 @@ void SignalTissue:: Test()
 //---------------------------------------------------------------------------------------------
 void SignalTissue:: Add_NewVerticesToBoundaryEdges()
 {
-    for (int i =0; i < cells.size(); i++)
+    for (unsigned int i =0; i < cells.size(); i++)
     {
         cells.at(i).Add_BoundaryVertice3 () ;
     }
@@ -707,11 +724,11 @@ void SignalTissue:: Add_NewVerticesToBoundaryEdges()
 void SignalTissue:: Refine_VerticesInBoundaryCells ()
 {
     // Add vertices for nodes that are shared only between two cells but not three.
-    for (int i =0; i < cells.size(); i++)
+    for (unsigned int i =0; i < cells.size(); i++)
     {
         if (cells.at(i).boundary )
         {
-            for (int j =0; j < cells.at(i).newVertX.size(); j++)
+            for (unsigned int j =0; j < cells.at(i).newVertX.size(); j++)
             {
                 if (cells.at(i).newVertUpdateStatus.at(j) == false)
                 {
@@ -725,7 +742,7 @@ void SignalTissue:: Refine_VerticesInBoundaryCells ()
                     {
                         if (cells.at(k).boundary)
                         {
-                            for (int l = 0; l < cells.at(k).newVertX.size(); l++)
+                            for (unsigned int l = 0; l < cells.at(k).newVertX.size(); l++)
                             {
                                 double tmpDist = Dist2D(x1, y1, cells.at(k).newVertX.at(l), cells.at(k).newVertY.at(l)) ;
                                 if (tmpDist < thres_corners )
@@ -745,13 +762,13 @@ void SignalTissue:: Refine_VerticesInBoundaryCells ()
                         double newvertX =  accumulate(pointsX.begin(), pointsX.end(), 0.0)/pointsX.size() ;
                         double newvertY =  accumulate(pointsY.begin(), pointsY.end(), 0.0)/pointsY.size() ;
                         
-                        for (int n=0; n < cellIDs.size(); n++)
+                        for (unsigned int n=0; n < cellIDs.size(); n++)
                         {
                             cells.at(cellIDs.at(n)).newVertUpdateStatus.at(newvertID.at(n)) = true ;
                         }
                         sort(cellIDs.begin(), cellIDs.end()) ;
                         cellIDs.erase( unique(cellIDs.begin(),cellIDs.end()) , cellIDs.end() ) ;
-                        for (int n=0 ; n< cellIDs.size(); n++)
+                        for (unsigned int n=0 ; n< cellIDs.size(); n++)
                         {
                             cells.at(cellIDs.at(n)).verticesX.push_back(newvertX) ;
                             cells.at(cellIDs.at(n)).verticesY.push_back(newvertY) ;
@@ -774,22 +791,22 @@ void SignalTissue:: Refine_VerticesInBoundaryCells ()
 
 void SignalTissue::Cyclic4Correction()
 {
-    for (int i =0 ; i< cells.size(); i++)
+    for (unsigned int i =0 ; i< cells.size(); i++)
     {
      //   int verticesSize = cells.at(i).verticesX.size() ;
-        for (int j =0; j < cells.at(i).verticesX.size() ; j++)
+        for (unsigned int j =0; j < cells.at(i).verticesX.size() ; j++)
         {
             vector<double> pointsX ;
             vector<double> pointsY ;
             vector<int > cellIDs ;
             vector<int> vertID ;
             
-            for (int k =0; k < cells.at(i).cyclic4.size(); k++)
+            for (unsigned int k =0; k < cells.at(i).cyclic4.size(); k++)
             {
                 int cellID = cells.at(i).cyclic4.at(k) ;
               //  if (i < cellID)
                 {
-                    for (int l=0; l < cells.at(cellID).verticesX.size(); l++)
+                    for (unsigned int l=0; l < cells.at(cellID).verticesX.size(); l++)
                     {
                         double x1 = cells.at(i).verticesX.at(j) ;
                         double y1 = cells.at(i).verticesY.at(j) ;
@@ -817,7 +834,7 @@ void SignalTissue::Cyclic4Correction()
                 
                 sort(cellIDs.begin(), cellIDs.end()) ;
                 cellIDs.erase( unique(cellIDs.begin(),cellIDs.end()) , cellIDs.end() ) ;
-                for (int n=0 ; n< cellIDs.size(); n++)
+                for (unsigned int n=0 ; n< cellIDs.size(); n++)
                 {
                     cells.at(cellIDs.at(n)).verticesX.push_back(newvertX) ;
                     cells.at(cellIDs.at(n)).verticesY.push_back(newvertY) ;
@@ -833,24 +850,24 @@ void SignalTissue::Cyclic4Correction()
 //---------------------------------------------------------------------------------------------
 void SignalTissue:: Find_Cyclic4()
 {
-    for (int i =0; i < cells.size(); i++)
+    for (unsigned int i =0; i < cells.size(); i++)
     {
-        for (int j =0; j< cells.at(i).neighbors.size(); j++)
+        for (unsigned int j =0; j< cells.at(i).neighbors.size(); j++)
         {
             
             int cellID_B = cells.at(i).neighbors.at(j).CellID_Neighbor ;
             if ( i < cellID_B)
             {
-                for (int k=0; k< cells.at(i).neighbors.at(j).commonNeighbors.size(); k++)
+                for (unsigned int k=0; k< cells.at(i).neighbors.at(j).commonNeighbors.size(); k++)
                 {
-                    for (int l = k+1; l < cells.at(i).neighbors.at(j).commonNeighbors.size() ; l++)
+                    for (unsigned int l = k+1; l < cells.at(i).neighbors.at(j).commonNeighbors.size() ; l++)
                     {
                         int cellID_C = cells.at(i).neighbors.at(j).commonNeighbors.at(k).cellIDCommonNeighbor ;
                         int cellID_D = cells.at(i).neighbors.at(j).commonNeighbors.at(l).cellIDCommonNeighbor ;
                         if (cellID_B < cellID_C && cellID_C < cellID_D )
                             {
                             
-                            for (int m =0; m< cells.at(cellID_C).neighbors.size(); m++)
+                            for (unsigned int m =0; m< cells.at(cellID_C).neighbors.size(); m++)
                             {
                                 if (cells.at(cellID_C).neighbors.at(m).CellID_Neighbor == cellID_D )
                                 {
@@ -882,7 +899,7 @@ void SignalTissue:: Find_Cyclic4()
             }
         }
     }
-    for (int i =0; i < cells.size(); i++)
+    for (unsigned int i =0; i < cells.size(); i++)
     {
         sort(cells.at(i).cyclic4.begin(), cells.at(i).cyclic4.end()) ;
         cells.at(i).cyclic4.erase( unique(cells.at(i).cyclic4.begin(),cells.at(i).cyclic4.end()) , cells.at(i).cyclic4.end() ) ;
@@ -893,7 +910,7 @@ void SignalTissue:: Find_Cyclic4()
 
 void SignalTissue::SortVertices()
 {
-    for (int i =0; i < cells.size(); i++)
+    for (unsigned int i =0; i < cells.size(); i++)
     {
         cells.at(i).SortCCW(); // verticesX ,verticesY ) ;
     }
@@ -901,7 +918,7 @@ void SignalTissue::SortVertices()
 //---------------------------------------------------------------------------------------------
 void SignalTissue::AllCell_RefineNoBoundary ()
 {
-    for (int i=0; i< cells.size(); i++)
+    for (unsigned int i=0; i< cells.size(); i++)
     {
         cells.at(i).Refine_NoBoundary() ;
         //  cells.at(i).Refine_NodeXNew() ; 
@@ -916,9 +933,9 @@ void SignalTissue::ParaViewBoundary ()
     }
     vector<double> allNodesX ;
     vector<double> allNodesY ;
-    for (int i=0 ; i< cells.size() ; i++)
+    for (unsigned int i=0 ; i< cells.size() ; i++)
     {
-        for ( int j=0 ; j< cells.at(i).noNeighboringNodesX.size() ; j++)
+        for (unsigned int j=0 ; j< cells.at(i).noNeighboringNodesX.size() ; j++)
         {
             allNodesX.push_back(cells.at(i).noNeighboringNodesX.at(j))   ;
             allNodesY.push_back(cells.at(i).noNeighboringNodesY.at(j))   ;
@@ -951,9 +968,9 @@ void SignalTissue::ParaViewInitialConfiguration ()
     }
     vector<double> allNodesX ;
     vector<double> allNodesY ;
-    for (int i=0 ; i< cells.size() ; i++)
+    for (unsigned int i=0 ; i< cells.size() ; i++)
     {
-        for ( int j=0 ; j < cells.at(i).nodesX.size() ; j++)
+        for (unsigned int j=0 ; j < cells.at(i).nodesX.size() ; j++)
         {
             allNodesX.push_back(cells.at(i).nodesX.at(j))   ;
             allNodesY.push_back(cells.at(i).nodesY.at(j))   ;
@@ -969,7 +986,7 @@ void SignalTissue::ParaViewInitialConfiguration ()
     InitialOut << "DATASET UNSTRUCTURED_GRID" << endl;
     InitialOut << "POINTS " << size   << " float" << endl;
     
-    for (int i = 0; i < size ; i++)
+    for (unsigned int i = 0; i < size ; i++)
     {
         
         InitialOut << allNodesX.at(i) << " " << allNodesY.at(i) << " " << 0.0 << endl;
@@ -981,9 +998,9 @@ void SignalTissue::ParaViewInitialConfiguration ()
 //---------------------------------------------------------------------------------------------
 void SignalTissue::Refine_CurvedInterface ()
 {
-    for (int i = 0; i< cells.size(); i++)
+    for (unsigned int i = 0; i< cells.size(); i++)
     {
-        for (int j=0; j< cells.at(i).neighbors.size(); j++)
+        for (unsigned int j=0; j< cells.at(i).neighbors.size(); j++)
         {
             if (cells.at(i).neighbors.at(j).curvedInterface == false)
             {
@@ -1015,7 +1032,7 @@ void SignalTissue::Refine_CurvedInterface ()
                 iota(idx.begin(), idx.end(), 0);
                 sort(idx.begin(), idx.end(),
                      [&tmpDist](int i1, int i2) {return tmpDist[i1] < tmpDist[i2];});
-                for (int k = 0; k < tmpDist.size(); k++)
+                for (unsigned int k = 0; k < tmpDist.size(); k++)
                 {
                     tmpX.push_back(intfX.at(idx.at(k) ) ) ;
                     tmpY.push_back(intfY.at(idx.at(k) ) ) ;
@@ -1033,13 +1050,13 @@ void SignalTissue::Refine_CurvedInterface ()
                 vector<double> tetta ;
                 vector<double> tmpMag ;
                 
-                for (int k=0 ; k<distToCntrX.size(); k++)
+                for (unsigned int k=0 ; k<distToCntrX.size(); k++)
                 {
                     tetta.push_back(atan2(distToCntrY.at(k), distToCntrX.at(k) ) ) ;
                     tmpMag.push_back(MagnitudeVec(distToCntrX.at(k), distToCntrY.at(k))) ;
                 }
                 vector<double> dTetta ;
-                for (int k=0 ; k<distToCntrX.size()-1; k++)
+                for (unsigned int k=0 ; k<distToCntrX.size()-1; k++)
                 {
                     dTetta.push_back( tetta.at(k+1) - tetta.at(k) ) ;
                     area += 0.5 * tmpMag.at(k+1) * tmpMag.at(k) * abs( sin( dTetta.back() ) ) ;
@@ -1050,7 +1067,7 @@ void SignalTissue::Refine_CurvedInterface ()
                 {
                     vector<double> a ;
                     vector<double> dA ;
-                    for (int k=0; k< tetta.size(); k++)
+                    for (unsigned int k=0; k< tetta.size(); k++)
                     {
                         a.push_back(0.5 * tmpMag.at(k) * ( abs( sin( tetta.at(k)- tetta.front() ) ) * tmpMag.front() +
                                                           abs( sin( tetta.at(k)- tetta.back()  ) ) * tmpMag.back() ) ) ;
@@ -1076,7 +1093,7 @@ void SignalTissue::Refine_CurvedInterface ()
 //---------------------------------------------------------------------------------------------
 void SignalTissue::Print_VeritcesSize()
 {
-    for (int i=0; i<cells.size(); i++)
+    for (unsigned int i=0; i<cells.size(); i++)
     {
         cout<<"Cell "<<i<<" :"<<'\t'<<cells.at(i).verticesX.size()<<endl ;
     }
@@ -1090,7 +1107,7 @@ void SignalTissue::Print_VeritcesSize()
 //---------------------------------------------------------------------------------------------
 void SignalTissue::Find_AllMeshes()
 {
-    for (int i =0 ; i < cells.size(); i++)
+    for (unsigned int i =0 ; i < cells.size(); i++)
     {
         cells.at(i).Find_Mesh() ;
     }
@@ -1099,22 +1116,22 @@ void SignalTissue::Find_AllMeshes()
 void SignalTissue::Cal_AreaOfTissue()
 {
     areaTissue = 0.0 ;
-    for (int i =0; i<cells.size(); i++)
+    for (unsigned int i =0; i<cells.size(); i++)
     {
         cells.at(i).areaCell = 0.0 ;
-        for (int j=0; j<cells.at(i).meshes.size(); j++)
+        for (unsigned int j=0; j<cells.at(i).meshes.size(); j++)
         {
            cells.at(i).areaCell += cells.at(i).meshes.at(j).Cal_MeshArea() ;
             
         }
         areaTissue += cells.at(i).areaCell ;
     }
-    radius = sqrt(areaTissue/ pi ) ;
+    TissueRadius = sqrt(areaTissue/ pi ) ;
 }
 //---------------------------------------------------------------------------------------------
 void SignalTissue::Cal_AllSelfDiffusion()
 {
-    for (int i =0 ; i < cells.size(); i++)
+    for (unsigned int i =0 ; i < cells.size(); i++)
     {
         cells.at(i).Self_Diffusion() ;
     }
@@ -1122,15 +1139,15 @@ void SignalTissue::Cal_AllSelfDiffusion()
 //---------------------------------------------------------------------------------------------
 void SignalTissue::Find_IntercellularMeshConnection()
 {
-    for (int i =0; i < cells.size(); i++)
+    for (unsigned int i =0; i < cells.size(); i++)
     {
-        for (int k =0 ; k< cells.at(i).meshes.size(); k++)
+        for (unsigned int k =0 ; k< cells.at(i).meshes.size(); k++)
         {
             int counter = 0 ;
-            for (int j =0; j < cells.at(i).neighbors.size(); j++)
+            for (unsigned int j =0; j < cells.at(i).neighbors.size(); j++)
             {
                 int cell2 = cells.at(i).neighbors.at(j).CellID_Neighbor ;
-                for (int l = 0; l < cells.at(cell2).meshes.size() ; l++)
+                for (unsigned int l = 0; l < cells.at(cell2).meshes.size() ; l++)
                 {
                     double smallValue = 0.0001 ;
                     counter = 0 ;
@@ -1177,9 +1194,9 @@ void SignalTissue::Find_IntercellularMeshConnection()
 void SignalTissue::IntercellularDiffusion()
 {
     double dInter = 1.0 ;
-    for (int i =0 ; i < cells.size(); i++)
+    for (unsigned int i =0 ; i < cells.size(); i++)
     {
-        for (int j =0; j < cells.at(i).meshes.size(); j++)
+        for (unsigned int j =0; j < cells.at(i).meshes.size(); j++)
         {
             int cellID = cells.at(i).meshes.at(j).connection.first ;
             int meshID = cells.at(i).meshes.at(j).connection.second ;
@@ -1191,7 +1208,8 @@ void SignalTissue::IntercellularDiffusion()
             double tmpChannel = cells.at(i).meshes.at(j).channel.at(2) ;
             double length = cells.at(i).meshes.at(j).length.at(2) ;
             double deltaU = cells.at(cellID).meshes.at(meshID).u1 - cells.at(i).meshes.at(j).u1 ;
-            cells.at(i).meshes.at(j).flux.push_back(dInter * tmpChannel * deltaU / length) ;
+            // meshSize squared
+            cells.at(i).meshes.at(j).flux.push_back(dInter * tmpChannel * deltaU / (length * length) ) ;
             
         }
     }
@@ -1207,18 +1225,18 @@ void SignalTissue::EulerMethod()
         IntercellularDiffusion() ;
       //  if (l%1000==0) cout<<l/1000<<endl ;
       //  if (l%1000==0) ParaViewMesh(l/1000) ;
-        for (int i = 0; i < cells.size(); i++)
+        for (unsigned int i = 0; i < cells.size(); i++)
         {
-            for (int j =0; j < cells.at(i).meshes.size(); j++)
+            for (unsigned int j =0; j < cells.at(i).meshes.size(); j++)
             {
                 cells.at(i).meshes.at(j).Euler() ;
             }
         }
         
         state = true ;
-        for (int i = 0; i < cells.size(); i++)
+        for (unsigned int i = 0; i < cells.size(); i++)
         {
-            for (int j =0; j < cells.at(i).meshes.size(); j++)
+            for (unsigned int j =0; j < cells.at(i).meshes.size(); j++)
             {
                  if( abs(cells.at(i).meshes.at(j).u2- cells.at(i).meshes.at(j).u1)/(cells.at(i).meshes.at(j).u1 + 0.000001) > 0.000001)
                  {
@@ -1229,9 +1247,9 @@ void SignalTissue::EulerMethod()
             }
             if (state == false) break ;
         }
-        for (int i = 0; i < cells.size(); i++)
+        for (unsigned int i = 0; i < cells.size(); i++)
         {
-            for (int j =0; j < cells.at(i).meshes.size(); j++)
+            for (unsigned int j =0; j < cells.at(i).meshes.size(); j++)
             {
                 cells.at(i).meshes.at(j).UpdateU() ;
             }
@@ -1242,9 +1260,9 @@ void SignalTissue::EulerMethod()
      ParaViewMesh(frameIndex) ;
     /*
     double value = 0 ;
-    for (int j =0 ; j < cells.size();j++)
+    for (unsigned int j =0 ; j < cells.size();j++)
     {
-        for (int i =0; i< cells.at(j).meshes.size(); i++)
+        for (unsigned int i =0; i< cells.at(j).meshes.size(); i++)
         {
             value += cells.at(j).meshes.at(i).u1 ;
         }
@@ -1268,9 +1286,9 @@ void SignalTissue::EulerMethod2 ()
             ParaViewMesh(l) ;
         }
         
-        for (int i = 0; i < cells.size(); i++)
+        for (unsigned int i = 0; i < cells.size(); i++)
         {
-            for (int j =0; j < cells.at(i).meshes.size(); j++)
+            for (unsigned int j =0; j < cells.at(i).meshes.size(); j++)
             {
                 cells.at(i).meshes.at(j).Euler() ;
            //     cells.at(i).meshes.at(j).FullModel_Euler() ;
@@ -1282,23 +1300,13 @@ void SignalTissue::EulerMethod2 ()
 //---------------------------------------------------------------------------------------------
 void SignalTissue::Find_SecretingCell()
 {
-    double cntX ;
-    double cntY ;
-    if (cellType == plant)
-    {
-        cntX = 0.0 ;
-        cntY = 0.0 ;
-    }
-    else if ( cellType == wingDisc)
-    {
-        cntX = 25 ;
-        cntY = 25 ;
-    }
+    double cntX = tissueCenter.at(0) ;
+    double cntY = tissueCenter.at(1) ;
     
     double minDis = Dist2D(cntX, cntY , cells.at(0).centroid.at(0), cells.at(0).centroid.at(1)) ;
     int cellID = 0 ;
     double dis ;
-    for (int i = 1; i< cells.size(); i++)
+    for (unsigned int i = 1; i< cells.size(); i++)
     {
         dis = Dist2D(cntX, cntY, cells.at(i).centroid.at(0), cells.at(i).centroid.at(1)) ;
         if (dis < minDis)
@@ -1308,7 +1316,7 @@ void SignalTissue::Find_SecretingCell()
         }
     }
     cout <<"cellID source " << cellID <<endl ;
-    for (int j = 0; j < cells.at(cellID).meshes.size(); j++)
+    for (unsigned int j = 0; j < cells.at(cellID).meshes.size(); j++)
     {
         cells.at(cellID).meshes.at(j).c = 1.0 ;
     }
@@ -1323,12 +1331,12 @@ void SignalTissue::ParaViewMesh(int number)
     vector<double> allNodesX ;
     vector<double> allNodesY ;
     int numberOfCells = 0 ;
-    for (int i=0 ; i< cells.size() ; i++)
+    for (unsigned int i=0 ; i< cells.size() ; i++)
     {
-        for ( int j=0 ; j< cells.at(i).meshes.size() ; j++)
+        for (unsigned int j=0 ; j< cells.at(i).meshes.size() ; j++)
         {
             numberOfCells += 1 ;
-            for (int k =0; k< cells.at(i).meshes.at(j).triangleX.size(); k++)
+            for (unsigned int k =0; k< cells.at(i).meshes.at(j).triangleX.size(); k++)
             {
                 allNodesX.push_back( cells.at(i).meshes.at(j).triangleX.at(k))   ;
                 allNodesY.push_back( cells.at(i).meshes.at(j).triangleY.at(k))   ;
@@ -1454,15 +1462,15 @@ void SignalTissue::ParaViewMesh(int number)
  //---------------------------------------------------------------------------------------------
 void SignalTissue::FullModel_Diffusion()
 {
-    for (int i=0; i<cells.size(); i++)
+    for (unsigned int i=0; i<cells.size(); i++)
     {
-        for (int j=0; j< cells.at(i).meshes.size(); j++)
+        for (unsigned int j=0; j< cells.at(i).meshes.size(); j++)
         {
             cells.at(i).meshes.at(j).Flux.clear() ;
         }
     }
     
-    for (int i =0 ; i<cells.size(); i++)
+    for (unsigned int i =0 ; i<cells.size(); i++)
     {
         
         cells.at(i).FullModel_SelfDiffusion (cellType) ;
@@ -1470,9 +1478,9 @@ void SignalTissue::FullModel_Diffusion()
     if (cellType == plant )
     {
 
-        for (int i =0 ; i<cells.size(); i++)
+        for (unsigned int i =0 ; i<cells.size(); i++)
         {
-            for (int j =0; j < cells.at(i).meshes.size(); j++)
+            for (unsigned int j =0; j < cells.at(i).meshes.size(); j++)
             {
                 int cellID = cells.at(i).meshes.at(j).connection.first ;
                 int meshID = cells.at(i).meshes.at(j).connection.second ;
@@ -1492,7 +1500,7 @@ void SignalTissue::FullModel_Diffusion()
                     vector<double> flux ;
                     flux.clear() ;
                     flux.resize(deltaU.size() ) ;
-                  transform(deltaU.begin()+1, deltaU.begin()+5, flux.begin()+1, productNum(tmpChannel/length ) ) ;
+                  transform(deltaU.begin()+1, deltaU.begin()+5, flux.begin()+1, productNum(tmpChannel/(length * length ) ) ) ;
                     transform(flux.begin()+1, flux.begin()+5, cells.at(i).meshes.at(j).diffusions.begin()+1, flux.begin()+1 , productVec()  ) ;
                     cells.at(i).meshes.at(j).Flux.push_back(flux) ;
                     transform(flux.begin()+1, flux.begin()+5, flux.begin()+1, productNum(-1.0) ) ;
@@ -1505,9 +1513,9 @@ void SignalTissue::FullModel_Diffusion()
     
     else if (cellType == wingDisc)
     {
-        for (int i =0 ; i<cells.size(); i++)
+        for (unsigned int i =0 ; i<cells.size(); i++)
         {
-            for (int j =0; j < cells.at(i).meshes.size(); j++)
+            for (unsigned int j =0; j < cells.at(i).meshes.size(); j++)
             {
                 int cellID = cells.at(i).meshes.at(j).connection.first ;
                 int meshID = cells.at(i).meshes.at(j).connection.second ;
@@ -1528,7 +1536,7 @@ void SignalTissue::FullModel_Diffusion()
                     vector<double> flux ;
                     flux.clear() ;
                     flux.resize(deltaU.size() ) ;
-                    transform(deltaU.begin()+4, deltaU.begin()+5, flux.begin()+4, productNum(tmpChannel/length ) ) ;
+                    transform(deltaU.begin()+4, deltaU.begin()+5, flux.begin()+4, productNum(tmpChannel/(length * length ) ) ) ;
                     transform(flux.begin()+4, flux.begin()+5 , flux.begin()+4 , productNum( dif)  ) ;
                     cells.at(i).meshes.at(j).Flux.push_back(flux) ;
                     transform(flux.begin()+4, flux.begin()+5, flux.begin()+4, productNum(-1.0) ) ;
@@ -1545,7 +1553,7 @@ void SignalTissue::FullModel_Diffusion()
 
 void SignalTissue::FullModel_AllCellProductions()         //call once, initialize the constants
 {
-    for (int i=0; i<cells.size(); i++)
+    for (unsigned int i=0; i<cells.size(); i++)
     {
         if (cellType == false)      //plant
         {
@@ -1553,10 +1561,10 @@ void SignalTissue::FullModel_AllCellProductions()         //call once, initializ
             {
                 // CLV3 layer 3+
                 cells.at(i).productionW = 1.0 ;
-                cells.at(i).productionC = 1 ;
+                cells.at(i).productionC = 1.0 ;
                 // ck layer 4+
-                cells.at(i).productionCk  = 1 ;
-                cells.at(i).productionCkR  = 1 ;
+                cells.at(i).productionCk  = 1.0 ;
+                cells.at(i).productionCkR  = 1.0 ;
                 
             }
             else
@@ -1572,9 +1580,9 @@ void SignalTissue::FullModel_AllCellProductions()         //call once, initializ
         {
             cells.at(i).productionW = 0 ;
             cells.at(i).productionC = 0 ;
-            cells.at(i).productionCk  = 1 ;         //corresponds to Dpp
-            cells.at(i).productionCkR  = 1 ;        //corresponds to Tkv
-            cells.at(i).productionPMad  = 1 ;
+            cells.at(i).productionCk  = 0.04 ;         //corresponds to Dpp
+            cells.at(i).productionCkR  = 0.04 ;        //corresponds to Tkv
+            cells.at(i).productionPMad  = 0.01 ;
         }
         cells.at(i).FullModel_ProductionCell() ;
     }
@@ -1582,41 +1590,44 @@ void SignalTissue::FullModel_AllCellProductions()         //call once, initializ
 //---------------------------------------------------------------------------------------------
 void SignalTissue::FullModelEulerMethod()
 {
-    /*
-    string txtFileName = "Histagram_"+ to_string(frameIndex)+ ".txt" ;
+    double dt = cells.at(0).meshes.at(0).dt ;
+    std:: stringstream stream ;
+    stream <<fixed << setprecision(4) << dt  ;
+    std::string dtString = stream.str();
+    string txtFileName = "Histogram_"+ to_string(frameIndex) + "dt" + dtString + ".txt" ;
     ofstream histagram;
     histagram.open(txtFileName.c_str());
-     */
+     
     bool state = false ;
     int l = 0 ;
     while (
            state==false
-           && l<=100000
+           && l<=300000
            )
     {
         double smallValue = 0.0001 ;
         FullModel_Diffusion() ;
     //    if (l%1000==0) cout<<l/1000<<endl ;
     //    if (l%100==0) ParaViewMesh(l/100) ;
-        for (int i = 0; i < cells.size(); i++)
+        for (unsigned int i = 0; i < cells.size(); i++)
         {
-            for (int j =0; j < cells.at(i).meshes.size(); j++)
+            for (unsigned int j =0; j < cells.at(i).meshes.size(); j++)
             {
-                cells.at(i).meshes.at(j).FullModel_Euler(cellType , radius) ;
+                cells.at(i).meshes.at(j).FullModel_Euler(cellType , TissueRadius,tissueCenter ) ;
             }
         }
         
         state = true ;
-        for (int i = 0; i < cells.size(); i++)
+        for (unsigned int i = 0; i < cells.size(); i++)
         {
-            for (int j =0; j < cells.at(i).meshes.size(); j++)
+            for (unsigned int j =0; j < cells.at(i).meshes.size(); j++)
             {
                 if (cellType == plant)
                 {
                     if(
-                       abs(cells.at(i).meshes.at(j).concentrations2.at(1) - cells.at(i).meshes.at(j).concentrations.at(1) )/(cells.at(i).meshes.at(j).concentrations.at(1) + smallValue) > smallValue
-                     ||  abs(cells.at(i).meshes.at(j).concentrations2.at(3) - cells.at(i).meshes.at(j).concentrations.at(3) )/(cells.at(i).meshes.at(j).concentrations.at(3) + smallValue) > smallValue
-                        || abs(cells.at(i).meshes.at(j).concentrations2.at(6) - cells.at(i).meshes.at(j).concentrations.at(6) )/(cells.at(i).meshes.at(j).concentrations.at(6) + smallValue) > smallValue
+                       abs(cells.at(i).meshes.at(j).concentrations2.at(1) - cells.at(i).meshes.at(j).concentrations.at(1) )/(cells.at(i).meshes.at(j).concentrations.at(1) + smallValue) > smallValue * dt
+                     ||  abs(cells.at(i).meshes.at(j).concentrations2.at(3) - cells.at(i).meshes.at(j).concentrations.at(3) )/(cells.at(i).meshes.at(j).concentrations.at(3) + smallValue) > smallValue * dt
+                        || abs(cells.at(i).meshes.at(j).concentrations2.at(6) - cells.at(i).meshes.at(j).concentrations.at(6) )/(cells.at(i).meshes.at(j).concentrations.at(6) + smallValue) > smallValue * dt
                        )
                     {
                         state = false ;
@@ -1626,8 +1637,8 @@ void SignalTissue::FullModelEulerMethod()
                 else if (cellType== wingDisc)
                 {
                     //condition is not finilized
-                    if (abs(cells.at(i).meshes.at(j).concentrations2.at(4) - cells.at(i).meshes.at(j).concentrations.at(4) )/(cells.at(i).meshes.at(j).concentrations.at(4) + smallValue) > smallValue ||
-                        abs(cells.at(i).meshes.at(j).concentrations2.at(7) - cells.at(i).meshes.at(j).concentrations.at(7) )/(cells.at(i).meshes.at(j).concentrations.at(7) + smallValue) > smallValue
+                    if (abs(cells.at(i).meshes.at(j).concentrations2.at(4) - cells.at(i).meshes.at(j).concentrations.at(4) )/(cells.at(i).meshes.at(j).concentrations.at(4) + smallValue) > smallValue * dt   ||
+                        abs(cells.at(i).meshes.at(j).concentrations2.at(7) - cells.at(i).meshes.at(j).concentrations.at(7) )/(cells.at(i).meshes.at(j).concentrations.at(7) + smallValue) > smallValue * dt
                         )
                     {
                         state = false ;
@@ -1638,26 +1649,35 @@ void SignalTissue::FullModelEulerMethod()
             }
             if (state == false) break ;
         }
-        for (int i = 0; i < cells.size(); i++)
+        for (unsigned int i = 0; i < cells.size(); i++)
         {
-            for (int j =0; j < cells.at(i).meshes.size(); j++)
+            for (unsigned int j =0; j < cells.at(i).meshes.size(); j++)
             {
                 cells.at(i).meshes.at(j).UpdateU() ;
             }
         }
-        /*
-        Cal_AllCellConcentration() ;
-        histagram<<l<<'\t'<<accumulate(tissueLevelU.begin(), tissueLevelU.end(), 0.0)<<endl ;
-        */
-         
+        if (l%10==0 && l<200)
+        {
+            Cal_AllCellConcentration() ;
+            double overallC = accumulate(tissueLevelU.begin(), tissueLevelU.end(), 0.0) ;
+            histagram<<l * dt<<'\t'<< overallC <<endl ;
+        }
+        
+        if (l%100==0 && l>= 200 )
+        {
+            Cal_AllCellConcentration() ;
+            double overallC = accumulate(tissueLevelU.begin(), tissueLevelU.end(), 0.0) ;
+            histagram<<l * dt <<'\t'<< overallC <<endl ;
+        }
+        
         l++ ;
     }
     ParaViewMesh(frameIndex) ;
     cout<<"l is equal to "<<l << endl ;
     double value = 0 ;
-    for (int j =0 ; j < cells.size();j++)
+    for (unsigned int j =0 ; j < cells.size();j++)
     {
-        for (int i =0; i< cells.at(j).meshes.size(); i++)
+        for (unsigned int i =0; i< cells.at(j).meshes.size(); i++)
         {
             value += cells.at(j).meshes.at(i).concentrations.at(4) ;
         }
@@ -1672,10 +1692,10 @@ void SignalTissue::Cal_AllCellConcentration()
 {
     tissueLevelConcentration.clear() ;
     tissueLevelU.clear() ;
-    for (int i =0; i<cells.size(); i++)
+    for (unsigned int i =0; i<cells.size(); i++)
     {
-       // cells.at(i).CellLevelConcentration(cellType) ;
-        cells.at(i).CellLevelConcentration2(cellType) ;
+        cells.at(i).CellLevelConcentration(cellType) ;
+       // cells.at(i).CellLevelConcentration2(cellType) ;
         if (equationsType== simpleODE)
         {
             tissueLevelU.push_back(cells.at(i).cellU ) ;
@@ -1703,7 +1723,7 @@ void SignalTissue::Cal_ReturnSignal()
             sgnl = 3 ;     //CLV3
         }
         tissueLevelU.clear() ;
-        for (int i=0 ; i < cells.size() ; i++)
+        for (unsigned int i=0 ; i < cells.size() ; i++)
         {
             tissueLevelU.push_back( tissueLevelConcentration.at(i).at(sgnl) ) ;
         }
@@ -1712,9 +1732,9 @@ void SignalTissue::Cal_ReturnSignal()
 //---------------------------------------------------------------------------------------------
 void SignalTissue:: Initialize_Concentrations(vector<vector<double> > oldConcentrations )
 {
-    for (int i=0; i<oldConcentrations.size() ; i++)
+    for (unsigned int i=0; i<oldConcentrations.size() ; i++)
     {
-        for (int j=0; j< oldConcentrations.at(i).size() ; j++)
+        for (unsigned int j=0; j< oldConcentrations.at(i).size() ; j++)
         {
              if( isfinite(oldConcentrations.at(i).at(j) )== false  )
                 {
@@ -1724,10 +1744,10 @@ void SignalTissue:: Initialize_Concentrations(vector<vector<double> > oldConcent
     }
     
     // for now, concentrations have nothing to do with volume
-    for (int i=0; i< cells.size(); i++)
+    for (unsigned int i=0; i< cells.size(); i++)
     {
         int meshSize = static_cast<int>( cells.at(i).meshes.size() ) ;
-        for (int j=0; j< cells.at(i).meshes.size(); j++)
+        for (unsigned int j=0; j< cells.at(i).meshes.size(); j++)
         {
             if (cellType== plant)
             {
@@ -1754,15 +1774,16 @@ void SignalTissue::WriteConcentrations(string timer)
 {
     if( writeVtk == false )
     {
+        cout<< "WriteConcentratons is off" << endl ;
         return ;
     }
     string number = to_string(frameIndex) ;
-    ofstream concentrationsData (timer + "concentrations_"+ number +".txt") ;
+    ofstream concentrationsData (timer + "Concentrations_"+ number +".txt") ;
     concentrationsData << cells.size()<<endl ;
-    for (int i=0; i<tissueLevelConcentration.size(); i++)
+    for (unsigned int i=0; i<tissueLevelConcentration.size(); i++)
     {
         concentrationsData<<i ;
-        for (int j=0; j<tissueLevelConcentration.at(i).size(); j++)
+        for (unsigned int j=0; j<tissueLevelConcentration.at(i).size(); j++)
         {
             concentrationsData<<'\t'<<tissueLevelConcentration.at(i).at(j) ;
         }
@@ -1780,7 +1801,7 @@ void SignalTissue::ReadConcentrations()
         double b,c,d,e ;
         vector<double> data ;
         string number = to_string(frameIndex) ;
-        ifstream concentrationsData ("concentrations_"+ number +".txt") ;
+        ifstream concentrationsData ("newConcentrations_"+ number +".txt") ;
         if (concentrationsData.is_open())
         {
             concentrationsData >> a ;
@@ -1800,7 +1821,26 @@ void SignalTissue::ReadConcentrations()
     }
     else
     {
-        cout<< "ReadConcentrations is not written for plant" <<endl ;
+        int a ;
+        double WmRNA,Wc,Wn,clv3,ck,ckr,CKR ;
+        vector<double> data ;
+        string number = to_string(frameIndex) ;
+        ifstream concentrationsData ("newConcentrations_"+ number +".txt") ;
+        if (concentrationsData.is_open())
+        {
+            concentrationsData >> a ;
+            if (a==cells.size())
+            {
+                
+                cout<<"concentrationsData is open"<<endl ;
+                while (concentrationsData >> a >> WmRNA >> Wc >> Wn >> clv3 >> ck >> ckr >> CKR )
+                {
+                    data = { WmRNA , Wc, Wn, clv3, ck, ckr, CKR } ;
+                    tissueLevelConcentration.push_back(data) ;
+                }
+                Initialize_Concentrations(tissueLevelConcentration) ;
+            }
+        }
     }
     
     
@@ -1809,9 +1849,9 @@ void SignalTissue::ReadConcentrations()
 
 void SignalTissue::UpdateNanStatus()
 {
-    for (int i=0; i<tissueLevelConcentration.size() ; i++)
+    for (unsigned int i=0; i<tissueLevelConcentration.size() ; i++)
     {
-        for (int j=0; j< tissueLevelConcentration.at(i).size() ; j++)
+        for (unsigned int j=0; j< tissueLevelConcentration.at(i).size() ; j++)
         {
             if( isfinite(tissueLevelConcentration.at(i).at(j) )== false  )
             {
@@ -1821,3 +1861,41 @@ void SignalTissue::UpdateNanStatus()
         }
     }
 }
+//---------------------------------------------------------------------------------------------
+void SignalTissue::WriteSignalingProfile()
+{
+    string number = to_string(frameIndex) ;
+    std:: stringstream stream ;
+    stream <<fixed << setprecision(1) << cells.at(0).meshes.at(0).diffusions.at(4)  ;
+    std::string dif = stream.str();
+    stream.str(string() ) ;
+   // string dif = to_string(cells.at(0).meshes.at(0).diffusions.at(4) ) ;
+    stream <<fixed << setprecision(3) << cells.at(0).meshes.at(0).degradations.at(4)  ;
+    std::string deg = stream.str();
+    stream.str(string() ) ;
+  //  string deg = to_string(cells.at(0).meshes.at(0).degradations.at(4) ) ;
+    stream <<fixed << setprecision(3) << cells.at(0).meshes.at(0).productions.at(4) ;
+   // string pro = to_string(cells.at(0).meshes.at(0).productions.at(4) ) ;
+    std::string pro = stream.str() ;
+    stream.str(string() ) ;
+    stream <<fixed << setprecision(5) << cells.at(0).meshes.at(0).dt ;
+    std::string timeStep = stream.str() ;
+    
+    string cellTypeString = (cellType) ? "WingDisc" : "Plant" ;
+    
+    ofstream profile (cellTypeString + number + "D" + dif + "d" + deg + "p" + pro + "dt"+ timeStep + ".txt") ;
+    
+    for (int i=0 ; i< tissueLevelConcentration.size() ; i++)
+    {
+        profile << abs( cells.at(i).centroid.at(0)- tissueCenter.at(0) ) << '\t'
+                << abs( cells.at(i).centroid.at(0)- tissueCenter.at(0) )/ TissueRadius ;
+        for (unsigned int j = 0; j< tissueLevelConcentration.at(i).size() ; j++)
+        {
+            profile << '\t' << tissueLevelConcentration.at(i).at(j) ;
+        }
+        profile << endl ;
+    }
+    
+    profile.close() ;
+}
+
