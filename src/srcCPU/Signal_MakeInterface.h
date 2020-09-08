@@ -3,6 +3,7 @@
 #include <cmath>
 #include <string>
 #include <fstream>
+#include <chrono>
 #include "GeoVector.h"
 #include "commonData.h"
 using namespace std ;
@@ -25,7 +26,11 @@ class Signal {
     int numActiveCells ;
     double minResol, resol ;
     double frameNumber = 1.0 ;
-    
+    auto startChemical ;
+    auto stopChemical ;
+    auto durationChemical ;
+    auto durationMechanical ;
+
     std::vector<bool> nodeIsActiveHost ;
     std::vector<double> nodeLocXHost, nodeLocYHost, cellCenterX,cellCenterY ;
     std::vector<double> dppLevel ;

@@ -43,6 +43,11 @@ void Signal::Initialize (uint maxAllNodePerCell, uint maxMembrNodePerCell, uint 
 	dppTkvLevel.resize(maxCellCount,0.0) ; //Alireza
 	pMadLevel.resize(maxCellCount,0.0) ; //Alireza
 
+	startChemical = std::chrono::high_resolution_clock::now();
+	stopChemical = startChemical ;
+	durationChemical = std::chrono::duration_cast<std::chrono::seconds>(stopChemical - startChemical);
+        durationMechanical = std::chrono::duration_cast<std::chrono::seconds>(startChemical - stopChemical ) ;
+
 	minResol=0.1 ;// max distance of the first imported coordinate of DPP from the tissue center to accept it for that cell    
 	resol=501 ; // the number of imported DPP values
 	cout << "I am at the end of signal initialization function" << endl ; 
@@ -72,7 +77,8 @@ void Signal::updateSignal(double minX, double maxX, double minY, double maxY, do
 void Signal::exportGeometryInfo() {
 
 	//ALIREZA CODE BEGIN
-
+	startChemical = std::chrono::high_resolution_clock::now();
+	durationMechanical += std::chrono::duration_cast<std::chrono::seconds>(startChemical - stopChemical );
  	double Center_X=minX+0.5*(maxX-minX); 
  	int cellRank ; 
 	int totalNumActiveMembraneNodes=0 ; 
@@ -173,6 +179,10 @@ void Signal::exportGeometryInfo() {
 		ExportOut.close() ;  
 	}
 	frameNumber += 0.1 ;
+	stopChemical  = std::chrono::high_resolution_clock::now() ;
+	durationChemical += std::chrono::duration_cast<std::chrono::seconds>(stopChemical - startChemical);
+	cout << "Time taken by Chemical model is : " << durationChemical.count() << " seconds" << endl;
+	cout << "Time taken by Mechanical model is : " << durationMechanical.count() << " seconds" << endl;
 }
 
 	/*
