@@ -1907,7 +1907,7 @@ void SignalTissue::AddNoiseToChemical()
                             double distYAbs = abs( cells.at(k).centroid.at(1) - tissueCenter.at(1) ) ;
                                     
                                     double dummy = (static_cast<double>(rand()) / RAND_MAX);
-                                            double ranNum = NormalCDFInverse(dummy);
+                                            double ranNum = NormalCDFInverse2(dummy);
                                                     
                                                     tissueLevelConcentration.at(k).at(0) *= 1.0 + (0.1*sin(0.2*3.141592*distYAbs)+0.12*ranNum) ;
                                                         }

@@ -106,5 +106,5 @@ public:
     }
 } ;
 
-double NormalCDFInverse(double p);
-double RationalApproximation(double t);
+double NormalCDFInverse2(double p);
+double RationalApproximation2(double t);

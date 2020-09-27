@@ -114,17 +114,17 @@ double sum_over_vec(const vector<vector<double> >& v, int a )
                       [&](double sum, vector<double> curr) { return sum + curr.at(a) ; });
 };
 
-double NormalCDFInverse(double p) {
+double NormalCDFInverse2(double p) {
         
         if (p < 0.5) {
-                    return -RationalApproximation( sqrt(-2.0*log(p)));
+                    return -RationalApproximation2( sqrt(-2.0*log(p)));
                         }
             else {
-                        return RationalApproximation( sqrt(-2.0*log(1-p)));
+                        return RationalApproximation2( sqrt(-2.0*log(1-p)));
                             }
 }
 
-double RationalApproximation(double t) {
+double RationalApproximation2(double t) {
         
         double c[] = {2.515517, 0.802853, 0.010328};
             double d[] = {1.432788, 0.189269, 0.001308};
