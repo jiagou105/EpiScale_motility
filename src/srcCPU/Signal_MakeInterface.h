@@ -28,8 +28,8 @@ class Signal {
     double frameNumber = 1.0 ;
     std::chrono::high_resolution_clock::time_point startChemical  ;
     std::chrono::high_resolution_clock::time_point stopChemical  ;
-    std::chrono::high_resolution_clock::duration durationChemical ;
-    std::chrono::high_resolution_clock::duration durationMechanical  ;
+    std::chrono::seconds durationChemical ;
+    std::chrono::seconds durationMechanical  ;
 
     std::vector<bool> nodeIsActiveHost ;
     std::vector<double> nodeLocXHost, nodeLocYHost, cellCenterX,cellCenterY ;

@@ -124,7 +124,7 @@ int main ()
     }
     
      tissue.Cal_AllCellConcentration() ;     // output depends on the cellType and equationType
-     
+     tissue.AddNoiseToChemical() ;     
      
    //  tissue.Cal_ReturnSignal() ;             // returning Dpp level as U
      

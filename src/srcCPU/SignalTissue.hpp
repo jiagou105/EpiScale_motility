@@ -85,6 +85,6 @@ public:
     void ReadConcentrations () ;
     void UpdateNanStatus () ;
     void WriteSignalingProfile () ;
-    
+    void AddNoiseToChemical () ;    
  
 };

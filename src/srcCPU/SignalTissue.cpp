@@ -1899,3 +1899,17 @@ void SignalTissue::WriteSignalingProfile()
     profile.close() ;
 }
 
+void SignalTissue::AddNoiseToChemical()
+{
+
+        for (unsigned int k=0 ;  k< cells.size(); k++)
+                {
+                            double distYAbs = abs( cells.at(k).centroid.at(1) - tissueCenter.at(1) ) ;
+                                    
+                                    double dummy = (static_cast<double>(rand()) / RAND_MAX);
+                                            double ranNum = NormalCDFInverse(dummy);
+                                                    
+                                                    tissueLevelConcentration.at(k).at(0) *= 1.0 + (0.1*sin(0.2*3.141592*distYAbs)+0.12*ranNum) ;
+                                                        }
+
+}
