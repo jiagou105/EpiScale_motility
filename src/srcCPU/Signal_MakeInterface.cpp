@@ -178,7 +178,7 @@ void Signal::exportGeometryInfo() {
 		cout << "I exported  the data for signaling model"<< endl ; 
 		ExportOut.close() ;  
 	}
-	frameNumber += 0.1 ;
+	frameNumber += 1.0 ;
 	stopChemical  = std::chrono::high_resolution_clock::now() ;
 	durationChemical += std::chrono::duration_cast<std::chrono::seconds>(stopChemical - startChemical);
 	cout << "Time taken by Chemical model is : " << durationChemical.count() << " seconds" << endl;

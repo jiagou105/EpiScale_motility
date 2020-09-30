@@ -1456,7 +1456,7 @@ if (firstTimeReadDpp) {
    	lastTimeExchange=lastTimeExchange+dt ;
 	cout << "last time exchange is " << lastTimeExchange << endl ; 
 	cout << "dt is " << dt << endl ;  
-   	double exchPeriod=20 ; 
+   	double exchPeriod=200 ; 
 	if ( lastTimeExchange>exchPeriod) {
 		lastTimeExchange=0 ; 
 		//vector<CVector> cellCentersHost ; 
