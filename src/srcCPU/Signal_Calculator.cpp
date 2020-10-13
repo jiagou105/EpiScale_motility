@@ -34,7 +34,8 @@ int main ()
     tissue.equationsType = fullModel ;
     tissue.readFileStatus = false ;
     tissue.frameIndex = static_cast<int>(round ( 100 * index) ) / 100 ;
-    tissue.writeVtk = ! fmod(static_cast<int>(round ( 100 * index) ), 100) ;
+    //tissue.writeVtk = ! fmod(static_cast<int>(round ( 100 * index) ), 100) ;
+    tissue.writeVtk = false ;
     cout<<"current index in Signal_Calculator function is "<<index<<endl ;
     sgnlCalculator<<"current index in Signal_Calculator function is "<<index<<endl ;
     if (tissue.readFileStatus)
@@ -124,7 +125,7 @@ int main ()
     }
     
      tissue.Cal_AllCellConcentration() ;     // output depends on the cellType and equationType
-     tissue.AddNoiseToChemical() ;     
+     //tissue.AddNoiseToChemical() ;     
      
    //  tissue.Cal_ReturnSignal() ;             // returning Dpp level as U
      

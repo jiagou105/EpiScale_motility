@@ -27,7 +27,7 @@ public:
     int frameIndex ;
     bool writeVtk ;
     bool frameIsNan = false ;
-    
+    double dppProd = 0.04 ;    
     
     
     void Cal_AllCellCenters () ;

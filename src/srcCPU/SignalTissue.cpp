@@ -1580,8 +1580,8 @@ void SignalTissue::FullModel_AllCellProductions()         //call once, initializ
         {
             cells.at(i).productionW = 0 ;
             cells.at(i).productionC = 0 ;
-            cells.at(i).productionCk  = 0.04 ;         //corresponds to Dpp
-            cells.at(i).productionCkR  = 0.04 ;        //corresponds to Tkv
+            cells.at(i).productionCk  = dppProd ;         //corresponds to Dpp
+            cells.at(i).productionCkR  = dppProd ;        //corresponds to Tkv
             cells.at(i).productionPMad  = 0.01 ;
         }
         cells.at(i).FullModel_ProductionCell() ;
@@ -1595,8 +1595,8 @@ void SignalTissue::FullModelEulerMethod()
     stream <<fixed << setprecision(4) << dt  ;
     std::string dtString = stream.str();
     string txtFileName = "Histogram_"+ to_string(frameIndex) + "dt" + dtString + ".txt" ;
-    ofstream histagram;
-    histagram.open(txtFileName.c_str());
+   // ofstream histagram;
+   // histagram.open(txtFileName.c_str());
      
     bool state = false ;
     int l = 0 ;
@@ -1660,14 +1660,14 @@ void SignalTissue::FullModelEulerMethod()
         {
             Cal_AllCellConcentration() ;
             double overallC = accumulate(tissueLevelU.begin(), tissueLevelU.end(), 0.0) ;
-            histagram<<l * dt<<'\t'<< overallC <<endl ;
+           // histagram<<l * dt<<'\t'<< overallC <<endl ;
         }
         
         if (l%100==0 && l>= 200 )
         {
             Cal_AllCellConcentration() ;
             double overallC = accumulate(tissueLevelU.begin(), tissueLevelU.end(), 0.0) ;
-            histagram<<l * dt <<'\t'<< overallC <<endl ;
+           // histagram<<l * dt <<'\t'<< overallC <<endl ;
         }
         
         l++ ;
