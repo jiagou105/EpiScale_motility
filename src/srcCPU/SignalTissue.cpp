@@ -1898,7 +1898,7 @@ void SignalTissue::WriteSignalingProfile()
     
     profile.close() ;
 }
-
+//---------------------------------------------------------------------------------------------
 void SignalTissue::AddNoiseToChemical()
 {
 
@@ -1913,3 +1913,18 @@ void SignalTissue::AddNoiseToChemical()
                                                         }
 
 }
+//---------------------------------------------------------------------------------------------
+ void SignalTissue:: AssignVariables ()
+{
+	for(unsigned int i=0; i< cells.size(); i++)
+	{
+		for(unsigned int j=0; i< cells.size(); i++)
+		{	
+			cells.at(i).meshes.at(j).D = diffusion ;
+			cells.at(i).meshes.at(j).d = degradation ;
+			cells.at(i).meshes.at(j).dt = timeStep / diffusion ;		
+		}			
+	}
+}
+
+

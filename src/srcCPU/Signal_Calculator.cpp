@@ -2,7 +2,7 @@
 #include "SignalTissue.hpp"
 #include "Signal_Calculator.h"
 #include <chrono>
-
+#include "ConfigParser.h"
 //---------------------------------------------------------------------------------------------
 /*
 vector<vector<double> > Signal_Calculator(vector< vector<double> > locX , vector< vector<double> > locY , vector<double > centX , vector<double > centY ,vector< vector<double> > oldConcentrations ,double index)
@@ -24,9 +24,28 @@ int main ()
      int index = 160 ;
      vector<vector<double> > oldConcentrations ;
  */
- vector< vector<double> > Signal_Calculator ( vector< vector<double> > locX , vector< vector<double> > locY , vector<double > centX , vector<double > centY,vector< vector<double> > oldConcentrations , double index ){
-    
-    ofstream nanIndex ("NanIndex.txt", ofstream::app) ;    //everything will be written at the end of the existing file
+
+void SignalGlobalVar:: Signal_get_config(){
+
+extern GlobalConfigVars globalConfigVars;
+diffusion = globalConfigVars.getConfigValue("SignalDiffusion").toDouble();
+degradation = globalConfigVars.getConfigValue("SignalDegradation").toDouble();
+timeStep = globalConfigVars.getConfigValue("SignalTimeStep").toDouble();
+sourceSize = globalConfigVars.getConfigValue("SignalSourceSize").toDouble();
+
+} 
+
+vector< vector<double> > Signal_Calculator ( vector< vector<double> > locX , vector< vector<double> > locY , vector<double > centX , vector<double > centY,vector< vector<double> > oldConcentrations , double index ){
+    SignalGlobalVar signalGlobVar ;
+    signalGlobVar.Signal_get_config() ;  
+/*    extern GlobalConfigVars globalConfigVars;
+    double diffusion = globalConfigVars.getConfigValue("SignalDiffusion").toDouble();
+    double degradation = globalConfigVars.getConfigValue("SignalDegradation").toDouble();
+    double timeStep = globalConfigVars.getConfigValue("SignalTimeStep").toDouble();
+    double sourceSize = globalConfigVars.getConfigValue("SignalSourceSize").toDouble();
+    Signal_get_config() ;   
+*/  
+  ofstream nanIndex ("NanIndex.txt", ofstream::app) ;    //everything will be written at the end of the existing file
     ofstream sgnlCalculator ("sgnlCalculator.txt", ofstream::app) ;    //everything will be written at the end of the existing file
     auto start = std::chrono::high_resolution_clock::now() ;
     SignalTissue tissue ;
@@ -36,6 +55,10 @@ int main ()
     tissue.frameIndex = static_cast<int>(round ( 100 * index) ) / 100 ;
     //tissue.writeVtk = ! fmod(static_cast<int>(round ( 100 * index) ), 100) ;
     tissue.writeVtk = false ;
+    tissue.diffusion = signalGlobVar.diffusion ;
+tissue.degradation = signalGlobVar.degradation ;
+tissue.timeStep = signalGlobVar.timeStep ;
+tissue.sourceSize = signalGlobVar.sourceSize ;
     cout<<"current index in Signal_Calculator function is "<<index<<endl ;
     sgnlCalculator<<"current index in Signal_Calculator function is "<<index<<endl ;
     if (tissue.readFileStatus)
@@ -93,7 +116,8 @@ int main ()
     tissue.Find_AllMeshes () ;
     tissue.Find_IntercellularMeshConnection () ;
     tissue.Cal_AreaOfTissue() ;
-     
+    tissue.AssignVariables() ; 
+
     // Equations part
     if (tissue.equationsType == simpleODE)
     {

@@ -1,9 +1,12 @@
+#ifndef Signal_MakeInterface
+#define Signal_MakeInterface
 #include <vector>
 #include <iostream>
 #include <cmath>
 #include <string>
 #include <fstream>
 #include <chrono>
+#include "Signal_Calculator.h"
 #include "GeoVector.h"
 #include "commonData.h"
 using namespace std ;
@@ -50,4 +53,4 @@ class Signal {
     
 } ;
 
-
+#endif

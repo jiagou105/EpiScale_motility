@@ -28,7 +28,11 @@ public:
     bool writeVtk ;
     bool frameIsNan = false ;
     double dppProd = 0.04 ;    
-    
+   
+    double diffusion = 0;
+    double degradation = 0;
+    double timeStep = 0.01 ;
+    double sourceSize = 0.12 ; 
     
     void Cal_AllCellCenters () ;
     void Cal_TissueCenter () ;
@@ -86,5 +90,7 @@ public:
     void UpdateNanStatus () ;
     void WriteSignalingProfile () ;
     void AddNoiseToChemical () ;    
+    void AssignVariables () ;
  
 };
+
