@@ -216,4 +216,10 @@ double SignalMesh::UpdateCp ()
 }
 
 //---------------------------------------------------------------------------------------------
+void SignalMesh::UpdateParameters()
+{
+	diffusions = {0,D,0,D,D,0,0,0} ;
+	selfDiffusions = {0,D,0,D,D,0,0,0} ;
+    	degradations = {d, d, d, d, d, d, 2.0*d , d } ;
 
+}

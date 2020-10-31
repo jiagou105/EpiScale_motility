@@ -54,5 +54,6 @@ public:
     vector<double> UpdateDegradation (bool type , double radius, vector<double> tissueCntr ) ;
     vector<double> UpdateRates ( bool type ) ;
     double UpdateCp () ;
+    void UpdateParameters() ;
     
 };
