@@ -33,6 +33,7 @@ public:
     double degradation = 0;
     double timeStep = 0.01 ;
     double sourceSize = 0.12 ; 
+    string folderName = "./signalVtkFiles/" ;
     
     void Cal_AllCellCenters () ;
     void Cal_TissueCenter () ;

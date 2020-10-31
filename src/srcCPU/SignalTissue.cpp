@@ -579,7 +579,7 @@ void SignalTissue::ParaViewVertices ()
             links2.push_back(verticesSize + i ) ;
         }
     }
-    string vtkFileName = "SignalVtkFiles/Vertices"+ to_string(frameIndex)+ ".vtk" ;
+    string vtkFileName = folderName + "Vertices"+ to_string(frameIndex)+ ".vtk" ;
     ofstream VerticesOut;
     VerticesOut.open(vtkFileName.c_str());
     VerticesOut<< "# vtk DataFile Version 3.0" << endl;
@@ -645,7 +645,7 @@ void SignalTissue::ParaViewTissue ()
         }
     }
     int size =static_cast<int> (allNodesX.size() );
-    string vtkFileName = "SignalVtkFiles/Tissue"+ to_string(frameIndex)+ ".vtk" ;
+    string vtkFileName = folderName + "Tissue"+ to_string(frameIndex)+ ".vtk" ;
     ofstream TissueOut;
     TissueOut.open(vtkFileName.c_str());
     TissueOut<< "# vtk DataFile Version 3.0" << endl;
@@ -942,7 +942,7 @@ void SignalTissue::ParaViewBoundary ()
         }
     }
     int size =static_cast<int> (allNodesX.size() );
-    string vtkFileName = "SignalVtkFiles/Boundary"+ to_string(frameIndex)+ ".vtk" ;
+    string vtkFileName =folderName + "Boundary"+ to_string(frameIndex)+ ".vtk" ;
     ofstream BoundaryOut;
     BoundaryOut.open(vtkFileName.c_str());
     BoundaryOut<< "# vtk DataFile Version 3.0" << endl;
@@ -977,7 +977,7 @@ void SignalTissue::ParaViewInitialConfiguration ()
         }
     }
     int size =static_cast<int> (allNodesX.size() );
-    string vtkFileName = "SignalVtkFiles/Initial"+ to_string(frameIndex)+ ".vtk" ;
+    string vtkFileName = folderName + "Initial"+ to_string(frameIndex)+ ".vtk" ;
     ofstream InitialOut;
     InitialOut.open(vtkFileName.c_str());
     InitialOut<< "# vtk DataFile Version 3.0" << endl;
@@ -1344,7 +1344,7 @@ void SignalTissue::ParaViewMesh(int number)
         }
     }
     
-    string vtkFileName = "SignalVtkFiles/Mesh"+ to_string(number)+ ".vtk" ;
+    string vtkFileName = folderName + "Mesh"+ to_string(number)+ ".vtk" ;
     ofstream MeshOut;
     MeshOut.open(vtkFileName.c_str());
     MeshOut<< "# vtk DataFile Version 3.0" << endl;
@@ -1883,7 +1883,7 @@ void SignalTissue::WriteSignalingProfile()
     
     string cellTypeString = (cellType) ? "WingDisc" : "Plant" ;
     
-    ofstream profile ("SignalVtkFiles/"+cellTypeString + number + "D" + dif + "d" + deg + "p" + pro + "dt"+ timeStep + ".txt") ;
+    ofstream profile (folderName + cellTypeString + number + "D" + dif + "d" + deg + "p" + pro + "dt"+ timeStep + ".txt") ;
     
     for (int i=0 ; i< tissueLevelConcentration.size() ; i++)
     {
