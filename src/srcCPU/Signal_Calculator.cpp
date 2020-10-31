@@ -32,7 +32,7 @@ diffusion = globalConfigVars.getConfigValue("SignalDiffusion").toDouble();
 degradation = globalConfigVars.getConfigValue("SignalDegradation").toDouble();
 timeStep = globalConfigVars.getConfigValue("SignalTimeStep").toDouble();
 sourceSize = globalConfigVars.getConfigValue("SignalSourceSize").toDouble();
-
+folderName=globalConfigVars.getConfigValue("SignalFolderName").toString();
 } 
 
 vector< vector<double> > Signal_Calculator ( vector< vector<double> > locX , vector< vector<double> > locY , vector<double > centX , vector<double > centY,vector< vector<double> > oldConcentrations , double index ){
@@ -59,6 +59,7 @@ vector< vector<double> > Signal_Calculator ( vector< vector<double> > locX , vec
 tissue.degradation = signalGlobVar.degradation ;
 tissue.timeStep = signalGlobVar.timeStep ;
 tissue.sourceSize = signalGlobVar.sourceSize ;
+tissue.folderName = signalGlobVar.folderName ;
     cout<<"current index in Signal_Calculator function is "<<index<<endl ;
     sgnlCalculator<<"current index in Signal_Calculator function is "<<index<<endl ;
     if (tissue.readFileStatus)
