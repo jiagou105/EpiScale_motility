@@ -13,6 +13,7 @@ public:
     double diffusion = 0;
     double degradation = 0;
     double timeStep = 0.01 ;
+    double dppProduction = 0.04 ;
     double sourceSize = 0.12 ;
     string folderName = "./signalVtkFiles/" ;
 void Signal_get_config();

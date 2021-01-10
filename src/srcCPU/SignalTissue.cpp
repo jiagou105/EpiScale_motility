@@ -1918,13 +1918,15 @@ void SignalTissue::AddNoiseToChemical()
 {
 	for(unsigned int i=0; i< cells.size(); i++)
 	{
-		for(unsigned int j=0; i< cells.size(); i++)
-		{	
-			cells.at(i).meshes.at(j).D = diffusion ;
-			cells.at(i).meshes.at(j).d = degradation ;
-			cells.at(i).meshes.at(j).dt = timeStep / diffusion ;		
-			cells.at(i).meshes.at(j).UpdateParameters() ;
-		}			
+	
+		for(unsigned int j=0; j< cells.at(i).meshes.size(); j++)
+                {
+                        cells.at(i).meshes.at(j).D = diffusion ;
+                        cells.at(i).meshes.at(j).d = degradation ;
+                        cells.at(i).meshes.at(j).dt = timeStep / diffusion ;
+                        cells.at(i).meshes.at(j).UpdateParameters() ;
+                
+		}
 	}
 }
 

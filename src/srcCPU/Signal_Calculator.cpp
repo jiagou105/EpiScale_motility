@@ -30,6 +30,7 @@ void SignalGlobalVar:: Signal_get_config(){
 extern GlobalConfigVars globalConfigVars;
 diffusion = globalConfigVars.getConfigValue("SignalDiffusion").toDouble();
 degradation = globalConfigVars.getConfigValue("SignalDegradation").toDouble();
+dppProduction = globalConfigVars.getConfigValue("SignalProduction").toDouble();
 timeStep = globalConfigVars.getConfigValue("SignalTimeStep").toDouble();
 sourceSize = globalConfigVars.getConfigValue("SignalSourceSize").toDouble();
 folderName=globalConfigVars.getConfigValue("SignalFolderName").toString();
@@ -59,6 +60,7 @@ vector< vector<double> > Signal_Calculator ( vector< vector<double> > locX , vec
 tissue.degradation = signalGlobVar.degradation ;
 tissue.timeStep = signalGlobVar.timeStep ;
 tissue.sourceSize = signalGlobVar.sourceSize ;
+tissue.dppProd = signalGlobVar.dppProduction ;
 tissue.folderName = signalGlobVar.folderName ;
     cout<<"current index in Signal_Calculator function is "<<index<<endl ;
     sgnlCalculator<<"current index in Signal_Calculator function is "<<index<<endl ;
