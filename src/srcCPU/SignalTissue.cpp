@@ -1891,7 +1891,7 @@ void SignalTissue::WriteSignalingProfile()
     
     string cellTypeString = (cellType) ? "WingDisc" : "Plant" ;
     
-    ofstream profile (cellTypeString + number + "D" + dif + "d" + deg + "p" + pro + "iter" + strIterator + "dt"+ timeStep + ".xls") ; 
+    ofstream profile (folderName + cellTypeString + number + "D" + dif + "d" + deg + "p" + pro + "iter" + strIterator + "dt"+ timeStep + ".xls") ; 
     for (int i=0 ; i< tissueLevelConcentration.size() ; i++)
     {
         profile << abs( cells.at(i).centroid.at(0)- tissueCenter.at(0) ) << '\t'
