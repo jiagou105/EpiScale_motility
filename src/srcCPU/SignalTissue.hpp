@@ -28,6 +28,8 @@ public:
     bool writeVtk ;
     bool frameIsNan = false ;
     double dppProd = 0.04 ;    
+    int eulerIterator = 0 ;
+    int eulerMaxIterator = 300000 ;
    
     double diffusion = 0;
     double degradation = 0;
@@ -92,6 +94,7 @@ public:
     void WriteSignalingProfile () ;
     void AddNoiseToChemical () ;    
     void AssignVariables () ;
- 
+
+    void AllCell_AbsorbingBoundaryCondition () ; 
 };
 

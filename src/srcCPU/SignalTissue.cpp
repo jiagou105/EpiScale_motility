@@ -1599,16 +1599,16 @@ void SignalTissue::FullModelEulerMethod()
    // histagram.open(txtFileName.c_str());
      
     bool state = false ;
-    int l = 0 ;
+    eulerIterator = 0 ;
     while (
            state==false
-           && l<=300000
+           && eulerIterator<= eulerMaxIterator
            )
     {
         double smallValue = 0.0001 ;
         FullModel_Diffusion() ;
-    //    if (l%1000==0) cout<<l/1000<<endl ;
-    //    if (l%100==0) ParaViewMesh(l/100) ;
+    //    if (eulerIterator%1000==0) cout<<eulerIterator/1000<<endl ;
+    //    if (eulerIterator%100==0) ParaViewMesh(eulerIterator/100) ;
         for (unsigned int i = 0; i < cells.size(); i++)
         {
             for (unsigned int j =0; j < cells.at(i).meshes.size(); j++)
@@ -1616,7 +1616,7 @@ void SignalTissue::FullModelEulerMethod()
                 cells.at(i).meshes.at(j).FullModel_Euler(cellType , TissueRadius,tissueCenter ) ;
             }
         }
-        
+        AllCell_AbsorbingBoundaryCondition() ; 
         state = true ;
         for (unsigned int i = 0; i < cells.size(); i++)
         {
@@ -1656,24 +1656,28 @@ void SignalTissue::FullModelEulerMethod()
                 cells.at(i).meshes.at(j).UpdateU() ;
             }
         }
-        if (l%10==0 && l<200)
+        if (eulerIterator%10==0 && eulerIterator<200)
         {
             Cal_AllCellConcentration() ;
             double overallC = accumulate(tissueLevelU.begin(), tissueLevelU.end(), 0.0) ;
-           // histagram<<l * dt<<'\t'<< overallC <<endl ;
+           // histagram<<eulerIterator * dt<<'\t'<< overallC <<endl ;
         }
         
-        if (l%100==0 && l>= 200 )
+        if (eulerIterator%100==0 && eulerIterator>= 200 )
         {
             Cal_AllCellConcentration() ;
             double overallC = accumulate(tissueLevelU.begin(), tissueLevelU.end(), 0.0) ;
-           // histagram<<l * dt <<'\t'<< overallC <<endl ;
+           // histagram<<eulerIterator * dt <<'\t'<< overallC <<endl ;
         }
         
-        l++ ;
+        eulerIterator++ ;
+    }
+    if (eulerIterator == eulerMaxIterator + 1)
+    {
+        cout<< "The solver is not at Steady states"<<endl ;
     }
     ParaViewMesh(frameIndex) ;
-    cout<<"l is equal to "<<l << endl ;
+    cout<<"eulerIterator is equal to "<<eulerIterator << endl ;
     double value = 0 ;
     for (unsigned int j =0 ; j < cells.size();j++)
     {
@@ -1683,7 +1687,7 @@ void SignalTissue::FullModelEulerMethod()
         }
     }
     cout<< "value is "<<value<<endl ;
-  //  cout<< "number of steps needed is " << l <<endl ;
+  //  cout<< "number of steps needed is " << eulerIterator <<endl ;
      
 }
 //---------------------------------------------------------------------------------------------
@@ -1880,11 +1884,14 @@ void SignalTissue::WriteSignalingProfile()
     stream.str(string() ) ;
     stream <<fixed << setprecision(5) << cells.at(0).meshes.at(0).dt ;
     std::string timeStep = stream.str() ;
+    stream.str(string() ) ;
+    stream <<fixed << setprecision(0) << eulerIterator  ;
+    std::string strIterator = stream.str();
+    stream.str(string() ) ;
     
     string cellTypeString = (cellType) ? "WingDisc" : "Plant" ;
     
-    ofstream profile (folderName + cellTypeString + number + "D" + dif + "d" + deg + "p" + pro + "dt"+ timeStep + ".txt") ;
-    
+    ofstream profile (cellTypeString + number + "D" + dif + "d" + deg + "p" + pro + "iter" + strIterator + "dt"+ timeStep + ".xls") ; 
     for (int i=0 ; i< tissueLevelConcentration.size() ; i++)
     {
         profile << abs( cells.at(i).centroid.at(0)- tissueCenter.at(0) ) << '\t'
@@ -1929,5 +1936,12 @@ void SignalTissue::AddNoiseToChemical()
 		}
 	}
 }
-
-
+//---------------------------------------------------------------------------------------------
+void SignalTissue::AllCell_AbsorbingBoundaryCondition ()
+{
+    double tCentX = tissueCenter.at(0) ;
+    for (int i=0; i< cells.size(); i++)
+    {
+        cells.at(i).Cell_ABC(cellType, TissueRadius, tCentX) ;
+    }
+}

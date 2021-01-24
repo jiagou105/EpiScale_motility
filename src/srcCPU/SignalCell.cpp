@@ -524,3 +524,33 @@ void SignalCell:: CellLevelConcentration2(bool type)
     }
     transform(cellConcentration.begin(), cellConcentration.end(), cellConcentration.begin(), productNum(1.0/meshes.size() ) ) ;
 }
+
+
+void SignalCell::Cell_ABC(bool type, double TRadius, double tCentX)
+{
+    boundary = false ;
+    for (int i = 0; i< meshes.size(); i++)
+    {
+        meshes.at(i).Mesh_ABC(type) ;
+       /*
+          if (meshes.at(i).connection.first == -1 && ( abs(centroid.at(0)- tCentX )/TRadius > 0.12 ) )
+                  {
+                              boundary = true ;
+                                          break ;
+                                                  }
+                                                      }
+                                                          if (boundary == true)
+                                                              {
+                                                                      for (int i=0; i< meshes.size(); i++)
+                                                                              {
+                                                                                          meshes.at(i).concentrations2.at(4) = 0.0 ;
+                                                                                                  }
+       */
+    }
+}
+
+
+
+
+
+

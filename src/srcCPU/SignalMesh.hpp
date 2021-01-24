@@ -49,6 +49,7 @@ public:
     void Cal_UStar () ;
     void Euler () ;
     void UpdateU () ;
+    void Mesh_ABC (bool type) ;
     
     void FullModel_Euler (bool type, double radius, vector<double> tissueCntr ) ;
     vector<double> UpdateDegradation (bool type , double radius, vector<double> tissueCntr ) ;

@@ -223,3 +223,19 @@ void SignalMesh::UpdateParameters()
     	degradations = {d, d, d, d, d, d, 2.0*d , d } ;
 
 }
+//---------------------------------------------------------------------------------------------
+
+void SignalMesh::Mesh_ABC(bool type)
+{
+    if (type == false )             //cellType == plant
+    {
+        
+    }
+    else
+    {
+        if (connection.first == -1)
+        {
+            concentrations2.at(4) = 0.0 ;
+        }
+    }
+}
