@@ -52,6 +52,8 @@ void Signal::Initialize (uint maxAllNodePerCell, uint maxMembrNodePerCell, uint 
 	cout << "I am at the end of signal initialization function" << endl ; 
 	cout << "size of node is active in signal module initialization is " << nodeIsActiveHost.size() << endl ; 
 	cout << "max of all nodes per cell in signal module initialization is " << maxAllNodePerCell << endl ; 
+        extern GlobalConfigVars globalConfigVars;
+        folderName=globalConfigVars.getConfigValue("SignalFolderName").toString();
 }
 void Signal::updateSignal(double minX, double maxX, double minY, double maxY, double curTime, int maxTotalNumActiveNodes, int numActiveCells)  {
 	this->maxX=maxX;
@@ -147,7 +149,7 @@ void Signal::exportGeometryInfo() {
 		cout << "max total number of active nodes in signal module is " << maxTotalNumActiveNodes  << endl ; 
 		cout << "max of all nodes per cell in signal module is " << maxAllNodePerCell << endl ; 
 		//std :: string  txtFileName="ExportTisuProp_" + patch::to_string(periodCount)+".txt" ; 
-		std :: string  txtFileName="./signalVtkFiles/ExportCellProp_" + patch::to_string(frameNumber)+".txt" ; 
+		std :: string  txtFileName= folderName + "ExportCellProp_" + patch::to_string(frameNumber)+".txt" ; 
 		ofstream ExportOut ; 
 		ExportOut.open(txtFileName.c_str()); 
 		//ExportOut << "Time (s), Tissue_CenterX(micro meter),Max_Length_X(micro meter)"<<endl; 

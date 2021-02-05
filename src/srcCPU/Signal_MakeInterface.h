@@ -29,6 +29,7 @@ class Signal {
     int numActiveCells ;
     double minResol, resol ;
     double frameNumber = 1.0 ;
+    string folderName = "./signalVtkFiles/" ;
     std::chrono::high_resolution_clock::time_point startChemical  ;
     std::chrono::high_resolution_clock::time_point stopChemical  ;
     std::chrono::seconds durationChemical ;
