@@ -152,6 +152,7 @@ tissue.folderName = signalGlobVar.folderName ;
     }
     
      tissue.Cal_AllCellConcentration() ;     // output depends on the cellType and equationType
+     tissue.CorrectionToConcentrations() ;
      //tissue.AddNoiseToChemical() ;     
      
    //  tissue.Cal_ReturnSignal() ;             // returning Dpp level as U

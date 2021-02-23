@@ -96,5 +96,6 @@ public:
     void AssignVariables () ;
 
     void AllCell_AbsorbingBoundaryCondition () ; 
+    void CorrectionToConcentrations () ;
 };
 

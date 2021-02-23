@@ -1676,6 +1676,7 @@ void SignalTissue::FullModelEulerMethod()
     {
         cout<< "The solver is not at Steady states"<<endl ;
     }
+    CorrectionToConcentrations() ;
     ParaViewMesh(frameIndex) ;
     cout<<"eulerIterator is equal to "<<eulerIterator << endl ;
     double value = 0 ;
@@ -1943,5 +1944,33 @@ void SignalTissue::AllCell_AbsorbingBoundaryCondition ()
     for (int i=0; i< cells.size(); i++)
     {
         cells.at(i).Cell_ABC(cellType, TissueRadius, tCentX) ;
+    }
+}
+
+void SignalTissue::CorrectionToConcentrations()
+{
+    for (int i=0 ; i< tissueLevelConcentration.size() ; i++)
+    {
+        for (int j=0; j< tissueLevelConcentration.at(i).size() ; j++)
+        {
+            if (tissueLevelConcentration.at(i).at(j) < pow(10, -30) )
+            {
+                tissueLevelConcentration.at(i).at(j) = 0.0 ;
+            }
+        }
+    }
+    
+    for (int i=0; i< cells.size(); i++)
+    {
+        for (int j=0; j< cells.at(i).meshes.size(); j++)
+        {
+            for (int k=0 ; k< cells.at(i).meshes.at(j).concentrations2.size() ; k++)
+            {
+                if (cells.at(i).meshes.at(j).concentrations2.at(k) < pow(10, -30) )
+                {
+                    cells.at(i).meshes.at(j).concentrations2.at(k) = 0.0 ;
+                }
+            }
+        }
     }
 }
