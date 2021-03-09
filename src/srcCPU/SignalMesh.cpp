@@ -132,7 +132,7 @@ void SignalMesh::FullModel_Euler(bool type, double radius, vector<double> tissue
         double cntX = tissueCntr.at(0) ;
         double cntY = tissueCntr.at(1) ;
         tmpProduction.at(4) *= 1/(1+ pow(abs(triangleX.at(0)-cntX )/(rs * radius), ns ) ) ;        //check power
-        tmpProduction.at(5) *= (cMax-cMin)/(1+ pow(concentrations.at(7)/kP,powers.at(2) ) ) ;        //check power
+        tmpProduction.at(5) *= (cMax-cMin)/(1+ pow(concentrations.at(7)/KP2,powers.at(2) ) ) ;        //check power
         tmpProduction.at(5) += cMin * productions.at(5) ;
         //test
 	//tmpProduction.at(5) *= 1/(1+ pow(abs(triangleX.at(0)-cntX )/(rs * radius) , -ns ) ) ;        //check power

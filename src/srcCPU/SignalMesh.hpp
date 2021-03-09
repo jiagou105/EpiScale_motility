@@ -27,7 +27,7 @@ public:
     double cMax = 9.0/6.0 ;
     double kCK = 1 ;
     double kcw = 1 ;
-    double kP = 0.1 ;
+    double KP2 = 0.1 ;
     double kLR =  10.0;
     vector< double> powers ;
     

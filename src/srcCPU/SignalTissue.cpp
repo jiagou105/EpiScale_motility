@@ -1941,7 +1941,7 @@ void SignalTissue::AddNoiseToChemical()
                         cells.at(i).meshes.at(j).d = degradation ;
                         cells.at(i).meshes.at(j).dt = timeStep / diffusion ;
 			cells.at(i).meshes.at(j).kLR = klr ;
-            		cells.at(i).meshes.at(j).kP2 = kp2 ;
+            		cells.at(i).meshes.at(j).KP2 = kp2 ;
                         cells.at(i).meshes.at(j).UpdateParameters() ;
                 
 		}
