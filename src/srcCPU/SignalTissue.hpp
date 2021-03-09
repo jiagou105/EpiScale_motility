@@ -30,13 +30,15 @@ public:
     double dppProd = 0.04 ;    
     int eulerIterator = 0 ;
     int eulerMaxIterator = 300000 ;
-   
+    
     double diffusion = 0;
     double degradation = 0;
     double timeStep = 0.01 ;
     double sourceSize = 0.12 ; 
     string folderName = "./signalVtkFiles/" ;
-    
+    double klr = 0.25 ;
+    double kp2 = 0.3 ;
+ 
     void Cal_AllCellCenters () ;
     void Cal_TissueCenter () ;
     void Cal_AllCellCntrToCntr () ;

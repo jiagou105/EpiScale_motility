@@ -1889,10 +1889,18 @@ void SignalTissue::WriteSignalingProfile()
     stream <<fixed << setprecision(0) << eulerIterator  ;
     std::string strIterator = stream.str();
     stream.str(string() ) ;
+
+    stream <<fixed << setprecision(2) << klr  ;
+    std::string strKLR = stream.str();
+    stream.str(string() ) ;
     
+    stream <<fixed << setprecision(2) << kp2  ;
+    std::string strKP2 = stream.str();
+    stream.str(string() ) ;
+ 
     string cellTypeString = (cellType) ? "WingDisc" : "Plant" ;
     
-    ofstream profile (folderName + cellTypeString + number + "D" + dif + "d" + deg + "p" + pro + "iter" + strIterator + "dt"+ timeStep + ".xls") ; 
+    ofstream profile (folderName + cellTypeString + number + "D" + dif + "d" + deg + "p" + pro + "iter" + strIterator + "KLR"+ strKLR + "KP" + strKP2 + "dt" + timeStep + ".xls") ; 
     for (int i=0 ; i< tissueLevelConcentration.size() ; i++)
     {
         profile << abs( cells.at(i).centroid.at(0)- tissueCenter.at(0) ) << '\t'
@@ -1932,6 +1940,8 @@ void SignalTissue::AddNoiseToChemical()
                         cells.at(i).meshes.at(j).D = diffusion ;
                         cells.at(i).meshes.at(j).d = degradation ;
                         cells.at(i).meshes.at(j).dt = timeStep / diffusion ;
+			cells.at(i).meshes.at(j).kLR = klr ;
+            		cells.at(i).meshes.at(j).kP2 = kp2 ;
                         cells.at(i).meshes.at(j).UpdateParameters() ;
                 
 		}

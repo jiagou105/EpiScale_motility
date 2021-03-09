@@ -21,7 +21,7 @@ SignalMesh::SignalMesh()
     concentrations = {0,0,0,0,0,0,0,0} ;
     concentrations2 = {0,0,0,0,0,0,0,0} ;
   //  productions = {1,0,0,1,1,1,0,1} ;
-    rates = {1,1,1,0,0.003,0.003,1,0} ; // <r_c, r_im, r_ex, 0 , k_on , k_on, k_off>
+    rates = {1,1,1,0,0.3,0.3,0.0003,0} ; // <r_c, r_im, r_ex, 0 , k_on , k_on, k_off>
     powers.resize(4) ;
     powers = {-2,1,2,1} ;
     dt = 0.01/ D ;
@@ -119,12 +119,12 @@ void SignalMesh::FullModel_Euler(bool type, double radius, vector<double> tissue
         // degradation changes (from 4th to the end(7th)
         transform(concentrations2.begin()+4, concentrations2.end(),degradationChanges.begin()+4 ,concentrations2.begin()+4, linearConfig( 1.0,-dt )  ) ;
         //rate changes
-        /*  test
+        // /*  test
         transform(concentrations2.begin()+4 , concentrations2.end()-1, rateChanges.begin()+4 , concentrations2.begin()+4 , linearConfig(1.0 , - dt ) ) ;
         concentrations2.at(4) += rateChanges.at(6) * dt ;
         concentrations2.at(5) += rateChanges.at(6) * dt ;
         concentrations2.at(6) += rateChanges.at(4) * dt ;
-        */
+        // */
         //production changes
         vector<double> tmpProduction = productions ;
         double rs = 0.12 ;
@@ -134,7 +134,8 @@ void SignalMesh::FullModel_Euler(bool type, double radius, vector<double> tissue
         tmpProduction.at(4) *= 1/(1+ pow(abs(triangleX.at(0)-cntX )/(rs * radius), ns ) ) ;        //check power
         tmpProduction.at(5) *= (cMax-cMin)/(1+ pow(concentrations.at(7)/kP,powers.at(2) ) ) ;        //check power
         tmpProduction.at(5) += cMin * productions.at(5) ;
-        tmpProduction.at(5) *= 1/(1+ pow(abs(triangleX.at(0)-cntX )/(rs * radius) , -ns ) ) ;        //check power
+        //test
+	//tmpProduction.at(5) *= 1/(1+ pow(abs(triangleX.at(0)-cntX )/(rs * radius) , -ns ) ) ;        //check power
         tmpProduction.at(5) += (3.0/6.0) * productions.at(5) ;
         tmpProduction.at(7) *= 1/(1+ pow(concentrations.at(6)/kLR , powers.at(0) ) ) ;        //check power
         transform(concentrations2.begin()+4 , concentrations2.end(), tmpProduction.begin()+4, concentrations2.begin()+4, linearConfig(1.0 , dt ) ) ;

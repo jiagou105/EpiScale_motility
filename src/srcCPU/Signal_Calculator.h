@@ -10,12 +10,15 @@ vector< vector<double> > Signal_Calculator (vector< vector<double> > locX , vect
 
 class SignalGlobalVar{
 public:
-    double diffusion = 0;
-    double degradation = 0;
+    double diffusion = 20;
+    double degradation = 0.4;
     double timeStep = 0.01 ;
-    double dppProduction = 0.04 ;
+    double dppProduction = 4.0 ;
     double sourceSize = 0.12 ;
     string folderName = "./signalVtkFiles/" ;
+    double klr = 0.5 ;
+    double kp2 = 0.3 ;
+
 void Signal_get_config();
 };
 #endif /* Signal_Calculator_h */

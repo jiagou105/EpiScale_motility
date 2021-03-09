@@ -34,6 +34,8 @@ dppProduction = globalConfigVars.getConfigValue("SignalProduction").toDouble();
 timeStep = globalConfigVars.getConfigValue("SignalTimeStep").toDouble();
 sourceSize = globalConfigVars.getConfigValue("SignalSourceSize").toDouble();
 folderName=globalConfigVars.getConfigValue("SignalFolderName").toString();
+klr = globalConfigVars.getConfigValue("SignalKlr").toDouble();
+kp2 = globalConfigVars.getConfigValue("SignalKp2").toDouble();
 } 
 
 vector< vector<double> > Signal_Calculator ( vector< vector<double> > locX , vector< vector<double> > locY , vector<double > centX , vector<double > centY,vector< vector<double> > oldConcentrations , double index ){
@@ -62,6 +64,8 @@ tissue.timeStep = signalGlobVar.timeStep ;
 tissue.sourceSize = signalGlobVar.sourceSize ;
 tissue.dppProd = signalGlobVar.dppProduction ;
 tissue.folderName = signalGlobVar.folderName ;
+tissue.klr = signalGlobVar.klr ;
+tissue.kp2 = signalGlobVar.kp2 ;
     cout<<"current index in Signal_Calculator function is "<<index<<endl ;
     sgnlCalculator<<"current index in Signal_Calculator function is "<<index<<endl ;
     if (tissue.readFileStatus)
