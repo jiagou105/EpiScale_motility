@@ -2753,6 +2753,7 @@ thrust::transform(
 			                           cellInfoVecs.growthProgress.begin(),
 			DppGrowRegulator(dt,mitoticCheckPoint));  
 */
+//Alireza
 thrust::transform(
                         thrust::make_zip_iterator(
                                         thrust::make_tuple(cellInfoVecs.cell_pMad.begin(),
