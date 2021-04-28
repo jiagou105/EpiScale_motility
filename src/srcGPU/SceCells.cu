@@ -1505,6 +1505,7 @@ if (firstTimeReadDpp) {
 	}
 	if (firstTimeReadDpp) {	 
 	   	thrust::copy(signal.dppLevel.begin(),signal.dppLevel.end(),cellInfoVecs.cell_DppOld.begin()) ;
+		thrust::copy(signal.pMadLevel.begin(),signal.pMadLevel.end(),cellInfoVecs.cell_pMadOld.begin()) ;	//Alireza
 		firstTimeReadDpp=false ; 
 	}
 
@@ -1925,6 +1926,7 @@ void SceCells::copyFirstCellArr_M() {
 		cellInfoVecs.isRandGrowInited[cellRank] = false;
 		cellInfoVecs.lastCheckPoint[cellRank] = 0;
 		cellInfoVecs.cell_DppOld[cellRank] = cellInfoVecs.cell_Dpp[cellRank];
+		cellInfoVecs.cell_pMadOld[cellRank] = cellInfoVecs.cell_pMad[cellRank];
 	}
 }
 
