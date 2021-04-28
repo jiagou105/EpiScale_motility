@@ -21,7 +21,7 @@ SignalMesh::SignalMesh()
     concentrations = {0,0,0,0,0,0,0,0} ;
     concentrations2 = {0,0,0,0,0,0,0,0} ;
   //  productions = {1,0,0,1,1,1,0,1} ;
-    rates = {1,1,1,0,0.3,0.3,0.0003,0} ; // <r_c, r_im, r_ex, 0 , k_on , k_on, k_off>
+    rates = {1,1,1,0,0.4,0.4,0.00004,0} ; // <r_c, r_im, r_ex, 0 , k_on , k_on, k_off>
     powers.resize(4) ;
     powers = {-2,1,2,1} ;
     dt = 0.01/ D ;
@@ -221,7 +221,7 @@ void SignalMesh::UpdateParameters()
 {
 	diffusions = {0,D,0,D,D,0,0,0} ;
 	selfDiffusions = {0,D,0,D,D,0,0,0} ;
-    	degradations = {d, d, d, d, d, d, 2.0*d , d } ;
+    	degradations = {d, d, d, d, d, d, d , d } ;
 
 }
 //---------------------------------------------------------------------------------------------

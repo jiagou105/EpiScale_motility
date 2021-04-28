@@ -684,6 +684,7 @@ void SceCells::initCellInfoVecs_M() {
 	cellInfoVecs.cell_Tkv.resize(allocPara_m.maxCellCount, 0.0);   //Alireza
 	cellInfoVecs.cell_DppTkv.resize(allocPara_m.maxCellCount, 0.0);   //Alireza
 	cellInfoVecs.cell_pMad.resize(allocPara_m.maxCellCount, 0.0);   //Alireza
+	cellInfoVecs.cell_pMadOld.resize(allocPara_m.maxCellCount, 0.0);   //Alireza
 	
         //cout<< "size of dpp in init is "<< cellInfoVecs.cell_Dpp.size() << endl ;          
 	cellInfoVecs.growthProgress.resize(allocPara_m.maxCellCount, 0.0); //A&A
@@ -1970,6 +1971,7 @@ void SceCells::copySecondCellArr_M() {
 		cellInfoVecs.cell_Tkv[cellRank]    = cellInfoVecs.cell_Tkv[cellRankMother];	//Alireza
 		cellInfoVecs.cell_DppTkv[cellRank]    = cellInfoVecs.cell_DppTkv[cellRankMother];	//Alireza
 		cellInfoVecs.cell_pMad[cellRank]    = cellInfoVecs.cell_pMad[cellRankMother];	//Alireza
+		cellInfoVecs.cell_pMadOld[cellRank]    = cellInfoVecs.cell_pMad[cellRankMother];   //Alireza
 	}
 }
 
@@ -2733,6 +2735,7 @@ cout << " I am trying to update growth progress" << endl ;
 
 	//double dummy=0 ;
     double mitoticCheckPoint=growthAuxData.grthPrgrCriVal_M_Ori ; 
+/* //Alireza : Dpp regulate
 thrust::transform(
 			thrust::make_zip_iterator(
 					thrust::make_tuple(cellInfoVecs.cell_Dpp.begin(),
@@ -2747,6 +2750,21 @@ thrust::transform(
 					+ allocPara_m.currentActiveCellCount,
 			                           cellInfoVecs.growthProgress.begin(),
 			DppGrowRegulator(dt,mitoticCheckPoint));  
+*/
+thrust::transform(
+                        thrust::make_zip_iterator(
+                                        thrust::make_tuple(cellInfoVecs.cell_pMad.begin(),
+                                                           cellInfoVecs.cell_pMadOld.begin(),
+                                                           cellInfoVecs.growthProgress.begin(),
+                                                           cellInfoVecs.growthSpeed.begin())),
+                        thrust::make_zip_iterator(
+                                        thrust::make_tuple(cellInfoVecs.cell_pMad.begin(),
+                                                                   cellInfoVecs.cell_pMadOld.begin(),
+                                                                   cellInfoVecs.growthProgress.begin(),
+                                                                           cellInfoVecs.growthSpeed.begin()))
+                                        + allocPara_m.currentActiveCellCount,
+                                                   cellInfoVecs.growthProgress.begin(),
+                        DppGrowRegulator(dt,mitoticCheckPoint));
 
 
 

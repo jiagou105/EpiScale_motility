@@ -1637,8 +1637,12 @@ void SignalTissue::FullModelEulerMethod()
                 else if (cellType== wingDisc)
                 {
                     //condition is not finilized
-                    if (abs(cells.at(i).meshes.at(j).concentrations2.at(4) - cells.at(i).meshes.at(j).concentrations.at(4) )/(cells.at(i).meshes.at(j).concentrations.at(4) + smallValue) > smallValue * dt   ||
+
+			if (abs(cells.at(i).meshes.at(j).concentrations2.at(4) - cells.at(i).meshes.at(j).concentrations.at(4) )/(cells.at(i).meshes.at(j).concentrations.at(4) + smallValue) > smallValue * dt   ||
+                        abs(cells.at(i).meshes.at(j).concentrations2.at(5) - cells.at(i).meshes.at(j).concentrations.at(5) )/(cells.at(i).meshes.at(j).concentrations.at(5) + smallValue) > smallValue * dt ||
+                        abs(cells.at(i).meshes.at(j).concentrations2.at(6) - cells.at(i).meshes.at(j).concentrations.at(6) )/(cells.at(i).meshes.at(j).concentrations.at(6) + smallValue) > smallValue * dt ||
                         abs(cells.at(i).meshes.at(j).concentrations2.at(7) - cells.at(i).meshes.at(j).concentrations.at(7) )/(cells.at(i).meshes.at(j).concentrations.at(7) + smallValue) > smallValue * dt
+                        
                         )
                     {
                         state = false ;
