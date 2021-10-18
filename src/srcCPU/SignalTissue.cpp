@@ -1582,7 +1582,7 @@ void SignalTissue::FullModel_AllCellProductions()         //call once, initializ
             cells.at(i).productionC = 0 ;
             cells.at(i).productionCk  = dppProd ;         //corresponds to Dpp
             cells.at(i).productionCkR  = dppProd ;        //corresponds to Tkv
-            cells.at(i).productionPMad  = 0.01 ;
+            cells.at(i).productionPMad  = dppProd ;
         }
         cells.at(i).FullModel_ProductionCell() ;
     }
