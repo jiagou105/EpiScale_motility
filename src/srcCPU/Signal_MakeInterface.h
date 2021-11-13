@@ -30,6 +30,8 @@ class Signal {
     int numActiveCells ;
     double minResol, resol ;
     double frameNumber = 1.0 ;
+    double tissueCentX0 = 25.0  ;
+    double tissueCentY0 = 25.0  ;
     string folderName = "./signalVtkFiles/" ;
     std::chrono::high_resolution_clock::time_point startChemical  ;
     std::chrono::high_resolution_clock::time_point stopChemical  ;
@@ -44,7 +46,7 @@ class Signal {
     std::vector<double> pMadLevel ;  //Alireza
     std::vector<double> dppDistV,dppLevelV ;
     
-    void updateSignal(double minX, double maxX, double minY, double maxY, double curTime, int maxTotalNumActiveNodes, int numActiveCells) ;
+    void updateSignal(double minX, double maxX, double minY, double maxY, double curTime, int maxTotalNumActiveNodes, int numActiveCells, double &tissueCentX0 ) ;
     
     void Initialize(uint maxAllNodePerCell, uint maxMembrNodePerCellECM, uint maxTotalNodes, uint maxCellCount) ;
     void exportGeometryInfo() ;

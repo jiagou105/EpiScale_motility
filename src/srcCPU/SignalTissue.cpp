@@ -25,6 +25,21 @@ void SignalTissue::Cal_TissueCenter()
     tissueCenter.push_back(tissueCntrY/cells.size() ) ;
 }
 //---------------------------------------------------------------------------------------------
+void SignalTissue::Cal_TissueCenter2()
+{
+    double tissueCntrX = 0.0 ;
+    double tissueCntrY = 0.0 ;
+    double tmpArea = 0.0 ;
+    for (unsigned int i=0; i< cells.size(); i++)
+    {
+                tissueCntrX += cells.at(i).centroid.at(0) * cells.at(i).areaCell ;
+                        tissueCntrY += cells.at(i).centroid.at(1) * cells.at(i).areaCell ;
+                                tmpArea += cells.at(i).areaCell ;
+                                    }
+                                        tissueCenter.push_back(tissueCntrX/tmpArea ) ;
+                                            tissueCenter.push_back(tissueCntrY/tmpArea ) ;
+                                            }
+//---------------------------------------------------------------------------------------------
 void SignalTissue::Find_AllCellNeighborCandidates ()
 {
     for (unsigned int i=0; i < cells.size(); i++)
@@ -1605,7 +1620,7 @@ void SignalTissue::FullModelEulerMethod()
            && eulerIterator<= eulerMaxIterator
            )
     {
-        double smallValue = 0.0001 ;
+        double smallValue = 0.01 ;
         FullModel_Diffusion() ;
     //    if (eulerIterator%1000==0) cout<<eulerIterator/1000<<endl ;
     //    if (eulerIterator%100==0) ParaViewMesh(eulerIterator/100) ;
@@ -1613,7 +1628,7 @@ void SignalTissue::FullModelEulerMethod()
         {
             for (unsigned int j =0; j < cells.at(i).meshes.size(); j++)
             {
-                cells.at(i).meshes.at(j).FullModel_Euler(cellType , TissueRadius,tissueCenter ) ;
+                cells.at(i).meshes.at(j).FullModel_Euler(cellType, tissueWidth / 2.0 , tissueCenter ) ;
             }
         }
         AllCell_AbsorbingBoundaryCondition() ; 
@@ -1908,7 +1923,7 @@ void SignalTissue::WriteSignalingProfile()
     for (int i=0 ; i< tissueLevelConcentration.size() ; i++)
     {
         profile << abs( cells.at(i).centroid.at(0)- tissueCenter.at(0) ) << '\t'
-                << abs( cells.at(i).centroid.at(0)- tissueCenter.at(0) )/ TissueRadius ;
+                << abs( cells.at(i).centroid.at(0)- tissueCenter.at(0) )/ (tissueWidth / 2.0) ;
         for (unsigned int j = 0; j< tissueLevelConcentration.at(i).size() ; j++)
         {
             profile << '\t' << tissueLevelConcentration.at(i).at(j) ;
@@ -1957,7 +1972,7 @@ void SignalTissue::AllCell_AbsorbingBoundaryCondition ()
     double tCentX = tissueCenter.at(0) ;
     for (int i=0; i< cells.size(); i++)
     {
-        cells.at(i).Cell_ABC(cellType, TissueRadius, tCentX) ;
+        cells.at(i).Cell_ABC(cellType, (tissueWidth / 2.0), tCentX) ;
     }
 }
 
@@ -1987,4 +2002,27 @@ void SignalTissue::CorrectionToConcentrations()
             }
         }
     }
+}
+//---------------------------------------------------------------------------------------------
+void SignalTissue::Cal_TissueDimensions()
+{
+    double minX = 0 ;
+    double maxX = 0 ;
+    double minY = 0 ;
+    double maxY = 0 ;
+    for (int i = 0; i< cells.size(); i++)
+    {
+        minX = min(minX, cells.at(i).centroid.at(0) ) ;
+        maxX = max(maxX, cells.at(i).centroid.at(0) ) ;
+        minY = min(minY, cells.at(i).centroid.at(1) ) ;
+        maxY = max(maxY, cells.at(i).centroid.at(1) ) ;
+    }
+    tissueHeight = maxY - minY ;
+    tissueWidth = maxX - minX ;
+}
+
+void SignalTissue::CombineTissueCenterX ( double ax0 , double axT, double x0 )
+{
+	tissueCenter.at(0) = ( ax0 * x0 + axT * tissueCenter.at(0) ) / (ax0 + axT) ;
+
 }

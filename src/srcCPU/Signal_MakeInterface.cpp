@@ -128,7 +128,7 @@ void Signal::exportGeometryInfo() {
 			locY.back().push_back ( nodeLocYHost[i] ) ;
        		 }
   	  }
-	concentrations = Signal_Calculator ( locX , locY , cntX , cntY, concentrations, frameNumber ) ;       //output required
+	concentrations = Signal_Calculator ( locX , locY , cntX , cntY, concentrations, frameNumber, tissueCentX0 ) ;       //output required
 	for (int i = 0; i < numActiveCells; i++)
     	{
 		dppLevel[i] = concentrations[i].at(0) ;

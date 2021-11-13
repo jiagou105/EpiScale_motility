@@ -38,7 +38,7 @@ klr = globalConfigVars.getConfigValue("SignalKlr").toDouble();
 kp2 = globalConfigVars.getConfigValue("SignalKp2").toDouble();
 } 
 
-vector< vector<double> > Signal_Calculator ( vector< vector<double> > locX , vector< vector<double> > locY , vector<double > centX , vector<double > centY,vector< vector<double> > oldConcentrations , double index ){
+vector< vector<double> > Signal_Calculator ( vector< vector<double> > locX , vector< vector<double> > locY , vector<double > centX , vector<double > centY,vector< vector<double> > oldConcentrations , double index, double tCentX0 ){
     SignalGlobalVar signalGlobVar ;
     signalGlobVar.Signal_get_config() ;  
 /*    extern GlobalConfigVars globalConfigVars;
@@ -94,7 +94,7 @@ tissue.kp2 = signalGlobVar.kp2 ;
      
   // // // // //  tissue.ParaViewInitialConfiguration() ;       // Bug when I run this early in the code!!!! intx.size()= 0 !!!!!!
     
-    tissue.Cal_TissueCenter() ;
+   // tissue.Cal_TissueCenter() ;
     tissue.Cal_AllCellCntrToCntr();
     tissue.Find_AllCellNeighborCandidates() ;
     tissue.Find_AllCellNeighbors () ;
@@ -124,6 +124,13 @@ tissue.kp2 = signalGlobVar.kp2 ;
     tissue.Find_IntercellularMeshConnection () ;
     tissue.Cal_AreaOfTissue() ;
     tissue.AssignVariables() ; 
+    tissue.Cal_TissueCenter2() ;
+    if ( abs(Index - 1.0 ) < 0.001 ) 
+    {
+    	tCentX0 = tissue.tissueCenter.at(0) ;
+    }
+    //tissue.CombineCenterX (0.5 , 0.5 , tCentX0) ;
+    tissue.Cal_TissueDimensions() ;
 
     // Equations part
     if (tissue.equationsType == simpleODE)

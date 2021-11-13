@@ -23,8 +23,8 @@ public:
 
     double eMin = 0 ;
     double eMAx = 1 ;
-    double cMin = 1.0/6.0 ;
-    double cMax = 9.0/6.0 ;
+    double cMin = 1.0 ;
+    double cMax = 3.0 ;
     double kCK = 1 ;
     double kcw = 1 ;
     double KP2 = 0.1 ;
