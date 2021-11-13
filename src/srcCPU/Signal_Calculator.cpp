@@ -38,7 +38,7 @@ klr = globalConfigVars.getConfigValue("SignalKlr").toDouble();
 kp2 = globalConfigVars.getConfigValue("SignalKp2").toDouble();
 } 
 
-vector< vector<double> > Signal_Calculator ( vector< vector<double> > locX , vector< vector<double> > locY , vector<double > centX , vector<double > centY,vector< vector<double> > oldConcentrations , double index, double tCentX0 ){
+vector< vector<double> > Signal_Calculator ( vector< vector<double> > locX , vector< vector<double> > locY , vector<double > centX , vector<double > centY,vector< vector<double> > oldConcentrations , double index, double &tCentX0 ){
     SignalGlobalVar signalGlobVar ;
     signalGlobVar.Signal_get_config() ;  
 /*    extern GlobalConfigVars globalConfigVars;
@@ -125,7 +125,7 @@ tissue.kp2 = signalGlobVar.kp2 ;
     tissue.Cal_AreaOfTissue() ;
     tissue.AssignVariables() ; 
     tissue.Cal_TissueCenter2() ;
-    if ( abs(Index - 1.0 ) < 0.001 ) 
+    if ( abs(index - 1.0 ) < 0.001 ) 
     {
     	tCentX0 = tissue.tissueCenter.at(0) ;
     }

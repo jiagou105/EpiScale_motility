@@ -46,7 +46,7 @@ class Signal {
     std::vector<double> pMadLevel ;  //Alireza
     std::vector<double> dppDistV,dppLevelV ;
     
-    void updateSignal(double minX, double maxX, double minY, double maxY, double curTime, int maxTotalNumActiveNodes, int numActiveCells, double &tissueCentX0 ) ;
+    void updateSignal(double minX, double maxX, double minY, double maxY, double curTime, int maxTotalNumActiveNodes, int numActiveCells ) ;
     
     void Initialize(uint maxAllNodePerCell, uint maxMembrNodePerCellECM, uint maxTotalNodes, uint maxCellCount) ;
     void exportGeometryInfo() ;

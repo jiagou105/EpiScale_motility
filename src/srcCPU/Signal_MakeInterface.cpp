@@ -55,7 +55,7 @@ void Signal::Initialize (uint maxAllNodePerCell, uint maxMembrNodePerCell, uint 
         extern GlobalConfigVars globalConfigVars;
         folderName=globalConfigVars.getConfigValue("SignalFolderName").toString();
 }
-void Signal::updateSignal(double minX, double maxX, double minY, double maxY, double curTime, int maxTotalNumActiveNodes, int numActiveCells)  {
+void Signal::updateSignal(double minX, double maxX, double minY, double maxY, double curTime, int maxTotalNumActiveNodes, int numActiveCells )  {
 	this->maxX=maxX;
 	this->maxY=maxY;
 	this->minX=minX;
