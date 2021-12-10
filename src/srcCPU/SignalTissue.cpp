@@ -1923,7 +1923,7 @@ void SignalTissue::WriteSignalingProfile()
     for (int i=0 ; i< tissueLevelConcentration.size() ; i++)
     {
         profile << abs( cells.at(i).centroid.at(0)- tissueCenter.at(0) ) << '\t'
-                << abs( cells.at(i).centroid.at(0)- tissueCenter.at(0) )/ (tissueWidth / 2.0) ;
+                <<  cells.at(i).centroid.at(0)- tissueCenter.at(0) / (tissueWidth / 2.0) ;
         for (unsigned int j = 0; j< tissueLevelConcentration.at(i).size() ; j++)
         {
             profile << '\t' << tissueLevelConcentration.at(i).at(j) ;
@@ -2006,10 +2006,10 @@ void SignalTissue::CorrectionToConcentrations()
 //---------------------------------------------------------------------------------------------
 void SignalTissue::Cal_TissueDimensions()
 {
-    double minX = 0 ;
-    double maxX = 0 ;
-    double minY = 0 ;
-    double maxY = 0 ;
+    double minX = cells.at(0).centroid.at(0);
+    double maxX = cells.at(0).centroid.at(0);
+    double minY = cells.at(0).centroid.at(1);
+    double maxY = cells.at(0).centroid.at(1) ;
     for (int i = 0; i< cells.size(); i++)
     {
         minX = min(minX, cells.at(i).centroid.at(0) ) ;

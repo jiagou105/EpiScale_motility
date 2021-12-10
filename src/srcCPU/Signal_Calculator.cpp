@@ -129,7 +129,7 @@ tissue.kp2 = signalGlobVar.kp2 ;
     {
     	tCentX0 = tissue.tissueCenter.at(0) ;
     }
-    //tissue.CombineCenterX (0.5 , 0.5 , tCentX0) ;
+    tissue.CombineTissueCenterX (1.0 , 0.0 , tCentX0) ;
     tissue.Cal_TissueDimensions() ;
 
     // Equations part
