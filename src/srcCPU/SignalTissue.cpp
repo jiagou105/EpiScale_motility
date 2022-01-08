@@ -1923,7 +1923,7 @@ void SignalTissue::WriteSignalingProfile()
     for (int i=0 ; i< tissueLevelConcentration.size() ; i++)
     {
         profile << abs( cells.at(i).centroid.at(0)- tissueCenter.at(0) ) << '\t'
-                <<  cells.at(i).centroid.at(0)- tissueCenter.at(0) / (tissueWidth / 2.0) ;
+                << ( cells.at(i).centroid.at(0)- tissueCenter.at(0) ) / (tissueWidth / 2.0) ;
         for (unsigned int j = 0; j< tissueLevelConcentration.at(i).size() ; j++)
         {
             profile << '\t' << tissueLevelConcentration.at(i).at(j) ;
