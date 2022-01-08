@@ -2737,7 +2737,7 @@ cout << " I am trying to update growth progress" << endl ;
 
 	//double dummy=0 ;
     double mitoticCheckPoint=growthAuxData.grthPrgrCriVal_M_Ori ; 
-/* //Alireza : Dpp regulate
+ //Alireza : Dpp regulate
 thrust::transform(
 			thrust::make_zip_iterator(
 					thrust::make_tuple(cellInfoVecs.cell_Dpp.begin(),
@@ -2752,8 +2752,9 @@ thrust::transform(
 					+ allocPara_m.currentActiveCellCount,
 			                           cellInfoVecs.growthProgress.begin(),
 			DppGrowRegulator(dt,mitoticCheckPoint));  
-*/
-//Alireza
+
+//Alireza : pMad regulate
+/*
 thrust::transform(
                         thrust::make_zip_iterator(
                                         thrust::make_tuple(cellInfoVecs.cell_pMad.begin(),
@@ -2769,7 +2770,7 @@ thrust::transform(
                                                    cellInfoVecs.growthProgress.begin(),
                         DppGrowRegulator(dt,mitoticCheckPoint));
 
-
+*/
 
 }
 
