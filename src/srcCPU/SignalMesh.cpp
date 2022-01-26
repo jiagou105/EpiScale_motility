@@ -167,7 +167,7 @@ vector<double> SignalMesh::UpdateDegradation(bool type , double radius, vector<d
         tmp = degradations ;
         transform(concentrations.begin()+4, concentrations.end() , degradations.begin()+4, tmp.begin()+4, productVec() ) ;
         //test
-        tmp.at(4) *= 1 / (1+pow(abs(triangleX.at(0)- cntX )/(rs * radius) , ns) ) ;
+     //   tmp.at(4) *= 1 / (1+pow(abs(triangleX.at(0)- cntX )/(rs * radius) , ns) ) ;
     }
     return tmp ;
 

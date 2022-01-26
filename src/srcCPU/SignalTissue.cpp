@@ -1620,7 +1620,7 @@ void SignalTissue::FullModelEulerMethod()
            && eulerIterator<= eulerMaxIterator
            )
     {
-        double smallValue = 0.01 ;
+        double smallValue = 0.001 ;
         FullModel_Diffusion() ;
     //    if (eulerIterator%1000==0) cout<<eulerIterator/1000<<endl ;
     //    if (eulerIterator%100==0) ParaViewMesh(eulerIterator/100) ;
@@ -1628,7 +1628,8 @@ void SignalTissue::FullModelEulerMethod()
         {
             for (unsigned int j =0; j < cells.at(i).meshes.size(); j++)
             {
-                cells.at(i).meshes.at(j).FullModel_Euler(cellType, tissueWidth / 2.0 , tissueCenter ) ;
+               cells.at(i).meshes.at(j).FullModel_Euler(cellType, tissueWidth / 2.0 , tissueCenter ) ;
+		//cells.at(i).meshes.at(j).FullModel_Euler(cellType, TissueRadius , tissueCenter ) ;
             }
         }
         AllCell_AbsorbingBoundaryCondition() ; 
@@ -1923,7 +1924,8 @@ void SignalTissue::WriteSignalingProfile()
     for (int i=0 ; i< tissueLevelConcentration.size() ; i++)
     {
         profile << abs( cells.at(i).centroid.at(0)- tissueCenter.at(0) ) << '\t'
-                << ( cells.at(i).centroid.at(0)- tissueCenter.at(0) ) / (tissueWidth / 2.0) ;
+               << ( cells.at(i).centroid.at(0)- tissueCenter.at(0) ) / (tissueWidth / 2.0) ;
+		//  << ( cells.at(i).centroid.at(0)- tissueCenter.at(0) ) / (TissueRadius ) ;
         for (unsigned int j = 0; j< tissueLevelConcentration.at(i).size() ; j++)
         {
             profile << '\t' << tissueLevelConcentration.at(i).at(j) ;
@@ -1973,6 +1975,7 @@ void SignalTissue::AllCell_AbsorbingBoundaryCondition ()
     for (int i=0; i< cells.size(); i++)
     {
         cells.at(i).Cell_ABC(cellType, (tissueWidth / 2.0), tCentX) ;
+	//cells.at(i).Cell_ABC(cellType, TissueRadius , tCentX) ;
     }
 }
 
