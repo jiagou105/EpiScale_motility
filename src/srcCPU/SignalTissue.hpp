@@ -31,14 +31,14 @@ public:
     bool frameIsNan = false ;
     double dppProd = 0.04 ;    
     int eulerIterator = 0 ;
-    int eulerMaxIterator = 300000 ;
+    int eulerMaxIterator = 100000 ;
     
     double diffusion = 0;
     double degradation = 0;
-    double timeStep = 0.01 ;
+    double timeStep = 0.0025 ;
     double sourceSize = 0.12 ; 
     string folderName = "./signalVtkFiles/" ;
-    double klr = 0.25 ;
+    double klr = 1.0 ;
     double kp2 = 0.3 ;
  
     void Cal_AllCellCenters () ;

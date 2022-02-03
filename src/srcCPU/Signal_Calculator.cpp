@@ -48,24 +48,25 @@ vector< vector<double> > Signal_Calculator ( vector< vector<double> > locX , vec
     double sourceSize = globalConfigVars.getConfigValue("SignalSourceSize").toDouble();
     Signal_get_config() ;   
 */  
-  ofstream nanIndex ("NanIndex.txt", ofstream::app) ;    //everything will be written at the end of the existing file
-    ofstream sgnlCalculator ("sgnlCalculator.txt", ofstream::app) ;    //everything will be written at the end of the existing file
-    auto start = std::chrono::high_resolution_clock::now() ;
-    SignalTissue tissue ;
-    tissue.cellType = wingDisc ;
-    tissue.equationsType = fullModel ;
-    tissue.readFileStatus = false ;
-    tissue.frameIndex = static_cast<int>(round ( 100 * index) ) / 100 ;
-    //tissue.writeVtk = ! fmod(static_cast<int>(round ( 100 * index) ), 100) ;
-    tissue.writeVtk = false ;
-    tissue.diffusion = signalGlobVar.diffusion ;
-tissue.degradation = signalGlobVar.degradation ;
-tissue.timeStep = signalGlobVar.timeStep ;
-tissue.sourceSize = signalGlobVar.sourceSize ;
-tissue.dppProd = signalGlobVar.dppProduction ;
-tissue.folderName = signalGlobVar.folderName ;
-tissue.klr = signalGlobVar.klr ;
-tissue.kp2 = signalGlobVar.kp2 ;
+  	ofstream nanIndex ("NanIndex.txt", ofstream::app) ;    //everything will be written at the end of the existing file
+    	ofstream sgnlCalculator ("sgnlCalculator.txt", ofstream::app) ;    //everything will be written at the end of the existing file
+    	auto start = std::chrono::high_resolution_clock::now() ;
+    	SignalTissue tissue ;
+    	tissue.cellType = wingDisc ;
+    	tissue.equationsType = fullModel ;
+	tissue.readFileStatus = false ;
+    	tissue.frameIndex = static_cast<int>(round ( 100 * index) ) / 100 ;
+    	//tissue.writeVtk = ! fmod(static_cast<int>(round ( 100 * index) ), 100) ;
+	tissue.writeVtk = false ;
+	if ( tissue.frameIndex > 5 ) { tissue.eulerMaxIterator = 25000 ; }
+    	tissue.diffusion = signalGlobVar.diffusion ;
+	tissue.degradation = signalGlobVar.degradation ;
+	tissue.timeStep = signalGlobVar.timeStep ;
+	tissue.sourceSize = signalGlobVar.sourceSize ;
+	tissue.dppProd = signalGlobVar.dppProduction ;
+	tissue.folderName = signalGlobVar.folderName ;
+	tissue.klr = signalGlobVar.klr ;
+	tissue.kp2 = signalGlobVar.kp2 ;
     cout<<"current index in Signal_Calculator function is "<<index<<endl ;
     sgnlCalculator<<"current index in Signal_Calculator function is "<<index<<endl ;
     if (tissue.readFileStatus)

@@ -21,7 +21,7 @@ SignalMesh::SignalMesh()
     concentrations = {0,0,0,0,0,0,0,0} ;
     concentrations2 = {0,0,0,0,0,0,0,0} ;
   //  productions = {1,0,0,1,1,1,0,1} ;
-    rates = {1,1,1,0,0.00 ,0.00 ,0.0000,0} ; // <r_c, r_im, r_ex, 0 , k_on , k_on, k_off>
+    rates = {1,1,1,0,0.025 ,0.025 ,0.00025,0} ; // <r_c, r_im, r_ex, 0 , k_on , k_on, k_off>
     powers.resize(4) ;
     powers = {-2,1,8,1} ;
     dt = 0.01/ D ;
