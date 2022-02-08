@@ -1684,16 +1684,22 @@ void SignalTissue::FullModelEulerMethod()
         }
         if (eulerIterator%10==0 && eulerIterator<200)
         {
-            Cal_AllCellConcentration() ;
-            double overallC = accumulate(tissueLevelU.begin(), tissueLevelU.end(), 0.0) ;
-            histagram<<eulerIterator * dt<<'\t'<< overallC <<endl ;
+            	Cal_AllCellConcentration() ;
+		double overallDpp =  sum_over_vec(tissueLevelConcentration, 0) ;
+            	double overallTkv =  sum_over_vec(tissueLevelConcentration, 1) ;
+            	double overallDppTkv =  sum_over_vec(tissueLevelConcentration, 2) ;
+            	double overallpMad = sum_over_vec(tissueLevelConcentration, 3) ;
+           	histagram<<eulerIterator * dt <<'\t'<< overallDpp <<'\t'<<overallTkv <<'\t'<< overallDppTkv <<'\t'<< overallpMad <<endl ;
         }
         
         if (eulerIterator%100==0 && eulerIterator>= 200 )
         {
-            Cal_AllCellConcentration() ;
-            double overallC = accumulate(tissueLevelU.begin(), tissueLevelU.end(), 0.0) ;
-            histagram<<eulerIterator * dt <<'\t'<< overallC <<endl ;
+            	Cal_AllCellConcentration() ;
+		double overallDpp =  sum_over_vec(tissueLevelConcentration, 0) ;
+		double overallTkv =  sum_over_vec(tissueLevelConcentration, 1) ;
+            	double overallDppTkv =  sum_over_vec(tissueLevelConcentration, 2) ;
+            	double overallpMad = sum_over_vec(tissueLevelConcentration, 3) ;
+            	histagram<<eulerIterator * dt <<'\t'<< overallDpp <<'\t'<<overallTkv <<'\t'<< overallDppTkv <<'\t'<< overallpMad <<endl ;
         }
         
         eulerIterator++ ;

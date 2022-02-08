@@ -24,7 +24,7 @@ public:
     double eMin = 0 ;
     double eMAx = 1 ;
     double cMin = 1.0 ;
-    double cMax = 5.0 ;
+    double cMax = 10.0 ;
     double kCK = 1 ;
     double kcw = 1 ;
     double KP2 = 0.1 ;

@@ -31,11 +31,11 @@ public:
     bool frameIsNan = false ;
     double dppProd = 0.04 ;    
     int eulerIterator = 0 ;
-    int eulerMaxIterator = 100000 ;
+    int eulerMaxIterator = 60000 ;
     
     double diffusion = 0;
     double degradation = 0;
-    double timeStep = 0.0025 ;
+    double timeStep = 0.02 ;
     double sourceSize = 0.12 ; 
     string folderName = "./signalVtkFiles/" ;
     double klr = 1.0 ;

@@ -58,7 +58,7 @@ vector< vector<double> > Signal_Calculator ( vector< vector<double> > locX , vec
     	tissue.frameIndex = static_cast<int>(round ( 100 * index) ) / 100 ;
     	//tissue.writeVtk = ! fmod(static_cast<int>(round ( 100 * index) ), 100) ;
 	tissue.writeVtk = false ;
-	if ( tissue.frameIndex > 5 ) { tissue.eulerMaxIterator = 25000 ; }
+	// if ( tissue.frameIndex > 5 ) { tissue.eulerMaxIterator = 60000 ; }
     	tissue.diffusion = signalGlobVar.diffusion ;
 	tissue.degradation = signalGlobVar.degradation ;
 	tissue.timeStep = signalGlobVar.timeStep ;
