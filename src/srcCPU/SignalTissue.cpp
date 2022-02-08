@@ -1928,16 +1928,33 @@ void SignalTissue::WriteSignalingProfile()
     string cellTypeString = (cellType) ? "WingDisc" : "Plant" ;
     
     ofstream profile (folderName + cellTypeString + number + "D" + dif + "d" + deg + "p" + pro + "iter" + strIterator + "KLR"+ strKLR + "KP" + strKP2 + "dt" + timeStep + ".xls") ; 
+
+	vector<double> tmpMax ;
+    	tmpMax.resize(tissueLevelConcentration.at(0).size() , 0.000000001) ;
+	for (int i=0; i< tissueLevelConcentration.size(); i++)
+    	{
+        	for (unsigned int j = 0; j< tissueLevelConcentration.at(i).size() ; j++)
+        	{
+            	tmpMax.at(j) = max( tmpMax.at(j), tissueLevelConcentration.at(i).at(j) ) ;
+        	}
+    	}
     for (int i=0 ; i< tissueLevelConcentration.size() ; i++)
     {
-        profile << abs( cells.at(i).centroid.at(0)- tissueCenter.at(0) ) << '\t'
-               << ( cells.at(i).centroid.at(0)- tissueCenter.at(0) ) / (tissueWidth / 2.0) ;
-		//  << ( cells.at(i).centroid.at(0)- tissueCenter.at(0) ) / (TissueRadius ) ;
-        for (unsigned int j = 0; j< tissueLevelConcentration.at(i).size() ; j++)
-        {
-            profile << '\t' << tissueLevelConcentration.at(i).at(j) ;
-        }
-        profile << endl ;
+	if (cells.at(i).boundary==false)
+	{
+        	profile << abs( cells.at(i).centroid.at(0)- tissueCenter.at(0) ) << '\t'
+               	<< ( cells.at(i).centroid.at(0)- tissueCenter.at(0) ) / (tissueWidth / 2.0) ;
+			//  << ( cells.at(i).centroid.at(0)- tissueCenter.at(0) ) / (TissueRadius ) ;
+       		 for (unsigned int j = 0; j< tissueLevelConcentration.at(i).size() ; j++)
+        	{
+            	profile << '\t' << tissueLevelConcentration.at(i).at(j) ;
+        	}
+		for (unsigned int j = 0; j< tissueLevelConcentration.at(i).size() ; j++)
+            {
+                profile << '\t' << tissueLevelConcentration.at(i).at(j) / tmpMax.at(j) ;
+            }
+       	 profile << endl ;
+	}
     }
     
     profile.close() ;
