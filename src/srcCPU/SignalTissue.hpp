@@ -31,7 +31,7 @@ public:
     bool frameIsNan = false ;
     double dppProd = 0.04 ;    
     int eulerIterator = 0 ;
-    int eulerMaxIterator = 60000 ;
+    int eulerMaxIterator = 100000 ;
     
     double diffusion = 0;
     double degradation = 0;

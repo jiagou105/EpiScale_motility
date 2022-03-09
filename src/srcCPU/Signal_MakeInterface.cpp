@@ -128,15 +128,17 @@ void Signal::exportGeometryInfo() {
 			locY.back().push_back ( nodeLocYHost[i] ) ;
        		 }
   	  }
-	concentrations = Signal_Calculator ( locX , locY , cntX , cntY, concentrations, frameNumber, tissueCentX0 ) ;       //output required
+	concentrations = Signal_Calculator ( locX , locY , cntX , cntY, concentrations, frameNumber, tissueCentX0, isNan ) ;       //output required
+	if ( isNan == false)
+	{
 	for (int i = 0; i < numActiveCells; i++)
-    	{
-		dppLevel[i] = concentrations[i].at(0) ;
-		tkvLevel[i] = concentrations[i].at(1) ;
-		dppTkvLevel[i] = concentrations[i].at(2) ;
-		pMadLevel[i] = concentrations[i].at(3) ;
+    		{	
+			dppLevel[i] = concentrations[i].at(0) ;
+			tkvLevel[i] = concentrations[i].at(1) ;
+			dppTkvLevel[i] = concentrations[i].at(2) ;
+			pMadLevel[i] = concentrations[i].at(3) ;
+		}
 	}
-	
 	//Ali code: writing nodes locations in a file, needed for debuging
 	srand(time(NULL));
 	bool writeLoc ;

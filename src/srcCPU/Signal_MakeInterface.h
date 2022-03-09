@@ -32,6 +32,7 @@ class Signal {
     double frameNumber = 1.0 ;
     double tissueCentX0 = 25.0  ;
     double tissueCentY0 = 25.0  ;
+    bool isNan = false ;
     string folderName = "./signalVtkFiles/" ;
     std::chrono::high_resolution_clock::time_point startChemical  ;
     std::chrono::high_resolution_clock::time_point stopChemical  ;

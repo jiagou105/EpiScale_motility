@@ -38,7 +38,7 @@ klr = globalConfigVars.getConfigValue("SignalKlr").toDouble();
 kp2 = globalConfigVars.getConfigValue("SignalKp2").toDouble();
 } 
 
-vector< vector<double> > Signal_Calculator ( vector< vector<double> > locX , vector< vector<double> > locY , vector<double > centX , vector<double > centY,vector< vector<double> > oldConcentrations , double index, double &tCentX0 ){
+vector< vector<double> > Signal_Calculator ( vector< vector<double> > locX , vector< vector<double> > locY , vector<double > centX , vector<double > centY,vector< vector<double> > oldConcentrations , double index, double &tCentX0 , bool &isNan ){
     SignalGlobalVar signalGlobVar ;
     signalGlobVar.Signal_get_config() ;  
 /*    extern GlobalConfigVars globalConfigVars;
@@ -176,7 +176,7 @@ vector< vector<double> > Signal_Calculator ( vector< vector<double> > locX , vec
          nanIndex <<"This is a Nan frame :" <<tissue.frameIndex<<endl ;
      }
      nanIndex.close() ;
-     
+     isNan = tissue.frameIsNan ; 
      auto stop = std::chrono::high_resolution_clock::now();
      auto duration = std::chrono::duration_cast<std::chrono::seconds>(stop - start);
      cout << "Time taken by Singnal_Calculator is : " << duration.count() << " seconds" << endl;
