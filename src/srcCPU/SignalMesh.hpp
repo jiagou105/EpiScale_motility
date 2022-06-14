@@ -23,11 +23,13 @@ public:
 
     double eMin = 0 ;
     double eMAx = 1 ;
-    double cMin = 1.0/6.0 ;
-    double cMax = 9.0/6.0 ;
+
+    double cMin = 1.0 ;
+    double cMax = 10.0 ;
     double kCK = 1 ;
     double kcw = 1 ;
-    double kP = 0.1 ;
+    double KP2 = 0.1 ;
+
     double kLR =  10.0;
     vector< double> powers ;
     
@@ -49,10 +51,12 @@ public:
     void Cal_UStar () ;
     void Euler () ;
     void UpdateU () ;
+    void Mesh_ABC (bool type) ;
     
     void FullModel_Euler (bool type, double radius, vector<double> tissueCntr ) ;
     vector<double> UpdateDegradation (bool type , double radius, vector<double> tissueCntr ) ;
     vector<double> UpdateRates ( bool type ) ;
     double UpdateCp () ;
+    void UpdateParameters() ;
     
 };

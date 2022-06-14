@@ -25,6 +25,21 @@ void SignalTissue::Cal_TissueCenter()
     tissueCenter.push_back(tissueCntrY/cells.size() ) ;
 }
 //---------------------------------------------------------------------------------------------
+void SignalTissue::Cal_TissueCenter2()
+{
+    double tissueCntrX = 0.0 ;
+    double tissueCntrY = 0.0 ;
+    double tmpArea = 0.0 ;
+    for (unsigned int i=0; i< cells.size(); i++)
+    {
+                tissueCntrX += cells.at(i).centroid.at(0) * cells.at(i).areaCell ;
+                        tissueCntrY += cells.at(i).centroid.at(1) * cells.at(i).areaCell ;
+                                tmpArea += cells.at(i).areaCell ;
+                                    }
+                                        tissueCenter.push_back(tissueCntrX/tmpArea ) ;
+                                            tissueCenter.push_back(tissueCntrY/tmpArea ) ;
+                                            }
+//---------------------------------------------------------------------------------------------
 void SignalTissue::Find_AllCellNeighborCandidates ()
 {
     for (unsigned int i=0; i < cells.size(); i++)
@@ -579,7 +594,7 @@ void SignalTissue::ParaViewVertices ()
             links2.push_back(verticesSize + i ) ;
         }
     }
-    string vtkFileName = "Vertices"+ to_string(frameIndex)+ ".vtk" ;
+    string vtkFileName = folderName + "Vertices"+ to_string(frameIndex)+ ".vtk" ;
     ofstream VerticesOut;
     VerticesOut.open(vtkFileName.c_str());
     VerticesOut<< "# vtk DataFile Version 3.0" << endl;
@@ -645,7 +660,7 @@ void SignalTissue::ParaViewTissue ()
         }
     }
     int size =static_cast<int> (allNodesX.size() );
-    string vtkFileName = "Tissue"+ to_string(frameIndex)+ ".vtk" ;
+    string vtkFileName = folderName + "Tissue"+ to_string(frameIndex)+ ".vtk" ;
     ofstream TissueOut;
     TissueOut.open(vtkFileName.c_str());
     TissueOut<< "# vtk DataFile Version 3.0" << endl;
@@ -942,7 +957,7 @@ void SignalTissue::ParaViewBoundary ()
         }
     }
     int size =static_cast<int> (allNodesX.size() );
-    string vtkFileName = "Boundary"+ to_string(frameIndex)+ ".vtk" ;
+    string vtkFileName =folderName + "Boundary"+ to_string(frameIndex)+ ".vtk" ;
     ofstream BoundaryOut;
     BoundaryOut.open(vtkFileName.c_str());
     BoundaryOut<< "# vtk DataFile Version 3.0" << endl;
@@ -977,7 +992,7 @@ void SignalTissue::ParaViewInitialConfiguration ()
         }
     }
     int size =static_cast<int> (allNodesX.size() );
-    string vtkFileName = "Initial"+ to_string(frameIndex)+ ".vtk" ;
+    string vtkFileName = folderName + "Initial"+ to_string(frameIndex)+ ".vtk" ;
     ofstream InitialOut;
     InitialOut.open(vtkFileName.c_str());
     InitialOut<< "# vtk DataFile Version 3.0" << endl;
@@ -1344,7 +1359,7 @@ void SignalTissue::ParaViewMesh(int number)
         }
     }
     
-    string vtkFileName = "Mesh"+ to_string(number)+ ".vtk" ;
+    string vtkFileName = folderName + "Mesh"+ to_string(number)+ ".vtk" ;
     ofstream MeshOut;
     MeshOut.open(vtkFileName.c_str());
     MeshOut<< "# vtk DataFile Version 3.0" << endl;
@@ -1580,9 +1595,11 @@ void SignalTissue::FullModel_AllCellProductions()         //call once, initializ
         {
             cells.at(i).productionW = 0 ;
             cells.at(i).productionC = 0 ;
-            cells.at(i).productionCk  = 0.04 ;         //corresponds to Dpp
-            cells.at(i).productionCkR  = 0.04 ;        //corresponds to Tkv
-            cells.at(i).productionPMad  = 0.01 ;
+
+            cells.at(i).productionCk  = dppProd ;         //corresponds to Dpp
+            cells.at(i).productionCkR  = dppProd ;        //corresponds to Tkv
+            cells.at(i).productionPMad  = dppProd ;
+
         }
         cells.at(i).FullModel_ProductionCell() ;
     }
@@ -1590,33 +1607,49 @@ void SignalTissue::FullModel_AllCellProductions()         //call once, initializ
 //---------------------------------------------------------------------------------------------
 void SignalTissue::FullModelEulerMethod()
 {
+    double smallValue = 0.00001 ;
+    double smallValue2 = 0.1 ;
+
     double dt = cells.at(0).meshes.at(0).dt ;
     std:: stringstream stream ;
     stream <<fixed << setprecision(4) << dt  ;
     std::string dtString = stream.str();
-    string txtFileName = "Histogram_"+ to_string(frameIndex) + "dt" + dtString + ".txt" ;
+
+    stream.str(string() ) ;
+    stream <<fixed << setprecision(4) << smallValue2  ;
+    std::string smallVString = stream.str();
+    stream.str(string() ) ;
+
+    string txtFileName = folderName + "Histogram_"+ to_string(frameIndex) + "dt" + dtString + "smallV" + smallVString + ".txt" ;
+
     ofstream histagram;
     histagram.open(txtFileName.c_str());
      
     bool state = false ;
-    int l = 0 ;
+    eulerIterator = 0 ;
     while (
            state==false
-           && l<=300000
+
+           && eulerIterator<= eulerMaxIterator
+
            )
     {
-        double smallValue = 0.0001 ;
         FullModel_Diffusion() ;
-    //    if (l%1000==0) cout<<l/1000<<endl ;
-    //    if (l%100==0) ParaViewMesh(l/100) ;
+
+    //    if (eulerIterator%1000==0) cout<<eulerIterator/1000<<endl ;
+    //    if (eulerIterator%100==0) ParaViewMesh(eulerIterator/100) ;
+
         for (unsigned int i = 0; i < cells.size(); i++)
         {
             for (unsigned int j =0; j < cells.at(i).meshes.size(); j++)
             {
-                cells.at(i).meshes.at(j).FullModel_Euler(cellType , TissueRadius,tissueCenter ) ;
+
+               cells.at(i).meshes.at(j).FullModel_Euler(cellType, tissueWidth / 2.0 , tissueCenter ) ;
+		//cells.at(i).meshes.at(j).FullModel_Euler(cellType, TissueRadius , tissueCenter ) ;
+
             }
         }
-        
+        AllCell_AbsorbingBoundaryCondition() ; 
         state = true ;
         for (unsigned int i = 0; i < cells.size(); i++)
         {
@@ -1625,9 +1658,11 @@ void SignalTissue::FullModelEulerMethod()
                 if (cellType == plant)
                 {
                     if(
-                       abs(cells.at(i).meshes.at(j).concentrations2.at(1) - cells.at(i).meshes.at(j).concentrations.at(1) )/(cells.at(i).meshes.at(j).concentrations.at(1) + smallValue) > smallValue * dt
-                     ||  abs(cells.at(i).meshes.at(j).concentrations2.at(3) - cells.at(i).meshes.at(j).concentrations.at(3) )/(cells.at(i).meshes.at(j).concentrations.at(3) + smallValue) > smallValue * dt
-                        || abs(cells.at(i).meshes.at(j).concentrations2.at(6) - cells.at(i).meshes.at(j).concentrations.at(6) )/(cells.at(i).meshes.at(j).concentrations.at(6) + smallValue) > smallValue * dt
+
+                       abs(cells.at(i).meshes.at(j).concentrations2.at(1) - cells.at(i).meshes.at(j).concentrations.at(1) )/(cells.at(i).meshes.at(j).concentrations.at(1) + smallValue) > smallValue2 * dt
+                     ||  abs(cells.at(i).meshes.at(j).concentrations2.at(3) - cells.at(i).meshes.at(j).concentrations.at(3) )/(cells.at(i).meshes.at(j).concentrations.at(3) + smallValue) > smallValue2 * dt
+                        || abs(cells.at(i).meshes.at(j).concentrations2.at(6) - cells.at(i).meshes.at(j).concentrations.at(6) )/(cells.at(i).meshes.at(j).concentrations.at(6) + smallValue) > smallValue2 * dt
+
                        )
                     {
                         state = false ;
@@ -1637,8 +1672,14 @@ void SignalTissue::FullModelEulerMethod()
                 else if (cellType== wingDisc)
                 {
                     //condition is not finilized
-                    if (abs(cells.at(i).meshes.at(j).concentrations2.at(4) - cells.at(i).meshes.at(j).concentrations.at(4) )/(cells.at(i).meshes.at(j).concentrations.at(4) + smallValue) > smallValue * dt   ||
-                        abs(cells.at(i).meshes.at(j).concentrations2.at(7) - cells.at(i).meshes.at(j).concentrations.at(7) )/(cells.at(i).meshes.at(j).concentrations.at(7) + smallValue) > smallValue * dt
+
+
+			if (abs(cells.at(i).meshes.at(j).concentrations2.at(4) - cells.at(i).meshes.at(j).concentrations.at(4) )/(cells.at(i).meshes.at(j).concentrations.at(4) + smallValue) > smallValue2 * dt   ||
+                        abs(cells.at(i).meshes.at(j).concentrations2.at(5) - cells.at(i).meshes.at(j).concentrations.at(5) )/(cells.at(i).meshes.at(j).concentrations.at(5) + smallValue) > smallValue2 * dt ||
+                        abs(cells.at(i).meshes.at(j).concentrations2.at(6) - cells.at(i).meshes.at(j).concentrations.at(6) )/(cells.at(i).meshes.at(j).concentrations.at(6) + smallValue) > smallValue2 * dt ||
+                        abs(cells.at(i).meshes.at(j).concentrations2.at(7) - cells.at(i).meshes.at(j).concentrations.at(7) )/(cells.at(i).meshes.at(j).concentrations.at(7) + smallValue) > smallValue2 * dt
+                        
+
                         )
                     {
                         state = false ;
@@ -1656,24 +1697,38 @@ void SignalTissue::FullModelEulerMethod()
                 cells.at(i).meshes.at(j).UpdateU() ;
             }
         }
-        if (l%10==0 && l<200)
+
+        if (eulerIterator%10==0 && eulerIterator<200)
         {
-            Cal_AllCellConcentration() ;
-            double overallC = accumulate(tissueLevelU.begin(), tissueLevelU.end(), 0.0) ;
-            histagram<<l * dt<<'\t'<< overallC <<endl ;
+            	Cal_AllCellConcentration() ;
+		double overallDpp =  sum_over_vec(tissueLevelConcentration, 0) ;
+            	double overallTkv =  sum_over_vec(tissueLevelConcentration, 1) ;
+            	double overallDppTkv =  sum_over_vec(tissueLevelConcentration, 2) ;
+            	double overallpMad = sum_over_vec(tissueLevelConcentration, 3) ;
+           	histagram<<eulerIterator * dt <<'\t'<< overallDpp <<'\t'<<overallTkv <<'\t'<< overallDppTkv <<'\t'<< overallpMad <<endl ;
         }
         
-        if (l%100==0 && l>= 200 )
+        if (eulerIterator%100==0 && eulerIterator>= 200 )
         {
-            Cal_AllCellConcentration() ;
-            double overallC = accumulate(tissueLevelU.begin(), tissueLevelU.end(), 0.0) ;
-            histagram<<l * dt <<'\t'<< overallC <<endl ;
+            	Cal_AllCellConcentration() ;
+		double overallDpp =  sum_over_vec(tissueLevelConcentration, 0) ;
+		double overallTkv =  sum_over_vec(tissueLevelConcentration, 1) ;
+            	double overallDppTkv =  sum_over_vec(tissueLevelConcentration, 2) ;
+            	double overallpMad = sum_over_vec(tissueLevelConcentration, 3) ;
+            	histagram<<eulerIterator * dt <<'\t'<< overallDpp <<'\t'<<overallTkv <<'\t'<< overallDppTkv <<'\t'<< overallpMad <<endl ;
         }
         
-        l++ ;
+        eulerIterator++ ;
     }
+    if (eulerIterator == eulerMaxIterator + 1)
+    {
+        cout<< "The solver is not at Steady states"<<endl ;
+
+    }
+    histagram.close() ;
+    CorrectionToConcentrations() ;
     ParaViewMesh(frameIndex) ;
-    cout<<"l is equal to "<<l << endl ;
+    cout<<"eulerIterator is equal to "<<eulerIterator << endl ;
     double value = 0 ;
     for (unsigned int j =0 ; j < cells.size();j++)
     {
@@ -1683,7 +1738,7 @@ void SignalTissue::FullModelEulerMethod()
         }
     }
     cout<< "value is "<<value<<endl ;
-  //  cout<< "number of steps needed is " << l <<endl ;
+  //  cout<< "number of steps needed is " << eulerIterator <<endl ;
      
 }
 //---------------------------------------------------------------------------------------------
@@ -1880,22 +1935,146 @@ void SignalTissue::WriteSignalingProfile()
     stream.str(string() ) ;
     stream <<fixed << setprecision(5) << cells.at(0).meshes.at(0).dt ;
     std::string timeStep = stream.str() ;
+  
+    stream.str(string() ) ;
+    stream <<fixed << setprecision(0) << eulerIterator  ;
+    std::string strIterator = stream.str();
+    stream.str(string() ) ;
+
+    stream <<fixed << setprecision(2) << klr  ;
+    std::string strKLR = stream.str();
+    stream.str(string() ) ;
     
+    stream <<fixed << setprecision(2) << kp2  ;
+    std::string strKP2 = stream.str();
+    stream.str(string() ) ;
+ 
     string cellTypeString = (cellType) ? "WingDisc" : "Plant" ;
     
-    ofstream profile (cellTypeString + number + "D" + dif + "d" + deg + "p" + pro + "dt"+ timeStep + ".txt") ;
-    
+    ofstream profile (folderName + cellTypeString + number + "D" + dif + "d" + deg + "p" + pro + "iter" + strIterator + "KLR"+ strKLR + "KP" + strKP2 + "dt" + timeStep + ".xls") ; 
+
+	vector<double> tmpMax ;
+    	tmpMax.resize(tissueLevelConcentration.at(0).size() , 0.000000001) ;
+	for (int i=0; i< tissueLevelConcentration.size(); i++)
+    	{
+        	for (unsigned int j = 0; j< tissueLevelConcentration.at(i).size() ; j++)
+        	{
+            	tmpMax.at(j) = max( tmpMax.at(j), tissueLevelConcentration.at(i).at(j) ) ;
+        	}
+    	}
     for (int i=0 ; i< tissueLevelConcentration.size() ; i++)
     {
-        profile << abs( cells.at(i).centroid.at(0)- tissueCenter.at(0) ) << '\t'
-                << abs( cells.at(i).centroid.at(0)- tissueCenter.at(0) )/ TissueRadius ;
-        for (unsigned int j = 0; j< tissueLevelConcentration.at(i).size() ; j++)
-        {
-            profile << '\t' << tissueLevelConcentration.at(i).at(j) ;
-        }
-        profile << endl ;
+	if (cells.at(i).boundary==false)
+	{
+        	profile << abs( cells.at(i).centroid.at(0)- tissueCenter.at(0) ) << '\t'
+               	<< ( cells.at(i).centroid.at(0)- tissueCenter.at(0) ) / (tissueWidth / 2.0) ;
+			//  << ( cells.at(i).centroid.at(0)- tissueCenter.at(0) ) / (TissueRadius ) ;
+       		 for (unsigned int j = 0; j< tissueLevelConcentration.at(i).size() ; j++)
+        	{
+            	profile << '\t' << tissueLevelConcentration.at(i).at(j) ;
+        	}
+		for (unsigned int j = 0; j< tissueLevelConcentration.at(i).size() ; j++)
+            {
+                profile << '\t' << tissueLevelConcentration.at(i).at(j) / tmpMax.at(j) ;
+            }
+       	 profile << endl ;
+	}
     }
     
     profile.close() ;
+}
+//---------------------------------------------------------------------------------------------
+void SignalTissue::AddNoiseToChemical()
+{
+
+        for (unsigned int k=0 ;  k< cells.size(); k++)
+                {
+                            double distYAbs = abs( cells.at(k).centroid.at(1) - tissueCenter.at(1) ) ;
+                                    
+                                    double dummy = (static_cast<double>(rand()) / RAND_MAX);
+                                            double ranNum = NormalCDFInverse2(dummy);
+                                                    
+                                                    tissueLevelConcentration.at(k).at(0) *= 1.0 + (0.1*sin(0.2*3.141592*distYAbs)+0.12*ranNum) ;
+                                                        }
+
+}
+//---------------------------------------------------------------------------------------------
+ void SignalTissue:: AssignVariables ()
+{
+	for(unsigned int i=0; i< cells.size(); i++)
+	{
+	
+		for(unsigned int j=0; j< cells.at(i).meshes.size(); j++)
+                {
+                        cells.at(i).meshes.at(j).D = diffusion ;
+                        cells.at(i).meshes.at(j).d = degradation ;
+                        cells.at(i).meshes.at(j).dt = timeStep / diffusion ;
+			cells.at(i).meshes.at(j).kLR = klr ;
+            		cells.at(i).meshes.at(j).KP2 = kp2 ;
+                        cells.at(i).meshes.at(j).UpdateParameters() ;
+                
+		}
+	}
+}
+//---------------------------------------------------------------------------------------------
+void SignalTissue::AllCell_AbsorbingBoundaryCondition ()
+{
+    double tCentX = tissueCenter.at(0) ;
+    for (int i=0; i< cells.size(); i++)
+    {
+        cells.at(i).Cell_ABC(cellType, (tissueWidth / 2.0), tCentX) ;
+	//cells.at(i).Cell_ABC(cellType, TissueRadius , tCentX) ;
+    }
+}
+
+void SignalTissue::CorrectionToConcentrations()
+{
+    for (int i=0 ; i< tissueLevelConcentration.size() ; i++)
+    {
+        for (int j=0; j< tissueLevelConcentration.at(i).size() ; j++)
+        {
+            if (tissueLevelConcentration.at(i).at(j) < pow(10, -30) )
+            {
+                tissueLevelConcentration.at(i).at(j) = 0.0 ;
+            }
+        }
+    }
+    
+    for (int i=0; i< cells.size(); i++)
+    {
+        for (int j=0; j< cells.at(i).meshes.size(); j++)
+        {
+            for (int k=0 ; k< cells.at(i).meshes.at(j).concentrations2.size() ; k++)
+            {
+                if (cells.at(i).meshes.at(j).concentrations2.at(k) < pow(10, -30) )
+                {
+                    cells.at(i).meshes.at(j).concentrations2.at(k) = 0.0 ;
+                }
+            }
+        }
+    }
+}
+//---------------------------------------------------------------------------------------------
+void SignalTissue::Cal_TissueDimensions()
+{
+    double minX = cells.at(0).centroid.at(0);
+    double maxX = cells.at(0).centroid.at(0);
+    double minY = cells.at(0).centroid.at(1);
+    double maxY = cells.at(0).centroid.at(1) ;
+    for (int i = 0; i< cells.size(); i++)
+    {
+        minX = min(minX, cells.at(i).centroid.at(0) ) ;
+        maxX = max(maxX, cells.at(i).centroid.at(0) ) ;
+        minY = min(minY, cells.at(i).centroid.at(1) ) ;
+        maxY = max(maxY, cells.at(i).centroid.at(1) ) ;
+    }
+    tissueHeight = maxY - minY ;
+    tissueWidth = maxX - minX ;
+}
+
+void SignalTissue::CombineTissueCenterX ( double ax0 , double axT, double x0 )
+{
+	tissueCenter.at(0) = ( ax0 * x0 + axT * tissueCenter.at(0) ) / (ax0 + axT) ;
+
 }
 

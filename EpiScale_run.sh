@@ -7,12 +7,12 @@
 #$ -N  run_test	 # Specify job name
 
 
-module load slurm/19.05.0
+module load slurm/17.02.5
 module load cmake
-module load cuda/9.1
-module load extra
-module load GCCcore/6.3.0
-module load matlab/R2018b
+module load cuda/9.0
+module load gcc/6.3.0
+#module load extra
+#module load openmpi/2.0.1-slurm-16.05.4
 echo -n "It is currently: ";date
 echo -n "I am logged on as ";who am i
 echo -n "This computer is called ";hostname

@@ -96,9 +96,7 @@ class SignalCell
     void FullModel_ProductionCell () ;
     void CellLevelConcentration (bool type) ;
     void CellLevelConcentration2(bool type) ;
-    
-    void FullModel_WingDisc_SelfDiffusion () ;
-    
+    void Cell_ABC (bool type, double TRadius, double tCentX)  ;      // absorbing boundary condition    
     
     
 };
