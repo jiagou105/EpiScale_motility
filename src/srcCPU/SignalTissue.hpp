@@ -23,8 +23,10 @@ public:
     vector<vector<double> > tissueLevelConcentration ;
     double areaTissue ;
     double TissueRadius ;
+
     double tissueHeight ;
     double tissueWidth ;
+
     vector<double> tissueCenter ;
     int frameIndex ;
     bool writeVtk ;
@@ -44,6 +46,7 @@ public:
     void Cal_AllCellCenters () ;
     void Cal_TissueCenter () ;
     void Cal_TissueCenter2 () ;
+
     void Cal_AllCellCntrToCntr () ;
     void Find_AllCellNeighborCandidates () ;
     void Find_AllCellNeighbors () ;
@@ -97,11 +100,13 @@ public:
     void ReadConcentrations () ;
     void UpdateNanStatus () ;
     void WriteSignalingProfile () ;
+
     void AddNoiseToChemical () ;    
     void AssignVariables () ;
 
     void AllCell_AbsorbingBoundaryCondition () ; 
     void CorrectionToConcentrations () ;
     void CombineTissueCenterX (double aX0 , double aXT, double x0) ;
+
 };
 

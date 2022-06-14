@@ -95,7 +95,9 @@ vector< vector<double> > Signal_Calculator ( vector< vector<double> > locX , vec
      
   // // // // //  tissue.ParaViewInitialConfiguration() ;       // Bug when I run this early in the code!!!! intx.size()= 0 !!!!!!
     
+
    // tissue.Cal_TissueCenter() ;
+
     tissue.Cal_AllCellCntrToCntr();
     tissue.Find_AllCellNeighborCandidates() ;
     tissue.Find_AllCellNeighbors () ;

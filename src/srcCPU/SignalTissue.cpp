@@ -1595,9 +1595,11 @@ void SignalTissue::FullModel_AllCellProductions()         //call once, initializ
         {
             cells.at(i).productionW = 0 ;
             cells.at(i).productionC = 0 ;
+
             cells.at(i).productionCk  = dppProd ;         //corresponds to Dpp
             cells.at(i).productionCkR  = dppProd ;        //corresponds to Tkv
             cells.at(i).productionPMad  = dppProd ;
+
         }
         cells.at(i).FullModel_ProductionCell() ;
     }
@@ -1607,16 +1609,19 @@ void SignalTissue::FullModelEulerMethod()
 {
     double smallValue = 0.00001 ;
     double smallValue2 = 0.1 ;
+
     double dt = cells.at(0).meshes.at(0).dt ;
     std:: stringstream stream ;
     stream <<fixed << setprecision(4) << dt  ;
     std::string dtString = stream.str();
+
     stream.str(string() ) ;
     stream <<fixed << setprecision(4) << smallValue2  ;
     std::string smallVString = stream.str();
     stream.str(string() ) ;
 
     string txtFileName = folderName + "Histogram_"+ to_string(frameIndex) + "dt" + dtString + "smallV" + smallVString + ".txt" ;
+
     ofstream histagram;
     histagram.open(txtFileName.c_str());
      
@@ -1624,18 +1629,24 @@ void SignalTissue::FullModelEulerMethod()
     eulerIterator = 0 ;
     while (
            state==false
+
            && eulerIterator<= eulerMaxIterator
+
            )
     {
         FullModel_Diffusion() ;
+
     //    if (eulerIterator%1000==0) cout<<eulerIterator/1000<<endl ;
     //    if (eulerIterator%100==0) ParaViewMesh(eulerIterator/100) ;
+
         for (unsigned int i = 0; i < cells.size(); i++)
         {
             for (unsigned int j =0; j < cells.at(i).meshes.size(); j++)
             {
+
                cells.at(i).meshes.at(j).FullModel_Euler(cellType, tissueWidth / 2.0 , tissueCenter ) ;
 		//cells.at(i).meshes.at(j).FullModel_Euler(cellType, TissueRadius , tissueCenter ) ;
+
             }
         }
         AllCell_AbsorbingBoundaryCondition() ; 
@@ -1647,9 +1658,11 @@ void SignalTissue::FullModelEulerMethod()
                 if (cellType == plant)
                 {
                     if(
+
                        abs(cells.at(i).meshes.at(j).concentrations2.at(1) - cells.at(i).meshes.at(j).concentrations.at(1) )/(cells.at(i).meshes.at(j).concentrations.at(1) + smallValue) > smallValue2 * dt
                      ||  abs(cells.at(i).meshes.at(j).concentrations2.at(3) - cells.at(i).meshes.at(j).concentrations.at(3) )/(cells.at(i).meshes.at(j).concentrations.at(3) + smallValue) > smallValue2 * dt
                         || abs(cells.at(i).meshes.at(j).concentrations2.at(6) - cells.at(i).meshes.at(j).concentrations.at(6) )/(cells.at(i).meshes.at(j).concentrations.at(6) + smallValue) > smallValue2 * dt
+
                        )
                     {
                         state = false ;
@@ -1660,11 +1673,13 @@ void SignalTissue::FullModelEulerMethod()
                 {
                     //condition is not finilized
 
+
 			if (abs(cells.at(i).meshes.at(j).concentrations2.at(4) - cells.at(i).meshes.at(j).concentrations.at(4) )/(cells.at(i).meshes.at(j).concentrations.at(4) + smallValue) > smallValue2 * dt   ||
                         abs(cells.at(i).meshes.at(j).concentrations2.at(5) - cells.at(i).meshes.at(j).concentrations.at(5) )/(cells.at(i).meshes.at(j).concentrations.at(5) + smallValue) > smallValue2 * dt ||
                         abs(cells.at(i).meshes.at(j).concentrations2.at(6) - cells.at(i).meshes.at(j).concentrations.at(6) )/(cells.at(i).meshes.at(j).concentrations.at(6) + smallValue) > smallValue2 * dt ||
                         abs(cells.at(i).meshes.at(j).concentrations2.at(7) - cells.at(i).meshes.at(j).concentrations.at(7) )/(cells.at(i).meshes.at(j).concentrations.at(7) + smallValue) > smallValue2 * dt
                         
+
                         )
                     {
                         state = false ;
@@ -1682,6 +1697,7 @@ void SignalTissue::FullModelEulerMethod()
                 cells.at(i).meshes.at(j).UpdateU() ;
             }
         }
+
         if (eulerIterator%10==0 && eulerIterator<200)
         {
             	Cal_AllCellConcentration() ;
@@ -1707,6 +1723,7 @@ void SignalTissue::FullModelEulerMethod()
     if (eulerIterator == eulerMaxIterator + 1)
     {
         cout<< "The solver is not at Steady states"<<endl ;
+
     }
     histagram.close() ;
     CorrectionToConcentrations() ;
@@ -1918,6 +1935,7 @@ void SignalTissue::WriteSignalingProfile()
     stream.str(string() ) ;
     stream <<fixed << setprecision(5) << cells.at(0).meshes.at(0).dt ;
     std::string timeStep = stream.str() ;
+  
     stream.str(string() ) ;
     stream <<fixed << setprecision(0) << eulerIterator  ;
     std::string strIterator = stream.str();
@@ -2059,3 +2077,4 @@ void SignalTissue::CombineTissueCenterX ( double ax0 , double axT, double x0 )
 	tissueCenter.at(0) = ( ax0 * x0 + axT * tissueCenter.at(0) ) / (ax0 + axT) ;
 
 }
+
