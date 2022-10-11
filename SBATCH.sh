@@ -1,21 +1,27 @@
-#!/bin/bash -l
-#SBATCH --nodes=1
-#SBATCH --ntasks=1
-#SBATCH --cpus-per-task=1
-#SBATCH --mem-per-cpu=10G
-#SBATCH --output=my.stdout
-#SBATCH --mail-user=useremail@address.com
-#SBATCH --mail-type=ALL
-#SBATCH --job-name="test"
-#SBATCH -p gpu # This is the default partition, you can use any of the following; intel, batch, highmem, gpu
+#!/bin/bash
 
+set -ie
 
-module load slurm/17.02.5
+if [[ -z $1 ]]; then echo -e "USAGE\n\t$0 BUILD_NAME" && exit 256; fi
+BUILD_NAME=$1
+
+module load slurm/16.05.4
+module load openmpi/2.0.1-slurm-16.05.4
 module load cmake
-module load cuda/9.0
-module load gcc/6.3.0
+module load cuda/9.1
 module load extra
-module load matlab/R2018b
+module load GCCcore/6.3.0
 
-srun -p gpu --gres=gpu:1 ./bin/runDiscSimulation_M
+rm -rf $BUILD_NAME
+mkdir -p $BUILD_NAME && cd $BUILD_NAME
+
+cmake \
+-DCMAKE_C_COMPILER=$(which gcc)  \
+-DCMAKE_CXX_COMPILER=$(which g++)  \
+-DCUDA_INCLUDE_DIRS=${CUDA_HOME}/include \
+-DBUILD_TESTING=OFF \
+ENABLE_TESTS_COMPILATION=False \
+../
+
+make -j 20
 #srun ./bin/runDiscSimulation_M
