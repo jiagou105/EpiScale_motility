@@ -14,11 +14,11 @@ using namespace std ;
 
 
 
-#define thres_lateral 0.5 // 2.4 for plant cells and 0.5 for wing disc
+#define thres_lateral 0.5 // 2.4 0r 2.0 for plant cells and 0.5 for wing disc
 #define searchAreaForNghbr 20.0 * thres_lateral
 #define thres_corners 2.0 *thres_lateral        //to find a vertices for cells who does not have a comon neighbor
 #define thres_cyclic4  0.7 * thres_lateral      //when 4 cells are neighbors instead of 3 which is more common
-#define thres_intersect 1.1 *thres_lateral      // vertices shared between 3 cells
+#define thres_intersect 1.1 *thres_lateral      // vertices shared between 3 cells (1.1 for wingDisc 0.4 for plant)
 #define thres_refineNodes 2 * thres_lateral   //used to delete close boundary nodes and xNew nodes
 #define thres_noBoundary 20
 #define thres_Production 20
@@ -106,4 +106,5 @@ public:
     }
 } ;
 
-
+double NormalCDFInverse2(double p);
+double RationalApproximation2(double t);

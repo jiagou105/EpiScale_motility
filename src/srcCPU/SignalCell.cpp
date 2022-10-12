@@ -14,11 +14,11 @@ SignalCell::SignalCell ()
 vector <vector<double> > SignalCell::Cal_NodeToNodeDist(vector <double> nodesXNeighbor, vector<double> nodesYNeighbor)
 {
     vector<vector<double> > distNodeToNeighborNodes  ;
-    for (int k=0; k < nodesX.size() ; k++)
+    for (unsigned int k=0; k < nodesX.size() ; k++)
     {
         vector <double> distNodeToNode ;
         distNodeToNode.clear() ;
-        for (int l = 0; l < nodesXNeighbor.size(); l++)
+        for (unsigned int l = 0; l < nodesXNeighbor.size(); l++)
         {
             distNodeToNode.push_back( Dist2D(nodesX.at(k),nodesY.at(k),nodesXNeighbor.at(l),nodesYNeighbor.at(l))) ;
         }
@@ -32,7 +32,7 @@ vector <vector<double> > SignalCell::Cal_NodeToNodeDist(vector <double> nodesXNe
 void SignalCell::Find_NghbrCandidate ()
 {
     double smallValue= 0.00001 ;
-    for (int j = 0 ; j < cntrToCntr.size() ; j++)
+    for (unsigned int j = 0 ; j < cntrToCntr.size() ; j++)
     {
         if (cntrToCntr.at(j) < searchAreaForNghbr  && cntrToCntr.at(j) > smallValue)
         {
@@ -55,13 +55,13 @@ void SignalCell::Cal_Centroid()
 //---------------------------------------------------------------------------------------------
 void SignalCell::Find_NghbrProperties ()
 {
-    for (int j = 0 ; j < nghbrCandidate.size(); j++)
+    for (unsigned int j = 0 ; j < nghbrCandidate.size(); j++)
     {
         vector<double> minDistnode ;
         vector<int> indexminDistnode ;
         double minDistCell ;
         //for all the nodes in the primary cell
-        for (int k = 0; k < nodeDistoNghbrsCandidate.at(j).size(); k++)
+        for (unsigned int k = 0; k < nodeDistoNghbrsCandidate.at(j).size(); k++)
         {
             minDistnode.push_back( *min_element(nodeDistoNghbrsCandidate.at(j).at(k).begin(),nodeDistoNghbrsCandidate.at(j).at(k).end() ) );
             
@@ -76,7 +76,7 @@ void SignalCell::Find_NghbrProperties ()
             newNeighbor.minDistNode = minDistnode ;
             newNeighbor.nodeDistoNghbr = nodeDistoNghbrsCandidate.at(j) ;
             newNeighbor.indexMinDistNode = indexminDistnode  ;
-            for (int l = 0; l < newNeighbor.minDistNode.size(); l++)
+            for (unsigned int l = 0; l < newNeighbor.minDistNode.size(); l++)
             {
                 if (newNeighbor.minDistNode.at(l) < thres_lateral)
                 {
@@ -96,7 +96,7 @@ void SignalCell::NewEdge()
     vector<double> addNodeX ;
     vector<double> addNodeY ;
     
-    for (int j=0; j< neighbors.size(); j++)
+    for (unsigned int j=0; j< neighbors.size(); j++)
     {
         removeNode.insert( removeNode.end(), neighbors.at(j).indexCellNode.begin() ,neighbors.at(j).indexCellNode.end() )  ;
         addNodeX.insert( addNodeX.end(), neighbors.at(j).intfX.begin(), neighbors.at(j).intfX.end()) ;
@@ -119,7 +119,7 @@ void SignalCell::NewEdge()
 void SignalCell::SortCCW () // vector<double> &verticesX , vector<double> &verticesY )
 {
     vector<double> angle ;
-    for (int j = 0; j < verticesX.size() ; j++)
+    for (unsigned int j = 0; j < verticesX.size() ; j++)
     {
         angle.push_back( atan2(verticesY.at(j)-centroid.at(1), verticesX.at(j)-centroid.at(0)) ) ;
         angle.back() = fmod((angle.back() + 2* pi ) , (2*pi)) ;
@@ -131,7 +131,7 @@ void SignalCell::SortCCW () // vector<double> &verticesX , vector<double> &verti
          [&angle](int i1, int i2) {return angle[i1] < angle[i2];});
     vector<double> tmpX ;
     vector<double> tmpY ;
-    for (int j = 0; j < verticesX.size(); j++)
+    for (unsigned int j = 0; j < verticesX.size(); j++)
     {
         tmpX.push_back(verticesX.at(idx.at(j) ) ) ;
         tmpY.push_back(verticesY.at(idx.at(j) ) ) ;
@@ -142,9 +142,9 @@ void SignalCell::SortCCW () // vector<double> &verticesX , vector<double> &verti
 //---------------------------------------------------------------------------------------------
 void SignalCell::Cal_Vertices()
 {
-    for (int j =0; j < neighbors.size(); j++)
+    for (unsigned int j =0; j < neighbors.size(); j++)
     {   int offset = 0 ;
-        for (int k =0 ; k< neighbors.at(j).realIntersect.size(); k++)
+        for (unsigned int k =0 ; k< neighbors.at(j).realIntersect.size(); k++)
         {
             if (neighbors.at(j).realIntersect.at(k) == true)
             {
@@ -164,7 +164,7 @@ void SignalCell::Cal_Vertices()
 //---------------------------------------------------------------------------------------------
 void SignalCell::Cal_Connections()
 {
-    for (int j=0 ; j< verticesX.size(); j++)
+    for (unsigned int j=0 ; j< verticesX.size(); j++)
     {
         connections.push_back( (j+1) % verticesX.size() ) ;
     }
@@ -193,7 +193,7 @@ void SignalCell::Add_BoundaryVertice2()
     if (noNeighboringNodesX.size() > thres)
     {
         vector<double> angle ;
-        for (int j = 0; j < noNeighboringNodesX.size() ; j++)
+        for (unsigned int j = 0; j < noNeighboringNodesX.size() ; j++)
         {
             angle.push_back( atan2(noNeighboringNodesY.at(j)-centroid.at(1), noNeighboringNodesX.at(j)-centroid.at(0)) ) ;
             angle.back() = fmod((angle.back() + 2*pi ), (2*pi)) ;
@@ -205,7 +205,7 @@ void SignalCell::Add_BoundaryVertice2()
              [&angle](int i1, int i2) {return angle[i1] < angle[i2];});
         vector<double> tmpX ;
         vector<double> tmpY ;
-        for (int j = 0; j < noNeighboringNodesX.size(); j++)
+        for (unsigned int j = 0; j < noNeighboringNodesX.size(); j++)
         {
             tmpX.push_back(noNeighboringNodesX.at(idx.at(j) ) ) ;
             tmpY.push_back(noNeighboringNodesY.at(idx.at(j) ) ) ;
@@ -232,7 +232,7 @@ void SignalCell::Add_BoundaryVertice3 ()
     vector<double> angle ;
     if (noNeighboringNodesX.size() > thres)
     {
-        for (int j = 0; j < noNeighboringNodesX.size() ; j++)
+        for (unsigned int j = 0; j < noNeighboringNodesX.size() ; j++)
         {
             angle.push_back( atan2(noNeighboringNodesY.at(j)-centroid.at(1), noNeighboringNodesX.at(j)-centroid.at(0)) ) ;
             angle.back() = fmod((angle.back()+ 2* pi ) , (2*pi)) ;
@@ -292,12 +292,13 @@ void SignalCell::Add_BoundaryVertice3 ()
             verticesY.push_back(noNeighboringNodesY.at(id)) ;
         }
     }
-    
+    return ;
 }
 
 //---------------------------------------------------------------------------------------------
 void SignalCell::Refine_NoBoundary ()
 {
+    
     vector<double> tmp ;
     vector<int> removeNoBoundaryNode ;
     int size = static_cast<int>(noNeighboringNodesX.size()) ;
@@ -315,7 +316,7 @@ void SignalCell::Refine_NoBoundary ()
         }
         sort(removeNoBoundaryNode.begin(), removeNoBoundaryNode.end()) ;
         removeNoBoundaryNode.erase(unique(removeNoBoundaryNode.begin(), removeNoBoundaryNode.end()), removeNoBoundaryNode.end()) ;
-        for (int j=removeNoBoundaryNode.size()-1 ; j>= 0 ; j--)
+        for (long j= removeNoBoundaryNode.size()-1 ; j>= 0 ; j--)
         {
             noNeighboringNodesX.erase(noNeighboringNodesX.begin() + removeNoBoundaryNode.at(j) ) ;
             noNeighboringNodesY.erase(noNeighboringNodesY.begin() + removeNoBoundaryNode.at(j) ) ;
@@ -331,7 +332,7 @@ void SignalCell::Refine_NodeXNew ()
     int size = static_cast<int>(nodesXNew.size()) ;
     if (verticesX.size() > 0)
     {
-        for (int i = 0 ;i < size ; i++)
+        for (unsigned int i = 0 ;i < size ; i++)
         {
             tmp = Dist_PointToVec2D(nodesXNew.at(i), nodesYNew.at(i), verticesX, verticesY) ;
             double tmpMin = *min_element(tmp.begin(), tmp.end()) ;
@@ -343,7 +344,7 @@ void SignalCell::Refine_NodeXNew ()
         }
         sort(removeNodeXNew.begin(), removeNodeXNew.end()) ;
         removeNodeXNew.erase(unique(removeNodeXNew.begin(), removeNodeXNew.end()), removeNodeXNew.end()) ;
-        for (int j=removeNodeXNew.size()-1 ; j>= 0 ; j--)
+        for (long j=removeNodeXNew.size()-1 ; j>= 0 ; j--)
         {
             nodesXNew.erase(nodesXNew.begin() + removeNodeXNew.at(j) ) ;
             nodesYNew.erase(nodesYNew.begin() + removeNodeXNew.at(j) ) ;
@@ -357,7 +358,7 @@ void SignalCell::Refine_NodeXNew ()
 void SignalCell::Find_Mesh()
 {
     int size = static_cast<int>(verticesX.size()) ;
-    for (int i = 0; i < verticesX.size(); i++)
+    for (unsigned int i = 0; i < verticesX.size(); i++)
     {
         SignalMesh tmpMesh ;
         tmpMesh.triangleX.push_back( centroid.at(0) ) ;
@@ -373,7 +374,7 @@ void SignalCell::Find_Mesh()
         meshes.push_back(tmpMesh) ;
         
     }
-    for (int i =0; i< meshes.size(); i++)
+    for (unsigned int i =0; i< meshes.size(); i++)
     {
         int size = static_cast<int>(meshes.size()) ;
         double tmpChannel = Dist2D(meshes.at(i).triangleX.at(0), meshes.at(i).triangleY.at(0),
@@ -385,7 +386,7 @@ void SignalCell::Find_Mesh()
         meshes.at(i).length.at(0)= length ;
         meshes.at((i+1) % size).length.at(1) = length ;
     }
-    for (int i = 0; i < meshes.size(); i++)
+    for (unsigned int i = 0; i < meshes.size(); i++)
     {
         double tmpChannel = Dist2D(meshes.at(i).triangleX.at(1), meshes.at(i).triangleY.at(1),
                              meshes.at(i).triangleX.at(2), meshes.at(i).triangleY.at(2)) ;
@@ -397,13 +398,13 @@ void SignalCell::Find_Mesh()
 void SignalCell::Self_Diffusion()
 {
     double dSelf = 4.0 ;
-    for (int i =0; i< meshes.size(); i++)
+    for (unsigned int i =0; i< meshes.size(); i++)
     {
         int size = static_cast<int>(meshes.size()) ;
         double tmpChannel = meshes.at(i).channel.at(0) ;
         double length = meshes.at(i).length.at(0) ;
         double deltaU = meshes.at((i+1) % size).u1 - meshes.at(i).u1 ;
-        double flux = dSelf * tmpChannel * deltaU / length ;
+        double flux = dSelf * tmpChannel * deltaU / (length * length)  ;
         meshes.at(i).flux.push_back( flux ) ;
         meshes.at((i+1) % size).flux.push_back(- flux ) ;
     }
@@ -413,7 +414,7 @@ void SignalCell::FullModel_SelfDiffusion (bool type)
 {
     if (type == false) //plant
     {
-        for (int i =0; i< meshes.size(); i++)
+        for (unsigned int i =0; i< meshes.size(); i++)
         {
             int size = static_cast<int>(meshes.size()) ;
             double tmpChannel = meshes.at(i).channel.at(0) ;
@@ -424,7 +425,7 @@ void SignalCell::FullModel_SelfDiffusion (bool type)
                       meshes.at(i).concentrations.begin()+1, deltaU.begin()+1, linearConfig(1.0 ,-1.0) );
             vector<double> flux ;
             flux.resize(deltaU.size() ) ;
-            transform(deltaU.begin()+1, deltaU.begin()+5, flux.begin()+1, productNum(tmpChannel/length ) ) ;
+            transform(deltaU.begin()+1, deltaU.begin()+5, flux.begin()+1, productNum(tmpChannel/ (length * length ) ) ) ;
             transform(flux.begin()+1, flux.begin()+5, meshes.at(i).selfDiffusions.begin()+1, flux.begin()+1, productVec() ) ;
             meshes.at(i).Flux.push_back(flux) ;
             transform(flux.begin()+1, flux.begin()+5, flux.begin()+1, productNum(-1.0) ) ;
@@ -434,7 +435,7 @@ void SignalCell::FullModel_SelfDiffusion (bool type)
     }
     else
     {
-        for (int i =0; i< meshes.size(); i++)
+        for (unsigned int i =0; i< meshes.size(); i++)
         {
             int size = static_cast<int>(meshes.size()) ;
             double tmpChannel = meshes.at(i).channel.at(0) ;
@@ -445,7 +446,7 @@ void SignalCell::FullModel_SelfDiffusion (bool type)
                       meshes.at(i).concentrations.begin()+4, deltaU.begin()+4, linearConfig(1.0 ,-1.0) );
             vector<double> flux ;
             flux.resize(deltaU.size() ) ;
-            transform(deltaU.begin()+4, deltaU.begin()+5, flux.begin()+4, productNum(tmpChannel/length ) ) ;
+            transform(deltaU.begin()+4, deltaU.begin()+5, flux.begin()+4, productNum(tmpChannel/( length * length ) ) ) ;
             transform(flux.begin()+4, flux.begin()+5, meshes.at(i).selfDiffusions.begin()+4, flux.begin()+4, productVec() ) ;
             meshes.at(i).Flux.push_back(flux) ;
             transform(flux.begin()+4, flux.begin()+5, flux.begin()+4, productNum(-1.0) ) ;
@@ -457,7 +458,7 @@ void SignalCell::FullModel_SelfDiffusion (bool type)
 //---------------------------------------------------------------------------------------------
 void SignalCell:: FullModel_ProductionCell()
 {
-    for (int j=0; j< meshes.size(); j++)
+    for (unsigned int j=0; j< meshes.size(); j++)
     {
         meshes.at(j).productions = { productionW , 0.0, 0.0, productionC, productionCk, productionCkR, 0.0 , productionPMad } ;
     }
@@ -465,9 +466,9 @@ void SignalCell:: FullModel_ProductionCell()
 //---------------------------------------------------------------------------------------------
 void SignalCell:: CellLevelConcentration(bool type)
 {
+    //Calculate average concentration based on area of each mesh
     cellConcentration.clear() ;
     cellU = 0.0 ;
-  //  cellConcentration.resize(meshes.at(0).concentrations.size() ) ;
     if (type == false)  //plant
     {
         cellConcentration.resize(meshes.at(0).concentrations.size() -1 ) ;
@@ -477,7 +478,7 @@ void SignalCell:: CellLevelConcentration(bool type)
         cellConcentration.resize(meshes.at(0).concentrations.size() -4  ) ;
     }
     
-    for (int j=0 ; j< meshes.size() ; j++ )
+    for (unsigned int j=0 ; j< meshes.size() ; j++ )
     {
         cellU += meshes.at(j).u1 ;
         if (type == false)  //plant
@@ -495,6 +496,7 @@ void SignalCell:: CellLevelConcentration(bool type)
 //---------------------------------------------------------------------------------------------
 void SignalCell:: CellLevelConcentration2(bool type)
 {
+    //Calculate average concentration based on number of the meshes on each cell
     cellConcentration.clear() ;
     cellU = 0.0 ;
     //  cellConcentration.resize(meshes.at(0).concentrations.size() ) ;
@@ -507,7 +509,7 @@ void SignalCell:: CellLevelConcentration2(bool type)
         cellConcentration.resize(meshes.at(0).concentrations.size() -4  ) ;
     }
     
-    for (int j=0 ; j< meshes.size() ; j++ )
+    for (unsigned int j=0 ; j< meshes.size() ; j++ )
     {
         cellU += meshes.at(j).u1 ;
         if (type == false)  //plant
@@ -522,3 +524,33 @@ void SignalCell:: CellLevelConcentration2(bool type)
     }
     transform(cellConcentration.begin(), cellConcentration.end(), cellConcentration.begin(), productNum(1.0/meshes.size() ) ) ;
 }
+
+
+void SignalCell::Cell_ABC(bool type, double TRadius, double tCentX)
+{
+    boundary = false ;
+    for (int i = 0; i< meshes.size(); i++)
+    {
+        meshes.at(i).Mesh_ABC(type) ;
+       /*
+          if (meshes.at(i).connection.first == -1 && ( abs(centroid.at(0)- tCentX )/TRadius > 0.12 ) )
+                  {
+                              boundary = true ;
+                                          break ;
+                                                  }
+                                                      }
+                                                          if (boundary == true)
+                                                              {
+                                                                      for (int i=0; i< meshes.size(); i++)
+                                                                              {
+                                                                                          meshes.at(i).concentrations2.at(4) = 0.0 ;
+                                                                                                  }
+       */
+    }
+}
+
+
+
+
+
+

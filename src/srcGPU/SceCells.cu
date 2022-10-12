@@ -684,6 +684,7 @@ void SceCells::initCellInfoVecs_M() {
 	cellInfoVecs.cell_Tkv.resize(allocPara_m.maxCellCount, 0.0);   //Alireza
 	cellInfoVecs.cell_DppTkv.resize(allocPara_m.maxCellCount, 0.0);   //Alireza
 	cellInfoVecs.cell_pMad.resize(allocPara_m.maxCellCount, 0.0);   //Alireza
+	cellInfoVecs.cell_pMadOld.resize(allocPara_m.maxCellCount, 0.0);   //Alireza
 	
         //cout<< "size of dpp in init is "<< cellInfoVecs.cell_Dpp.size() << endl ;          
 	cellInfoVecs.growthProgress.resize(allocPara_m.maxCellCount, 0.0); //A&A
@@ -1456,7 +1457,7 @@ if (firstTimeReadDpp) {
    	lastTimeExchange=lastTimeExchange+dt ;
 	cout << "last time exchange is " << lastTimeExchange << endl ; 
 	cout << "dt is " << dt << endl ;  
-   	double exchPeriod=20 ; 
+   	double exchPeriod=200 ; 
 	if ( lastTimeExchange>exchPeriod) {
 		lastTimeExchange=0 ; 
 		//vector<CVector> cellCentersHost ; 
@@ -1504,6 +1505,7 @@ if (firstTimeReadDpp) {
 	}
 	if (firstTimeReadDpp) {	 
 	   	thrust::copy(signal.dppLevel.begin(),signal.dppLevel.end(),cellInfoVecs.cell_DppOld.begin()) ;
+		thrust::copy(signal.pMadLevel.begin(),signal.pMadLevel.end(),cellInfoVecs.cell_pMadOld.begin()) ;	//Alireza
 		firstTimeReadDpp=false ; 
 	}
 
@@ -1924,6 +1926,7 @@ void SceCells::copyFirstCellArr_M() {
 		cellInfoVecs.isRandGrowInited[cellRank] = false;
 		cellInfoVecs.lastCheckPoint[cellRank] = 0;
 		cellInfoVecs.cell_DppOld[cellRank] = cellInfoVecs.cell_Dpp[cellRank];
+		cellInfoVecs.cell_pMadOld[cellRank] = cellInfoVecs.cell_pMad[cellRank];
 	}
 }
 
@@ -1970,6 +1973,7 @@ void SceCells::copySecondCellArr_M() {
 		cellInfoVecs.cell_Tkv[cellRank]    = cellInfoVecs.cell_Tkv[cellRankMother];	//Alireza
 		cellInfoVecs.cell_DppTkv[cellRank]    = cellInfoVecs.cell_DppTkv[cellRankMother];	//Alireza
 		cellInfoVecs.cell_pMad[cellRank]    = cellInfoVecs.cell_pMad[cellRankMother];	//Alireza
+		cellInfoVecs.cell_pMadOld[cellRank]    = cellInfoVecs.cell_pMad[cellRankMother];   //Alireza
 	}
 }
 
@@ -2733,6 +2737,8 @@ cout << " I am trying to update growth progress" << endl ;
 
 	//double dummy=0 ;
     double mitoticCheckPoint=growthAuxData.grthPrgrCriVal_M_Ori ; 
+ //Alireza : Dpp regulate
+/*
 thrust::transform(
 			thrust::make_zip_iterator(
 					thrust::make_tuple(cellInfoVecs.cell_Dpp.begin(),
@@ -2747,6 +2753,24 @@ thrust::transform(
 					+ allocPara_m.currentActiveCellCount,
 			                           cellInfoVecs.growthProgress.begin(),
 			DppGrowRegulator(dt,mitoticCheckPoint));  
+
+*/
+//Alireza : pMad regulate
+
+thrust::transform(
+                        thrust::make_zip_iterator(
+                                        thrust::make_tuple(cellInfoVecs.cell_pMad.begin(),
+                                                           cellInfoVecs.cell_pMadOld.begin(),
+                                                           cellInfoVecs.growthProgress.begin(),
+                                                           cellInfoVecs.growthSpeed.begin())),
+                        thrust::make_zip_iterator(
+                                        thrust::make_tuple(cellInfoVecs.cell_pMad.begin(),
+                                                                   cellInfoVecs.cell_pMadOld.begin(),
+                                                                   cellInfoVecs.growthProgress.begin(),
+                                                                           cellInfoVecs.growthSpeed.begin()))
+                                        + allocPara_m.currentActiveCellCount,
+                                                   cellInfoVecs.growthProgress.begin(),
+                        DppGrowRegulator(dt,mitoticCheckPoint));
 
 
 

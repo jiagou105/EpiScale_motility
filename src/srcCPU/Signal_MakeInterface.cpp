@@ -1,6 +1,5 @@
 #include <fstream>
 #include <sstream>
-#include "Signal_Calculator.h"
 #include "Signal_MakeInterface.h"
 #include <unistd.h>
 #include <time.h>  
@@ -43,13 +42,20 @@ void Signal::Initialize (uint maxAllNodePerCell, uint maxMembrNodePerCell, uint 
 	dppTkvLevel.resize(maxCellCount,0.0) ; //Alireza
 	pMadLevel.resize(maxCellCount,0.0) ; //Alireza
 
+	startChemical = std::chrono::high_resolution_clock::now();
+	stopChemical = startChemical ;
+	durationChemical = std::chrono::duration_cast<std::chrono::seconds>(stopChemical - startChemical);
+        durationMechanical = std::chrono::duration_cast<std::chrono::seconds>(startChemical - stopChemical ) ;
+
 	minResol=0.1 ;// max distance of the first imported coordinate of DPP from the tissue center to accept it for that cell    
 	resol=501 ; // the number of imported DPP values
 	cout << "I am at the end of signal initialization function" << endl ; 
 	cout << "size of node is active in signal module initialization is " << nodeIsActiveHost.size() << endl ; 
 	cout << "max of all nodes per cell in signal module initialization is " << maxAllNodePerCell << endl ; 
+        extern GlobalConfigVars globalConfigVars;
+        folderName=globalConfigVars.getConfigValue("SignalFolderName").toString();
 }
-void Signal::updateSignal(double minX, double maxX, double minY, double maxY, double curTime, int maxTotalNumActiveNodes, int numActiveCells)  {
+void Signal::updateSignal(double minX, double maxX, double minY, double maxY, double curTime, int maxTotalNumActiveNodes, int numActiveCells )  {
 	this->maxX=maxX;
 	this->maxY=maxY;
 	this->minX=minX;
@@ -72,7 +78,8 @@ void Signal::updateSignal(double minX, double maxX, double minY, double maxY, do
 void Signal::exportGeometryInfo() {
 
 	//ALIREZA CODE BEGIN
-
+	startChemical = std::chrono::high_resolution_clock::now();
+	durationMechanical += std::chrono::duration_cast<std::chrono::seconds>(startChemical - stopChemical );
  	double Center_X=minX+0.5*(maxX-minX); 
  	int cellRank ; 
 	int totalNumActiveMembraneNodes=0 ; 
@@ -121,15 +128,17 @@ void Signal::exportGeometryInfo() {
 			locY.back().push_back ( nodeLocYHost[i] ) ;
        		 }
   	  }
-	concentrations = Signal_Calculator ( locX , locY , cntX , cntY, concentrations, frameNumber ) ;       //output required
+	concentrations = Signal_Calculator ( locX , locY , cntX , cntY, concentrations, frameNumber, tissueCentX0, isNan ) ;       //output required
+	if ( isNan == false)
+	{
 	for (int i = 0; i < numActiveCells; i++)
-    	{
-		dppLevel[i] = concentrations[i].at(0) ;
-		tkvLevel[i] = concentrations[i].at(1) ;
-		dppTkvLevel[i] = concentrations[i].at(2) ;
-		pMadLevel[i] = concentrations[i].at(3) ;
+    		{	
+			dppLevel[i] = concentrations[i].at(0) ;
+			tkvLevel[i] = concentrations[i].at(1) ;
+			dppTkvLevel[i] = concentrations[i].at(2) ;
+			pMadLevel[i] = concentrations[i].at(3) ;
+		}
 	}
-	
 	//Ali code: writing nodes locations in a file, needed for debuging
 	srand(time(NULL));
 	bool writeLoc ;
@@ -142,7 +151,7 @@ void Signal::exportGeometryInfo() {
 		cout << "max total number of active nodes in signal module is " << maxTotalNumActiveNodes  << endl ; 
 		cout << "max of all nodes per cell in signal module is " << maxAllNodePerCell << endl ; 
 		//std :: string  txtFileName="ExportTisuProp_" + patch::to_string(periodCount)+".txt" ; 
-		std :: string  txtFileName="ExportCellProp_" + patch::to_string(frameNumber)+".txt" ; 
+		std :: string  txtFileName= folderName + "ExportCellProp_" + patch::to_string(frameNumber)+".txt" ; 
 		ofstream ExportOut ; 
 		ExportOut.open(txtFileName.c_str()); 
 		//ExportOut << "Time (s), Tissue_CenterX(micro meter),Max_Length_X(micro meter)"<<endl; 
@@ -172,7 +181,11 @@ void Signal::exportGeometryInfo() {
 		cout << "I exported  the data for signaling model"<< endl ; 
 		ExportOut.close() ;  
 	}
-	frameNumber += 0.1 ;
+	frameNumber += 1.0 ;
+	stopChemical  = std::chrono::high_resolution_clock::now() ;
+	durationChemical += std::chrono::duration_cast<std::chrono::seconds>(stopChemical - startChemical);
+	cout << "Time taken by Chemical model is : " << durationChemical.count() << " seconds" << endl;
+	cout << "Time taken by Mechanical model is : " << durationMechanical.count() << " seconds" << endl;
 }
 
 	/*

@@ -12,27 +12,29 @@ public:
     pair<int , int> connection ;   //represent the connection to the <int cellID,int MeshID>
     vector<double> flux ;
     double area ;
-    double dt = 0.005 ;
+    double dt = 0.01 ;
     
     double u1 = 0.0 ;        //protein concentration (old)
     double u2 = 0.0 ;         //protein concentration (new)
     double uStar ;
     double c = 0.0 ;         //secretion rate
-    double d = 0.05 ;          //death rate\
+    double d = 0.05 ;          //death rate
+    double D ;
 
-    
     double eMin = 0 ;
     double eMAx = 1 ;
-    double cMin = 0 ;
-    double cMax = 0 ;
+
+    double cMin = 1.0 ;
+    double cMax = 10.0 ;
     double kCK = 1 ;
     double kcw = 1 ;
-    double kP = 1 ;
-    double kLR = 1 ;
+    double KP2 = 0.1 ;
+
+    double kLR =  10.0;
     vector< double> powers ;
     
     //--------------------------------Full model-Plant constants and variables---------------------------
-    vector<double> concentrations ; //  < w , wc , wn , CLV , ck , ckr , CK,pMad >
+    vector<double> concentrations ; //  < w , wc , wn , CLV , ck or Dpp , ckr or Tkv , CK or DppTkv ,pMad >
     vector<double> concentrations2 ; 
     vector<double> diffusions ; // from 2nd to 5th, exclude 3rd
     vector<double> selfDiffusions ;
@@ -42,24 +44,19 @@ public:
     vector<vector<double> > Flux ;
     
     //--------------------------------Full model-WingDisc constants and variables---------------------------
-//    vector<double> dpp ;
- //   vector<double> dpp2 ;
- //   double diff ;
- //   vector<double> degreDpp ;
- //   vector<double> producDpp ;
-    
-    
-    //---------------------------------------------------------------------------------------------
+
     
     void Cal_MeshCenter() ;
     double Cal_MeshArea () ;
     void Cal_UStar () ;
     void Euler () ;
     void UpdateU () ;
+    void Mesh_ABC (bool type) ;
     
-    void FullModel_Euler (bool type, double radius ) ;
-    vector<double> UpdateDegradation (bool type , double radius) ;
+    void FullModel_Euler (bool type, double radius, vector<double> tissueCntr ) ;
+    vector<double> UpdateDegradation (bool type , double radius, vector<double> tissueCntr ) ;
     vector<double> UpdateRates ( bool type ) ;
     double UpdateCp () ;
+    void UpdateParameters() ;
     
 };

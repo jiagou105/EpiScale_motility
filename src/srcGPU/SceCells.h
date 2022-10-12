@@ -2041,11 +2041,12 @@ struct DppGrowRegulator: public thrust::unary_function<DDDD, double> {
 		double progress = thrust::get<2>(dDDD);
 		double speed = thrust::get<3>(dDDD);
 		double progressNew ; 
-
+		double smallValue = 0.000001 ;
+	
 		progressNew=progress+speed*_dt ; 
-		return progressNew ;	// Alireza : bypass if conditions
+		//return progressNew ;	// Alireza : bypass if conditions means 2way coupling temporal model
 		if ((progress <= _mitoticCheckPoint) && (progressNew>_mitoticCheckPoint)) {
-			if (dpp/(dpp_Old+0.0005)>1.5) {
+			if (dpp/(dpp_Old+smallValue)>1.5) {
 				return (progressNew) ; 
 			}
 			else{
@@ -2273,7 +2274,8 @@ struct CellInfoVecs {
 	thrust::device_vector<double> cell_Tkv;//Alireza
 	thrust::device_vector<double> cell_DppTkv;//Alireza
 	thrust::device_vector<double> cell_pMad;//Alireza
-       
+        thrust::device_vector<double> cell_pMadOld;//Alireza
+
 	thrust::device_vector<double> growthProgressOld;  //A&A
 //Ali
         
