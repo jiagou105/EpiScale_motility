@@ -1649,7 +1649,10 @@ void SignalTissue::FullModelEulerMethod()
 
             }
         }
-        AllCell_AbsorbingBoundaryCondition() ; 
+        if ( boundaryCondition == absorbing)
+        {
+            AllCell_AbsorbingBoundaryCondition() ;
+        } 
         state = true ;
         for (unsigned int i = 0; i < cells.size(); i++)
         {
