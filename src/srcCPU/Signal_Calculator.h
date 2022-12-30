@@ -18,6 +18,9 @@ public:
     string folderName = "./signalVtkFiles/" ;
     double klr = 0.5 ;
     double kp2 = 0.3 ;
+    double signal_kOn = 0.0 ;
+    int signal_Boundary = 0 ;
+    int signal_FeedbackOn_d = 0 ;
 
 void Signal_get_config();
 };

@@ -174,8 +174,11 @@ vector<double> SignalMesh::UpdateDegradation(bool type , double radius, vector<d
     {
         tmp = degradations ;
         transform(concentrations.begin()+4, concentrations.end() , degradations.begin()+4, tmp.begin()+4, productVec() ) ;
-        //test
-     //   tmp.at(4) *= 1 / (1+pow(abs(triangleX.at(0)- cntX )/(rs * radius) , ns) ) ;
+	// feedbackOnDeg should be false in simplified model and true in advanced model
+	 if (feedbackOnDeg_mesh)
+         {
+             tmp.at(4) *= 1.0 / (1.0 +pow(abs(triangleX.at(0)- cntX )/(rs * radius) , ns) ) ;
+         } 
     }
     return tmp ;
 
@@ -230,7 +233,7 @@ void SignalMesh::UpdateParameters()
 	diffusions = {0,D,0,D,D,0,0,0} ;
 	selfDiffusions = {0,D,0,D,D,0,0,0} ;
     	degradations = {d, d, d, d, d, d, d , d } ;
-
+	rates = {0,0,0, kOn , kOn , 0.01 * kOn ,0.0 , 0} ;
 }
 //---------------------------------------------------------------------------------------------
 

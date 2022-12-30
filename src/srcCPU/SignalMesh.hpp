@@ -29,10 +29,11 @@ public:
     double kCK = 1 ;
     double kcw = 1 ;
     double KP2 = 0.1 ;
-
     double kLR =  10.0;
+    double kOn = 0.025 ;
+
     vector< double> powers ;
-    
+    bool feedbackOnDeg_mesh = false ;        // this has to one false for simplified model and true for advanced model    
     //--------------------------------Full model-Plant constants and variables---------------------------
     vector<double> concentrations ; //  < w , wc , wn , CLV , ck or Dpp , ckr or Tkv , CK or DppTkv ,pMad >
     vector<double> concentrations2 ; 
