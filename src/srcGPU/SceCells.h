@@ -433,7 +433,7 @@ struct AddMembrForce: public thrust::unary_function<TensionData, CVec10> {
 //Ali comment end
 
 //Ali
-struct AddMembrForce: public thrust::unary_function<TensionData, CVec10> {
+struct AddMembrForce: public thrust::binary_function<TensionData, CVec2, CVec10> {
 	uint _bdryCount;
 	uint _maxNodePerCell;
 	double* _locXAddr;
@@ -448,7 +448,7 @@ struct AddMembrForce: public thrust::unary_function<TensionData, CVec10> {
 					locXAddr), _locYAddr(locYAddr), _isActiveAddr(isActiveAddr), _mitoticCri(mitoticCri) {
 	}
 	// comment prevents bad formatting issues of __host__ and __device__ in Nsight
-	__device__ CVec10 operator()(const TensionData &tData) const {
+	__device__ CVec10 operator()(const TensionData &tData, const CVec2 &actinData) const {
 
 		double progress = thrust::get<0>(tData);
 		uint activeMembrCount = thrust::get<1>(tData);
@@ -460,6 +460,9 @@ struct AddMembrForce: public thrust::unary_function<TensionData, CVec10> {
 		double locY = thrust::get<7>(tData);
 		double velX = thrust::get<8>(tData);
 		double velY = thrust::get<9>(tData);
+
+		double actinX = thrust::get<0>(actinData);
+		double actinY = thrust::get<1>(actinData);
 
 		uint index = _bdryCount + cellRank * _maxNodePerCell + nodeRank;
 
@@ -531,6 +534,19 @@ struct AddMembrForce: public thrust::unary_function<TensionData, CVec10> {
 					midY = (rightPosY + locY) / 2;
 				}
 			}
+			// Cell Migration
+			if (_isActiveAddr[index_left] && _isActiveAddr[index_right]) {
+				double forceMigr = 0.2;
+				double lenRightLeft = sqrt((rightPosX-leftPosX)*(rightPosX-leftPosX)+(rightPosY-leftPosY)*(rightPosY-leftPosY)); //pow(a,2) #include<cmath>
+				if (longEnough(lenRightLeft)) {
+					velX = velX + forceMigr*(rightPosY-leftPosY)/lenRightLeft;
+					if (rightPosY>0){
+						velY = velY - forceMigr*(rightPosX-leftPosX)/lenRightLeft;
+					}
+					// mag = forceMigr + mag;
+				}
+			}
+
 			// applies bending force.
 			if (_isActiveAddr[index_left] && _isActiveAddr[index_right]) {
 				if (longEnough(lenLeft) && longEnough(lenRight)) {

@@ -2477,11 +2477,14 @@ void SceNodes::allocSpaceForNodes(uint maxTotalNodeCount) {
 		infoVecs.membrBendLeftY.resize(maxTotalNodeCount, 0);
 		infoVecs.membrBendRightX.resize(maxTotalNodeCount, 0);
 		infoVecs.membrBendRightY.resize(maxTotalNodeCount, 0);
+		infoVecs.actinForceX.resize(maxTotalNodeCount,0);
+		infoVecs.actinForceY.resize(maxTotalNodeCount,0);
 
 		auxVecs.bucketKeys.resize(maxTotalNodeCount);
 		auxVecs.bucketValues.resize(maxTotalNodeCount);
 		auxVecs.bucketKeysExpanded.resize(maxTotalNodeCount * 9);
 		auxVecs.bucketValuesIncludingNeighbor.resize(maxTotalNodeCount * 9);
+
 	}
 }
 

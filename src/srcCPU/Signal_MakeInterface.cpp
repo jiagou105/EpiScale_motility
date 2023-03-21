@@ -128,7 +128,7 @@ void Signal::exportGeometryInfo() {
 			locY.back().push_back ( nodeLocYHost[i] ) ;
        		 }
   	  }
-	concentrations = Signal_Calculator ( locX , locY , cntX , cntY, concentrations, frameNumber, tissueCentX0, isNan ) ;       //output required
+	// concentrations = Signal_Calculator ( locX , locY , cntX , cntY, concentrations, frameNumber, tissueCentX0, isNan ) ;       //output required
 	if ( isNan == false)
 	{
 	for (int i = 0; i < numActiveCells; i++)

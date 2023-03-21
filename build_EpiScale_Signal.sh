@@ -7,10 +7,10 @@ BUILD_NAME=$1
 
 
 module load cmake
-module load cuda/9.0
-module load gcc/6.3.0
+module load cuda/11.4
+module load gcc/9.2.1
 module load extra
-module load openmpi/2.0.1-slurm-16.05.4
+module load openmpi/4.1.2_slurm-21.08.5
 rm -rf $BUILD_NAME
 mkdir -p $BUILD_NAME && cd $BUILD_NAME
 

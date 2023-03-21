@@ -861,6 +861,9 @@ public:
 	thrust::device_vector<double> membrBendLeftY;
 	thrust::device_vector<double> membrBendRightX;
 	thrust::device_vector<double> membrBendRightY;
+
+	thrust::device_vector<double> actinForceX;
+	thrust::device_vector<double> actinForceY;
 };
 
 /**
@@ -902,6 +905,7 @@ class SceNodes {
 	NodeInfoVecs infoVecs;
 	NodeAuxVecs auxVecs;
 	ControlPara controlPara;
+	double myosin_cent = 0;
 
 	NodeAllocPara_M allocPara_M;
 	SceMechPara_M mechPara_M;  

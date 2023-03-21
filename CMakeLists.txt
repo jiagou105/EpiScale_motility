@@ -53,7 +53,14 @@ set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS}; -std=c++11)
 set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS}; -gencode arch=compute_30,code=compute_30)
 set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS}; -gencode arch=compute_50,code=compute_50)
 
+# HPCC ADMIN ADDED
+#set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS}; -gencode arch=compute_37,code=sm_37)
+set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS}; -gencode arch=compute_60,code=sm_60)
+
 MESSAGE("NVCC flags are : " ${CUDA_NVCC_FLAGS})
+
+# HPCC ADMIN ADDED
+set(CMAKE_CUDA_ARCHITECTURES 37 60)
 
 SET(CMAKE_BUILD_TYPE Debug)
 SET(EXECUTABLE_PATH ${PROJECT_SOURCE_DIR}/bin)

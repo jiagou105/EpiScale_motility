@@ -1405,7 +1405,7 @@ void SceCells::runAllCellLogicsDisc_M(double dt, double Damp_Coef, double InitTi
 	std::cout.flush();
 //Ali        
 	computeCenterPos_M();
-    exchSignal();
+    exchSignal(); // use files in srcCPU for chemical concentrations
     BC_Imp_M() ; 
 	std::cout << "     *** 3.5 ***" << endl;
 	std::cout.flush();
@@ -2175,7 +2175,7 @@ void SceCells::applyMemForce_M() {
 									cellInfoVecs.centerCoordX.begin(),
 									make_transform_iterator(iBegin,
 											DivideFunctor(maxAllNodePerCell))),
-                                                        thrust::make_permutation_iterator(
+                            thrust::make_permutation_iterator(
 									cellInfoVecs.Cell_Time.begin(),
 									make_transform_iterator(iBegin,
 											DivideFunctor(maxAllNodePerCell))),
@@ -2224,6 +2224,12 @@ void SceCells::applyMemForce_M() {
 									+ allocPara_m.bdryNodeCount))
 					+ totalNodeCountForActiveCells,
 			thrust::make_zip_iterator(
+				thrust::make_tuple(
+							nodes->getInfoVecs().actinForceX.begin()
+							+ allocPara_m.bdryNodeCount,
+							nodes->getInfoVecs().actinForceY.begin()
+							+ allocPara_m.bdryNodeCount)),
+			thrust::make_zip_iterator(
 					thrust::make_tuple(nodes->getInfoVecs().nodeVelX.begin(),
 							nodes->getInfoVecs().nodeVelY.begin(),
 							nodes->getInfoVecs().membrTensionMag.begin(),
@@ -2236,7 +2242,7 @@ void SceCells::applyMemForce_M() {
 							nodes->getInfoVecs().membrBendRightY.begin()))
 					+ allocPara_m.bdryNodeCount,
 			AddMembrForce(allocPara_m.bdryNodeCount, maxAllNodePerCell,
-					nodeLocXAddr, nodeLocYAddr, nodeIsActiveAddr, grthPrgrCriVal_M));
+					nodeLocXAddr, nodeLocYAddr, nodeIsActiveAddr, grthPrgrCriVal_M, nodeActinXAddr, nodeActinYAddr));
 
 
 

@@ -125,7 +125,7 @@ void SimulationDomainGPU::runAllLogic_M(double dt, double Damp_Coef, double Init
 #endif
 	cout << "--- 1 ---" << endl;
 	cout.flush();
-	nodes.sceForcesDisc_M();
+	nodes.sceForcesDisc_M(); // node level
 	cout << "--- 2 ---" << endl;
 	cout.flush();
 #ifdef DebugModeDomain
@@ -135,7 +135,7 @@ void SimulationDomainGPU::runAllLogic_M(double dt, double Damp_Coef, double Init
 #endif
 	cout << "--- 3 ---" << endl;
 	cout.flush();
-	cells.runAllCellLogicsDisc_M(dt,Damp_Coef,InitTimeStage);
+	cells.runAllCellLogicsDisc_M(dt,Damp_Coef,InitTimeStage); // cell level
 	cout << "--- 4 ---" << endl;
 	cout.flush();
 #ifdef DebugModeDomain
