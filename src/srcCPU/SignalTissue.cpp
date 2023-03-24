@@ -1649,7 +1649,10 @@ void SignalTissue::FullModelEulerMethod()
 
             }
         }
-        AllCell_AbsorbingBoundaryCondition() ; 
+        if ( boundaryCondition == absorbing)
+        {
+            AllCell_AbsorbingBoundaryCondition() ;
+        } 
         state = true ;
         for (unsigned int i = 0; i < cells.size(); i++)
         {
@@ -2011,6 +2014,8 @@ void SignalTissue::AddNoiseToChemical()
                         cells.at(i).meshes.at(j).dt = timeStep / diffusion ;
 			cells.at(i).meshes.at(j).kLR = klr ;
             		cells.at(i).meshes.at(j).KP2 = kp2 ;
+			cells.at(i).meshes.at(j).kOn = k_binding ;
+			cells.at(i).meshes.at(j).feedbackOnDeg_mesh = feedbackOnDeg ;
                         cells.at(i).meshes.at(j).UpdateParameters() ;
                 
 		}

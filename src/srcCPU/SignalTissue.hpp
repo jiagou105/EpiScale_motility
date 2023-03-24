@@ -11,6 +11,13 @@ enum Equation
     simpleODE = 0 ,
     fullModel = 1
 };
+
+enum BoundaryCondition
+{
+    noFlux = 0 ,
+    absorbing = 1
+};
+
 class SignalTissue
 {
 public:
@@ -19,6 +26,8 @@ public:
     CellType cellType ;
     Equation equationsType ;
     bool readFileStatus ;
+    BoundaryCondition boundaryCondition ;
+    bool feedbackOnDeg = false ;        // this has to one false for simplified model and true for advanced model
     vector<double> tissueLevelU ;
     vector<vector<double> > tissueLevelConcentration ;
     double areaTissue ;
@@ -42,6 +51,7 @@ public:
     string folderName = "./signalVtkFiles/" ;
     double klr = 1.0 ;
     double kp2 = 0.3 ;
+    double k_binding = 0.025 ;
  
     void Cal_AllCellCenters () ;
     void Cal_TissueCenter () ;

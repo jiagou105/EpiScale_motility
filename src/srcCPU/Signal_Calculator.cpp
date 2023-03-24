@@ -36,6 +36,9 @@ sourceSize = globalConfigVars.getConfigValue("SignalSourceSize").toDouble();
 folderName=globalConfigVars.getConfigValue("SignalFolderName").toString();
 klr = globalConfigVars.getConfigValue("SignalKlr").toDouble();
 kp2 = globalConfigVars.getConfigValue("SignalKp2").toDouble();
+signal_kOn = globalConfigVars.getConfigValue("SignalKOn").toDouble();
+signal_Boundary = globalConfigVars.getConfigValue("SignalBoundary").toInt();
+signal_FeedbackOn_d = globalConfigVars.getConfigValue("SignalFeedbackDeg").toInt();
 } 
 
 vector< vector<double> > Signal_Calculator ( vector< vector<double> > locX , vector< vector<double> > locY , vector<double > centX , vector<double > centY,vector< vector<double> > oldConcentrations , double index, double &tCentX0 , bool &isNan ){
@@ -67,6 +70,10 @@ vector< vector<double> > Signal_Calculator ( vector< vector<double> > locX , vec
 	tissue.folderName = signalGlobVar.folderName ;
 	tissue.klr = signalGlobVar.klr ;
 	tissue.kp2 = signalGlobVar.kp2 ;
+	tissue.k_binding = signalGlobVar.signal_kOn ;
+	tissue.boundaryCondition = static_cast<BoundaryCondition> ( signalGlobVar.signal_Boundary ) ;
+	tissue.feedbackOnDeg = signalGlobVar.signal_FeedbackOn_d ;
+	
     cout<<"current index in Signal_Calculator function is "<<index<<endl ;
     sgnlCalculator<<"current index in Signal_Calculator function is "<<index<<endl ;
     if (tissue.readFileStatus)
