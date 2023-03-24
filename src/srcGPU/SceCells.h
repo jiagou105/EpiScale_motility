@@ -5,6 +5,7 @@
 #include "../srcCPU/Signal_MakeInterface.h"
 #include <time.h>
 #include <thrust/tabulate.h>
+#include <cmath>
 #define PI 3.14159265358979
 
 typedef thrust::tuple<double, double, SceNodeType> CVec2Type;
@@ -433,7 +434,7 @@ struct AddMembrForce: public thrust::unary_function<TensionData, CVec10> {
 //Ali comment end
 
 //Ali
-struct AddMembrForce: public thrust::binary_function<TensionData, CVec2, CVec10> {
+struct AddMembrForce: public thrust::binary_function<TensionData, CVec3, CVec10> {
 	uint _bdryCount;
 	uint _maxNodePerCell;
 	double* _locXAddr;
@@ -448,7 +449,7 @@ struct AddMembrForce: public thrust::binary_function<TensionData, CVec2, CVec10>
 					locXAddr), _locYAddr(locYAddr), _isActiveAddr(isActiveAddr), _mitoticCri(mitoticCri) {
 	}
 	// comment prevents bad formatting issues of __host__ and __device__ in Nsight
-	__device__ CVec10 operator()(const TensionData &tData, const CVec2 &actinData) const {
+	__device__ CVec10 operator()(const TensionData &tData, const CVec3 &tData1) const {
 
 		double progress = thrust::get<0>(tData);
 		uint activeMembrCount = thrust::get<1>(tData);
@@ -461,8 +462,9 @@ struct AddMembrForce: public thrust::binary_function<TensionData, CVec2, CVec10>
 		double velX = thrust::get<8>(tData);
 		double velY = thrust::get<9>(tData);
 
-		double actinX = thrust::get<0>(actinData);
-		double actinY = thrust::get<1>(actinData);
+		double actinX = thrust::get<0>(tData1);
+		double actinY = thrust::get<1>(tData1);
+		double Cell_CenterY = thrust::get<2>(tData1);
 
 		uint index = _bdryCount + cellRank * _maxNodePerCell + nodeRank;
 
@@ -535,6 +537,7 @@ struct AddMembrForce: public thrust::binary_function<TensionData, CVec2, CVec10>
 				}
 			}
 			// Cell Migration
+			/* //constant force on part of the membrane 
 			if (_isActiveAddr[index_left] && _isActiveAddr[index_right]) {
 				double forceMigr = 0.2;
 				double lenRightLeft = sqrt((rightPosX-leftPosX)*(rightPosX-leftPosX)+(rightPosY-leftPosY)*(rightPosY-leftPosY)); //pow(a,2) #include<cmath>
@@ -546,6 +549,23 @@ struct AddMembrForce: public thrust::binary_function<TensionData, CVec2, CVec10>
 					// mag = forceMigr + mag;
 				}
 			}
+			*/
+			// specify a polarization vector and calculate the force projection on this direction
+			if (_isActiveAddr[index_left] && _isActiveAddr[index_right]) {
+				double Px = sqrt(2.0)/2.0;
+				double Py = sqrt(2.0)/2.0;
+				double curPosX = _locXAddr[index]; //current position
+				double curPosY = _locYAddr[index];
+				double lj = (curPosX-Cell_CenterX)*Px + (curPosY-Cell_CenterY)*Py;
+				double phi_lj = (-0.25+tanh((lj+1/3)*0.4))*0.5;
+				double lenRightLeft = sqrt((rightPosX-leftPosX)*(rightPosX-leftPosX)+(rightPosY-leftPosY)*(rightPosY-leftPosY)); //pow(a,2) #include<cmath>
+				double factin_mag = 0.2;
+				if (longEnough(lenRightLeft)) {
+					velX = velX + factin_mag*phi_lj*(rightPosY-leftPosY)/lenRightLeft;
+					velY = velY - factin_mag*phi_lj*(rightPosX-leftPosX)/lenRightLeft;
+				}
+			}
+
 
 			// applies bending force.
 			if (_isActiveAddr[index_left] && _isActiveAddr[index_right]) {
@@ -888,7 +908,7 @@ struct AddSceCellForce: public thrust::unary_function<CellData, CVec4> {
 			}
 		} else {
 			// means internal node
-			for (index_other = intnlIndxMemBegin;
+			for (index_other = intnlIndxMemBegin; // interaction between cur internal node and membrane node
 					index_other < intnlIndxMemBegin + activeMembrCount;
 					index_other++) {
 				nodeXOther = _locXAddr[index_other];
@@ -896,7 +916,7 @@ struct AddSceCellForce: public thrust::unary_function<CellData, CVec4> {
 				calAndAddIB_M(nodeX, nodeY, nodeXOther, nodeYOther, progress,
 						oriVelX, oriVelY, _grthPrgrCriVal_M);
 			}
-			for (index_other = intnlIndxBegin; index_other < intnlIndxEnd;
+			for (index_other = intnlIndxBegin; index_other < intnlIndxEnd; // interaction between cur internal node and other internal node
 					index_other++) {
 				if (index_other == index) {
 					continue;
