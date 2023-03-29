@@ -25,6 +25,8 @@ typedef thrust::tuple<double, uint, double, double,uint, uint, double, double, d
 typedef thrust::tuple<uint, uint, uint, double, double> BendData;
 typedef thrust::tuple<uint, uint, uint, double, double, double, double, double, double, double> CurvatureData;//AAMIRI
 typedef thrust::tuple<uint, uint, uint, uint, double, double, double> CellData;
+typedef thrust::tuple<uint, uint, uint, uint, double> UUUUD;
+
 //typedef pair<device_vector<double>::iterator,device_vector<double>::iterator> MinMaxNode ; 
 // maxMemThres, cellRank, nodeRank , locX, locY, velX, velY
 
@@ -434,7 +436,7 @@ struct AddMembrForce: public thrust::unary_function<TensionData, CVec10> {
 //Ali comment end
 
 //Ali
-struct AddMembrForce: public thrust::binary_function<TensionData, CVec3, CVec10> {
+struct AddMembrForce: public thrust::binary_function<TensionData, CVec4, CVec10> {
 	uint _bdryCount;
 	uint _maxNodePerCell;
 	double* _locXAddr;
@@ -449,7 +451,7 @@ struct AddMembrForce: public thrust::binary_function<TensionData, CVec3, CVec10>
 					locXAddr), _locYAddr(locYAddr), _isActiveAddr(isActiveAddr), _mitoticCri(mitoticCri) {
 	}
 	// comment prevents bad formatting issues of __host__ and __device__ in Nsight
-	__device__ CVec10 operator()(const TensionData &tData, const CVec3 &tData1) const {
+	__device__ CVec10 operator()(const TensionData &tData, const CVec4 &tData1) const {
 
 		double progress = thrust::get<0>(tData);
 		uint activeMembrCount = thrust::get<1>(tData);
@@ -464,7 +466,8 @@ struct AddMembrForce: public thrust::binary_function<TensionData, CVec3, CVec10>
 
 		double actinX = thrust::get<0>(tData1);
 		double actinY = thrust::get<1>(tData1);
-		double Cell_CenterY = thrust::get<2>(tData1);
+		double myosinL = thrust::get<2>(tData1);
+		double Cell_CenterY = thrust::get<3>(tData1);
 
 		uint index = _bdryCount + cellRank * _maxNodePerCell + nodeRank;
 
@@ -551,6 +554,7 @@ struct AddMembrForce: public thrust::binary_function<TensionData, CVec3, CVec10>
 			}
 			*/
 			// specify a polarization vector and calculate the force projection on this direction
+			
 			if (_isActiveAddr[index_left] && _isActiveAddr[index_right]) {
 				double Px = sqrt(2.0)/2.0;
 				double Py = sqrt(2.0)/2.0;
@@ -565,6 +569,8 @@ struct AddMembrForce: public thrust::binary_function<TensionData, CVec3, CVec10>
 					velY = velY - factin_mag*phi_lj*(rightPosX-leftPosX)/lenRightLeft;
 				}
 			}
+			
+			
 
 
 			// applies bending force.
@@ -930,6 +936,88 @@ struct AddSceCellForce: public thrust::unary_function<CellData, CVec4> {
 		return thrust::make_tuple(oriVelX, oriVelY,F_MI_M_x,F_MI_M_y);
 	}
 };
+
+
+// Mar 29, 2023
+struct UpdateSceCellMyosinForce: public thrust::unary_function<UUUUD, double> {
+	uint _maxNodePerCell;
+	uint _maxMemNodePerCell;
+	double* _locXAddr;
+	double* _locYAddr;
+	bool* _isActiveAddr;
+	double* _myosinLevelAddr;
+	double _myosinDiffusionThreshold;
+	double _timeStep;
+	// double _grthPrgrCriVal_M;
+	// comment prevents bad formatting issues of __host__ and __device__ in Nsight
+	__host__ __device__ UpdateSceCellMyosinForce(uint maxNodePerCell,
+			uint maxMemNodePerCell, double* locXAddr, double* locYAddr,
+			bool* isActiveAddr, double* myosinLevelAddr, double myosinDiffusionThreshold, double timeStep) :
+			_maxNodePerCell(maxNodePerCell), _maxMemNodePerCell(
+					maxMemNodePerCell), _locXAddr(locXAddr), _locYAddr(
+					locYAddr), _isActiveAddr(isActiveAddr), _myosinLevelAddr(myosinLevelAddr), _myosinDiffusionThreshold(myosinDiffusionThreshold),
+					_timeStep(timeStep) {
+	}
+	// comment prevents bad formatting issues of __host__ and __device__ in Nsight
+	__device__ double operator()(const UUUUD &cData) const {
+		uint activeMembrCount = thrust::get<0>(cData);
+		uint activeIntnlCount = thrust::get<1>(cData);
+		uint cellRank = thrust::get<2>(cData);
+		uint nodeRank = thrust::get<3>(cData);
+		double nodeMyosin = thrust::get<4>(cData);
+		uint index = cellRank * _maxNodePerCell + nodeRank;
+        
+
+
+		
+		if (_isActiveAddr[index] == false) {
+			return nodeMyosin; //AliE
+		}
+		uint intnlIndxMemBegin = cellRank * _maxNodePerCell;
+		uint intnlIndxBegin = cellRank * _maxNodePerCell + _maxMemNodePerCell;
+		uint intnlIndxEnd = intnlIndxBegin + activeIntnlCount;
+		uint index_other;
+		double nodeX = _locXAddr[index];
+		double nodeY = _locYAddr[index];
+		double nodeXOther, nodeYOther;
+		double distNodes = 0.0;
+		double myosinOther;
+		double myosinDiffer;
+		double kDiff = 1.0;
+		// means membrane node
+		//Because we want to compute the force on the membrane nodes we modify this function 
+		if (nodeRank < _maxMemNodePerCell) {
+			return nodeMyosin;
+		} else {
+			// means internal node
+			for (index_other = intnlIndxBegin; index_other < intnlIndxEnd; // interaction between cur internal node and other internal node
+					index_other++) {
+				if (index_other == index) {
+					continue;
+				}
+				nodeXOther = _locXAddr[index_other];
+				nodeYOther = _locYAddr[index_other];
+				myosinOther = _myosinLevelAddr[index_other];
+				distNodes = compDist2D(nodeX,nodeY,nodeXOther,nodeYOther);
+				myosinDiffer = kDiff * max((1.0-distNodes/_myosinDiffusionThreshold),0.0) * (myosinOther-nodeMyosin);
+				nodeMyosin = nodeMyosin + myosinDiffer * _timeStep;
+			}
+		}
+		
+		return nodeMyosin;
+	}
+};
+
+
+
+
+
+
+
+
+
+
+
 
 /**
  * Obtain growth speed and direction given node position.
@@ -2727,6 +2815,8 @@ class SceCells {
 	void applyMemForce_M();
 
 	void applySceCellDisc_M();
+
+	void applySceCellMyosinDisc_M();
 
 	void computeCenterPos_M();
 

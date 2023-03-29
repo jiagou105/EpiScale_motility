@@ -864,6 +864,8 @@ public:
 
 	thrust::device_vector<double> actinForceX;
 	thrust::device_vector<double> actinForceY;
+
+	thrust::device_vector<double> myosinLevel;
 };
 
 /**
@@ -905,7 +907,7 @@ class SceNodes {
 	NodeInfoVecs infoVecs;
 	NodeAuxVecs auxVecs;
 	ControlPara controlPara;
-	double myosin_cent = 0;
+	double myosin_level = 0;
 
 	NodeAllocPara_M allocPara_M;
 	SceMechPara_M mechPara_M;  

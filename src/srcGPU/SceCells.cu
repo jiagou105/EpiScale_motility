@@ -2155,6 +2155,9 @@ void SceCells::applyMemForce_M() {
 	bool* nodeIsActiveAddr = thrust::raw_pointer_cast(
 			&(nodes->getInfoVecs().nodeIsActive[0]));
 
+//	double* myosinLevelAddr = thrust::raw_pointer_cast(
+//		&(nodes->getInfoVecs().myosinLevel[0])); // pointer to the vector storing myosin level, // will not change the myosin level so not using pointer?
+
 	double grthPrgrCriVal_M = growthAuxData.grthPrgrCriVal_M_Ori; // for now constant  //growthAuxData.grthProgrEndCPU
 		//	- growthAuxData.prolifDecay
 		//			* (growthAuxData.grthProgrEndCPU
@@ -2228,6 +2231,8 @@ void SceCells::applyMemForce_M() {
 							nodes->getInfoVecs().actinForceX.begin()
 							+ allocPara_m.bdryNodeCount,
 							nodes->getInfoVecs().actinForceY.begin()
+							+ allocPara_m.bdryNodeCount,
+							nodes->getInfoVecs().myosinLevel.begin()
 							+ allocPara_m.bdryNodeCount,
 							thrust::make_permutation_iterator(
 									cellInfoVecs.centerCoordY.begin(),
@@ -4969,6 +4974,82 @@ void SceCells::applySceCellDisc_M() {
 			AddSceCellForce(maxAllNodePerCell, maxMemNodePerCell, nodeLocXAddr,
 					nodeLocYAddr, nodeIsActiveAddr, grthPrgrCriVal_M));
 }
+
+
+
+
+// Mar 29, 2023: add actin force on each membrane node, maganitude depending on neighboring myosin concentration
+// apply to all internal nodes
+void SceCells::applySceCellMyosinDisc_M() {
+	totalNodeCountForActiveCells = allocPara_m.currentActiveCellCount
+			* allocPara_m.maxAllNodePerCell;
+	uint maxAllNodePerCell = allocPara_m.maxAllNodePerCell;
+	uint maxMemNodePerCell = allocPara_m.maxMembrNodePerCell;
+	thrust::counting_iterator<uint> iBegin(0);
+
+	double* nodeLocXAddr = thrust::raw_pointer_cast(
+			&(nodes->getInfoVecs().nodeLocX[0]));
+	double* nodeLocYAddr = thrust::raw_pointer_cast(
+			&(nodes->getInfoVecs().nodeLocY[0]));
+	bool* nodeIsActiveAddr = thrust::raw_pointer_cast(
+			&(nodes->getInfoVecs().nodeIsActive[0])); // 
+
+	double* myosinLevelAddr = thrust::raw_pointer_cast(
+		&(nodes->getInfoVecs().myosinLevel[0])); // pointer to the vector storing myosin level
+
+	double grthPrgrCriVal_M =growthAuxData.grthPrgrCriVal_M_Ori ; // for now constant  growthAuxData.grthProgrEndCPU
+	//		- growthAuxData.prolifDecay
+	//				* (growthAuxData.grthProgrEndCPU
+	//						- growthAuxData.grthPrgrCriVal_M_Ori);
+	double timeStep = dt;
+	double myosinDiffusionThreshold = 100.0;
+
+	thrust::transform(
+			thrust::make_zip_iterator(
+					thrust::make_tuple(
+							thrust::make_permutation_iterator(
+									cellInfoVecs.activeMembrNodeCounts.begin(),
+									make_transform_iterator(iBegin,
+											DivideFunctor(maxAllNodePerCell))),
+							thrust::make_permutation_iterator(
+									cellInfoVecs.activeIntnlNodeCounts.begin(),
+									make_transform_iterator(iBegin,
+											DivideFunctor(maxAllNodePerCell))),
+							make_transform_iterator(iBegin,
+									DivideFunctor(maxAllNodePerCell)),
+							make_transform_iterator(iBegin,
+									ModuloFunctor(maxAllNodePerCell)),
+							nodes->getInfoVecs().myosinLevel.begin()
+							)),
+			thrust::make_zip_iterator(
+					thrust::make_tuple(
+							thrust::make_permutation_iterator(
+									cellInfoVecs.activeMembrNodeCounts.begin(),
+									make_transform_iterator(iBegin,
+											DivideFunctor(maxAllNodePerCell))),
+							thrust::make_permutation_iterator(
+									cellInfoVecs.activeIntnlNodeCounts.begin(),
+									make_transform_iterator(iBegin,
+											DivideFunctor(maxAllNodePerCell))),
+							make_transform_iterator(iBegin,
+									DivideFunctor(maxAllNodePerCell)),
+							make_transform_iterator(iBegin,
+									ModuloFunctor(maxAllNodePerCell)),
+							nodes->getInfoVecs().myosinLevel.begin()
+							))
+					+ totalNodeCountForActiveCells,
+			thrust::make_zip_iterator(nodes->getInfoVecs().myosinLevel.begin()), 
+			UpdateSceCellMyosinForce(maxAllNodePerCell, maxMemNodePerCell, nodeLocXAddr,
+					nodeLocYAddr, nodeIsActiveAddr, myosinLevelAddr, myosinDiffusionThreshold, timeStep));
+}
+
+// end of modification from Mar 29, 2023
+
+
+
+
+
+
 
 __device__
 void calAndAddIB_M(double& xPos, double& yPos, double& xPos2, double& yPos2,
