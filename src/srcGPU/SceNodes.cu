@@ -406,6 +406,8 @@ void SceNodes::initDimension(double domainMinX, double domainMaxX,
 	auxVecs.keyEnd.resize(domainPara.totalBucketCount);
 }
 
+
+
 std::vector<std::pair<uint, uint> > SceNodes::obtainPossibleNeighborPairs() {
 	std::vector<std::pair<uint, uint> > result;
 	thrust::host_vector<uint> keyBeginCPU = auxVecs.keyBegin;

@@ -74,7 +74,7 @@ void SimulationDomainGPU::initializeNodes_M(std::vector<SceNodeType> &nodeTypes,
 			initActiveIntnlNodeCounts, initGrowProgVec, InitTimeStage);  //Ali
 
 	//std::cout << "break point 5 " << std::endl;
-	//std::cout.flush();
+	//std::cout.flush();	
 }
 
 void SimulationDomainGPU::initialize_v2_M(SimulationInitData_V2_M& initData, double  InitTimeStage) {   //Ali 

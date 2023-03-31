@@ -101,10 +101,10 @@ int main(int argc, char* argv[]) {
 	SimulationDomainGPU simuDomain;
 
         cout<< "I am in main file after simulationDomainGPU instance creation"<<endl; 
-	SimulationInitData_V2_M initData = initHelper.initInput_M();
+	SimulationInitData_V2_M initData = initHelper.initInput_M(); // read input, Mar 31
 
         cout<< "I am in main file after initInput_M creation"<<endl; 
-	simuDomain.initialize_v2_M(initData,mainPara.InitTimeStage);
+	simuDomain.initialize_v2_M(initData,mainPara.InitTimeStage); //
 
         cout<< "I am in main file after initInput_v2_M creation"<<endl; 
 	std::string polyStatFileNameBase = globalConfigVars.getConfigValue(

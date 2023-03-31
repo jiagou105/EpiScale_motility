@@ -805,7 +805,7 @@ void SceCells::initialize(SceNodes* nodesInput) {
 	initCellInfoVecs();
 	initCellNodeInfoVecs();
 	initGrowthAuxData();
-
+	//
 	distributeIsCellRank();
 }
 
@@ -842,7 +842,7 @@ void SceCells::initialize_M(SceNodes* nodesInput) {
 	initGrowthAuxData_M();
 	//std::cout << "break point 8 " << std::endl;
 	//std::cout.flush();
-
+	initMyosinLevel(); // Mar 31, add header
 }
 
 void SceCells::copyInitActiveNodeCount(
@@ -1401,12 +1401,13 @@ void SceCells::runAllCellLogicsDisc_M(double dt, double Damp_Coef, double InitTi
 	std::cout << "     *** 2 ***" << endl;
 	std::cout.flush();
 	applySceCellDisc_M();
+	applySceCellMyosinDisc_M();
 	std::cout << "     *** 3 ***" << endl;
 	std::cout.flush();
 //Ali        
 	computeCenterPos_M();
     exchSignal(); // use files in srcCPU for chemical concentrations
-    BC_Imp_M() ; 
+    BC_Imp_M(); 
 	std::cout << "     *** 3.5 ***" << endl;
 	std::cout.flush();
         	
@@ -5038,13 +5039,12 @@ void SceCells::applySceCellMyosinDisc_M() {
 							nodes->getInfoVecs().myosinLevel.begin()
 							))
 					+ totalNodeCountForActiveCells,
-			thrust::make_zip_iterator(nodes->getInfoVecs().myosinLevel.begin()), 
+			nodes->getInfoVecs().myosinLevel.begin(), 
 			UpdateSceCellMyosinForce(maxAllNodePerCell, maxMemNodePerCell, nodeLocXAddr,
 					nodeLocYAddr, nodeIsActiveAddr, myosinLevelAddr, myosinDiffusionThreshold, timeStep));
 }
 
 // end of modification from Mar 29, 2023
-
 
 
 
