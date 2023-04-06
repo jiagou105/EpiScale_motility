@@ -997,8 +997,12 @@ struct AddSceCellMyosinForce: public thrust::unary_function<CellData, CVec2> {
 				myosinOther = _myosinLevelAddr[index_other];
 				totalMyosin += exp(-pow(distNodes,2.0)) * myosinOther;
 			}
-			oriVelX +=   2.0/3.0*(tanh((1.0 - totalMyosin)/0.1)+0.5) * (rightPosY-leftPosY)/lenRightLeft;
-			oriVelY += - 2.0/3.0*(tanh((1.0 - totalMyosin)/0.1)+0.5) * (rightPosX-leftPosX)/lenRightLeft;
+			// oriVelX += -2.0/3.0*(tanh((1.0 - totalMyosin)/0.1)+0.5) * (rightPosY-leftPosY)/lenRightLeft;
+			// oriVelY += +2.0/3.0*(tanh((1.0 - totalMyosin)/0.1)+0.5) * (rightPosX-leftPosX)/lenRightLeft; // opposite sign, Apr 4
+
+			// new tanh function, Apr 05, JG
+			oriVelX += -(tanh((1.0-totalMyosin)/2.0)+0.1)/(tanh(1.0/2.0)+0.1) * (rightPosY-leftPosY)/lenRightLeft;
+			oriVelY += +(tanh((1.0-totalMyosin)/2.0)+0.1)/(tanh(1.0/2.0)+0.1) * (rightPosX-leftPosX)/lenRightLeft; // opposite sign, Apr 4
 		}
 		return thrust::make_tuple(oriVelX, oriVelY); 
 	}
@@ -1019,15 +1023,16 @@ struct UpdateSceCellMyosin: public thrust::unary_function<UUUUD, double> {
 	double* _myosinLevelAddr;
 	double _myosinDiffusionThreshold;
 	double _timeStep;
+	double _timeNow;
 	// double _grthPrgrCriVal_M;
 	// comment prevents bad formatting issues of __host__ and __device__ in Nsight
 	__host__ __device__ UpdateSceCellMyosin(uint maxNodePerCell,
 			uint maxMemNodePerCell, double* locXAddr, double* locYAddr,
-			bool* isActiveAddr, double* myosinLevelAddr, double myosinDiffusionThreshold, double timeStep) :
+			bool* isActiveAddr, double* myosinLevelAddr, double myosinDiffusionThreshold, double timeStep, double timeNow) :
 			_maxNodePerCell(maxNodePerCell), _maxMemNodePerCell(
 					maxMemNodePerCell), _locXAddr(locXAddr), _locYAddr(
 					locYAddr), _isActiveAddr(isActiveAddr), _myosinLevelAddr(myosinLevelAddr), _myosinDiffusionThreshold(myosinDiffusionThreshold),
-					_timeStep(timeStep) {
+					_timeStep(timeStep), _timeNow(timeNow) {
 	}
 	// comment prevents bad formatting issues of __host__ and __device__ in Nsight
 	__device__ double operator()(const UUUUD &cData) const {
@@ -1054,7 +1059,8 @@ struct UpdateSceCellMyosin: public thrust::unary_function<UUUUD, double> {
 		double distNodes = 0.0;
 		double myosinOther;
 		double myosinDiffer;
-		double kDiff = 1.0;
+		double kDiff = 0.0;
+		if (_timeNow > 55800) {kDiff = 0.01;} 
 		// means membrane node
 		//Because we want to compute the force on the membrane nodes we modify this function 
 		if (nodeRank < _maxMemNodePerCell) {
@@ -1118,8 +1124,8 @@ struct InitializeMyosinLevel: public thrust::unary_function<UUDDUU, double> {
 		double nodeX = _locXAddr[index];
 		double nodeY = _locYAddr[index];
 		double nodeXOther, nodeYOther;
-		double baseMyosin = 5.0;
-		double gradientMyosin = 2.0;
+		double baseMyosin = 10.0;
+		double gradientMyosin = 4.0;
 		// double distNodes = 0.0;
 		// double myosinOther;
 		// double myosinDiffer;

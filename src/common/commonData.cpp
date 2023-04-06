@@ -150,7 +150,7 @@ double compuDistHost(double &xPos, double &yPos, double &zPos, double &xPos2,
 					+ (zPos - zPos2) * (zPos - zPos2));
 }
 
-void VtkAnimationData::outputVtkAni(std::string scriptNameBase, int rank) {
+void VtkAnimationData::outputVtkAni(std::string scriptNameBase, int rank) { //apr 05
 	std::stringstream ss;
 	ss << std::setw(5) << std::setfill('0') << rank;
 	std::string scriptNameRank = ss.str();
@@ -217,8 +217,13 @@ void VtkAnimationData::outputVtkAni(std::string scriptNameBase, int rank) {
 		fs << pointsAniData[i].dppLevel1 << endl;
 	}
 	fs << std::endl;
-	//AAMIRI finished writing the cell rank of each node
 
+	fs << "SCALARS myoLevel  float" << endl;
+	fs << "LOOKUP_TABLE default" << endl;
+	for (uint i = 0; i < pointsAniData.size(); i++) {
+		fs << pointsAniData[i].myoLevel1 << endl;
+	}
+	fs << std::endl;
 
 	//AAMIRI starts writing tension vector data
 	fs << "VECTORS F_MI_M float" << endl;

@@ -3423,7 +3423,7 @@ AniRawData SceCells::obtainAniRawData(AnimationCriteria& aniCri) {
 }
 
 AniRawData SceCells::obtainAniRawDataGivenCellColor(vector<double>& cellColors,
-		AnimationCriteria& aniCri, vector<double>& cellsPerimeter, vector <double> & cellsDppLevel) {   //AliE
+		AnimationCriteria& aniCri, vector<double>& cellsPerimeter, vector <double> & cellsDppLevel) {   //AliE //apr 05
         cout << "I am in obtainAniRawDataGivenCellColor start"<<endl; 
 	uint activeCellCount = allocPara_m.currentActiveCellCount;
 	uint maxNodePerCell = allocPara_m.maxAllNodePerCell;
@@ -3454,6 +3454,7 @@ AniRawData SceCells::obtainAniRawDataGivenCellColor(vector<double>& cellColors,
 	thrust::host_vector<double> hostTmpVectorNodeCurvature(maxActiveNode);//AAMIRI
 	thrust::host_vector<double> hostTmpVectorExtForceTangent(maxActiveNode);//AAMIRI
 	thrust::host_vector<double> hostTmpVectorExtForceNormal(maxActiveNode);//AAMIRI
+	thrust::host_vector<double> hostMyosinLevel(maxActiveNode);//apr 05
 
 
 
@@ -3495,17 +3496,19 @@ AniRawData SceCells::obtainAniRawDataGivenCellColor(vector<double>& cellColors,
 			thrust::make_zip_iterator(
 					thrust::make_tuple(
 							nodes->getInfoVecs().nodeF_MI_M_T.begin(), //Ali
-							nodes->getInfoVecs().nodeF_MI_M_N.begin() //Ali
+							nodes->getInfoVecs().nodeF_MI_M_N.begin(), //Ali
+							nodes->getInfoVecs().myosinLevel.begin()
 							)),
 			thrust::make_zip_iterator(
 					thrust::make_tuple(
 							nodes->getInfoVecs().nodeF_MI_M_T.begin(),//AliE
-							nodes->getInfoVecs().nodeF_MI_M_N.begin() //AliE
+							nodes->getInfoVecs().nodeF_MI_M_N.begin(), //AliE
+							nodes->getInfoVecs().myosinLevel.begin()
 							))
 					+ maxActiveNode,
 			thrust::make_zip_iterator(
 					thrust::make_tuple(
-							hostTmpVectorF_MI_M_T.begin(), hostTmpVectorF_MI_M_N.begin()
+							hostTmpVectorF_MI_M_T.begin(), hostTmpVectorF_MI_M_N.begin(), hostMyosinLevel.begin()
 							)));
 
 
@@ -3530,6 +3533,8 @@ AniRawData SceCells::obtainAniRawDataGivenCellColor(vector<double>& cellColors,
 	double nodeExtForceT, nodeExtForceN;//AAMIRI 
 	double aniVal;
 	double aniVal2;
+	double tempMyosinLevel;
+
         double tmpF_MI_M_MagN_Int[activeCellCount-1] ; //AliE
 
          //This is how the VTK file is intended to be written. First the memmbraen nodes are going to be written and then internal nodes.
@@ -3547,13 +3552,15 @@ AniRawData SceCells::obtainAniRawDataGivenCellColor(vector<double>& cellColors,
 				tmpF_MI_M= CVector(node1F_MI_M_x, node1F_MI_M_y, 0.0); //AliE
 				rawAniData.aniNodeF_MI_M.push_back(tmpF_MI_M); //AliE
                                // tmpF_MI_M_MagN_Int[i]=tmpF_MI_M_MagN_Int[i]+sqrt(pow(hostTmpVectorF_MI_M_x[index1],2)+pow(hostTmpVectorF_MI_M_y[index1],2)) ; //AliE
-                                tmpF_MI_M_MagN_Int[i]=tmpF_MI_M_MagN_Int[i]+abs(hostTmpVectorF_MI_M_N[index1]) ; //AliE
+                tmpF_MI_M_MagN_Int[i]=tmpF_MI_M_MagN_Int[i]+abs(hostTmpVectorF_MI_M_N[index1]) ; //AliE
 
 				nodeExtForceT = hostTmpVectorExtForceTangent[index1];//AAMIRI
 				nodeExtForceN = hostTmpVectorExtForceNormal[index1];//AAMIRI
 				tmpExtForce = CVector(nodeExtForceT, nodeExtForceN, 0.0);//AAMIRI
 				rawAniData.aniNodeExtForceArr.push_back(tmpExtForce);
 
+				tempMyosinLevel = hostMyosinLevel[index1];
+				rawAniData.myoLevel.push_back(tempMyosinLevel);
 
 				rawAniData.aniNodeRank.push_back(i);//AAMIRI
 
@@ -3579,6 +3586,10 @@ AniRawData SceCells::obtainAniRawDataGivenCellColor(vector<double>& cellColors,
 				tmpExtForce = CVector(nodeExtForceT, nodeExtForceN, 0.0);//AAMIRI
 				
 				rawAniData.aniNodeExtForceArr.push_back(tmpExtForce);
+
+				tempMyosinLevel = hostMyosinLevel[index1];
+				rawAniData.myoLevel.push_back(tempMyosinLevel);
+
 				rawAniData.aniNodeRank.push_back(i);//AAMIRI
 				}
 			
@@ -3995,7 +4006,7 @@ void SceCells::adjustGrowthInfo_M() {
 			AdjustGrowth(halfMax), thrust::identity<bool>());
 }
 
-VtkAnimationData SceCells::outputVtkData(AniRawData& rawAniData,
+VtkAnimationData SceCells::outputVtkData(AniRawData& rawAniData, //apr 05
 		AnimationCriteria& aniCri) {
 	VtkAnimationData vtkData;
 	for (uint i = 0; i < rawAniData.aniNodePosArr.size(); i++) {
@@ -4008,6 +4019,7 @@ VtkAnimationData SceCells::outputVtkData(AniRawData& rawAniData,
 		ptAniData.colorScale2 = rawAniData.aniNodeCurvature[i];//AAMIRI
 		ptAniData.rankScale = rawAniData.aniNodeRank[i];//AAMIRI
 		ptAniData.extForce = rawAniData.aniNodeExtForceArr[i];//AAMIRI
+		ptAniData.myoLevel1= rawAniData.myoLevel[i]; 
 		vtkData.pointsAniData.push_back(ptAniData);
 	}
 	for (uint i = 0; i < rawAniData.internalLinks.size(); i++) {
@@ -5157,6 +5169,7 @@ void SceCells::calSceCellMyosin() {
 	//						- growthAuxData.grthPrgrCriVal_M_Ori);
 	double timeStep = dt;
 	double myosinDiffusionThreshold = 100.0;
+	double timeNow = curTime;
 
 	thrust::transform(
 			thrust::make_zip_iterator(
@@ -5194,7 +5207,7 @@ void SceCells::calSceCellMyosin() {
 					+ totalNodeCountForActiveCells,
 			nodes->getInfoVecs().myosinLevel.begin(), 
 			UpdateSceCellMyosin(maxAllNodePerCell, maxMemNodePerCell, nodeLocXAddr,
-					nodeLocYAddr, nodeIsActiveAddr, myosinLevelAddr, myosinDiffusionThreshold, timeStep));
+					nodeLocYAddr, nodeIsActiveAddr, myosinLevelAddr, myosinDiffusionThreshold, timeStep, timeNow));
 }
 
 // end of modification from Mar 29, 2023
