@@ -951,7 +951,7 @@ struct AddSceCellMyosinForce: public thrust::unary_function<CellData, CVec2> {
 		
 
 
-		uint intnlIndxMemBegin = cellRank * _maxNodePerCell;
+		// uint intnlIndxMemBegin = cellRank * _maxNodePerCell;
 		uint intnlIndxBegin = cellRank * _maxNodePerCell + _maxMemNodePerCell;
 		uint intnlIndxEnd = intnlIndxBegin + activeIntnlCount;
 		uint index_other;
@@ -968,6 +968,7 @@ struct AddSceCellMyosinForce: public thrust::unary_function<CellData, CVec2> {
 		double rightPosY;
 		double lenRightLeft;
 
+		double shortestDistantce = 100;
 		// means membrane node
 		//Because we want to compute the force on the membrane nodes we modify this function 
 		if (nodeRank < _maxMemNodePerCell) {
@@ -994,15 +995,24 @@ struct AddSceCellMyosinForce: public thrust::unary_function<CellData, CVec2> {
 				nodeXOther = _locXAddr[index_other];
 				nodeYOther = _locYAddr[index_other]; 
 				distNodes = compDist2D(nodeX, nodeY, nodeXOther, nodeYOther);
-				myosinOther = _myosinLevelAddr[index_other];
-				totalMyosin += exp(-pow(distNodes,2.0)) * myosinOther;
+				if (distNodes < shortestDistantce) { // JG040623
+					totalMyosin = _myosinLevelAddr[index_other];
+					shortestDistantce = distNodes;
+					}
+				// myosinOther = _myosinLevelAddr[index_other];
+				// totalMyosin += exp(-pow(distNodes,2.0)) * myosinOther;
 			}
 			// oriVelX += -2.0/3.0*(tanh((1.0 - totalMyosin)/0.1)+0.5) * (rightPosY-leftPosY)/lenRightLeft;
 			// oriVelY += +2.0/3.0*(tanh((1.0 - totalMyosin)/0.1)+0.5) * (rightPosX-leftPosX)/lenRightLeft; // opposite sign, Apr 4
 
-			// new tanh function, Apr 05, JG
-			oriVelX += -(tanh((1.0-totalMyosin)/2.0)+0.1)/(tanh(1.0/2.0)+0.1) * (rightPosY-leftPosY)/lenRightLeft;
-			oriVelY += +(tanh((1.0-totalMyosin)/2.0)+0.1)/(tanh(1.0/2.0)+0.1) * (rightPosX-leftPosX)/lenRightLeft; // opposite sign, Apr 4
+			// new tanh function, JG040523
+			// oriVelX += -(tanh((1.0-totalMyosin)/2.0)+0.1)/(tanh(1.0/2.0)+0.1) * (rightPosY-leftPosY)/lenRightLeft;
+			// oriVelY += +(tanh((1.0-totalMyosin)/2.0)+0.1)/(tanh(1.0/2.0)+0.1) * (rightPosX-leftPosX)/lenRightLeft; // opposite sign, Apr 4
+
+			// new function JG040623
+			oriVelX = - 0.25*(-2.0*tanh(((totalMyosin-6.0)/(0.1)))-2.0 * tanh(((totalMyosin-9.0)/(0.1)))) * (rightPosY-leftPosY)/lenRightLeft;
+			oriVelY = + 0.25*(-2.0*tanh(((totalMyosin-6.0)/(0.1)))-2.0 * tanh(((totalMyosin-9.0)/(0.1)))) * (rightPosX-leftPosX)/lenRightLeft;
+
 		}
 		return thrust::make_tuple(oriVelX, oriVelY); 
 	}
@@ -1060,7 +1070,7 @@ struct UpdateSceCellMyosin: public thrust::unary_function<UUUUD, double> {
 		double myosinOther;
 		double myosinDiffer;
 		double kDiff = 0.0;
-		if (_timeNow > 55800) {kDiff = 0.01;} 
+		if (_timeNow > 55800.0) {kDiff = 0.00001;} 
 		// means membrane node
 		//Because we want to compute the force on the membrane nodes we modify this function 
 		if (nodeRank < _maxMemNodePerCell) {
@@ -1657,13 +1667,19 @@ struct AddPtOp_M: thrust::unary_function<BoolUIDDUID, DUi> {
 	double* _nodeYPosAddress;
 	bool* _nodeIsActiveAddress;
 
+	uint _maxNodePerCell;
+    uint _maxMemNodePerCell;
+	double* _myosinLevelAddr;
+
 	// comment prevents bad formatting issues of __host__ and __device__ in Nsight
 	__host__ __device__ AddPtOp_M(uint seed, double addNodeDistance,
 			double growThreshold, double* nodeXPosAddress,
-			double* nodeYPosAddress, bool* nodeIsActiveAddress) :
+			double* nodeYPosAddress, bool* nodeIsActiveAddress, 
+			uint maxNodePerCell, uint maxMemNodePerCell, double* myosinLevelAddr) :
 			_seed(seed), _addNodeDistance(addNodeDistance), _growThreshold(
 					growThreshold), _nodeXPosAddress(nodeXPosAddress), _nodeYPosAddress(
-					nodeYPosAddress), _nodeIsActiveAddress(nodeIsActiveAddress) {
+					nodeYPosAddress), _nodeIsActiveAddress(nodeIsActiveAddress), 
+					_maxNodePerCell(maxNodePerCell), _maxMemNodePerCell(maxMemNodePerCell), _myosinLevelAddr(myosinLevelAddr) {
 	}
 	// comment prevents bad formatting issues of __host__ and __device__ in Nsight
 	__device__ DUi operator()(const BoolUIDDUID &biddi) {
@@ -1690,6 +1706,31 @@ struct AddPtOp_M: thrust::unary_function<BoolUIDDUID, DUi> {
 		_nodeXPosAddress[cellNodeEndPos] = xCoordNewPt;
 		_nodeYPosAddress[cellNodeEndPos] = yCoordNewPt;
 		_nodeIsActiveAddress[cellNodeEndPos] = true;
+		// add myosin to new node here, JG040623
+		//
+		uint intnlIndxBegin = cellRank * _maxNodePerCell + _maxMemNodePerCell;
+        uint intnlIndxEnd = cellNodeEndPos; // double check this. 
+		uint index_intnl;
+		double nodeXIntnl;
+		double nodeYIntnl;
+		double distNodes;
+		double shortestDistantce = 100;
+		double newNodeMyosin;
+		uint indexClosestNeighbr;
+        for (index_intnl = intnlIndxBegin; index_intnl < intnlIndxEnd;
+                    index_intnl++) {
+                nodeXIntnl = _nodeXPosAddress[index_intnl];
+                nodeYIntnl = _nodeYPosAddress[index_intnl]; 
+                distNodes = compDist2D(xCoordNewPt, yCoordNewPt, nodeXIntnl, nodeYIntnl);
+                if (distNodes < shortestDistantce) { // JG040623
+		   			indexClosestNeighbr = index_intnl;
+                    shortestDistantce = distNodes;
+                    }
+            }
+		newNodeMyosin = _myosinLevelAddr[indexClosestNeighbr]/2.0;
+		_myosinLevelAddr[indexClosestNeighbr] = newNodeMyosin;
+		_myosinLevelAddr[cellNodeEndPos] = newNodeMyosin;
+		//
 		activeMembrNodeThis = activeMembrNodeThis + 1;
 		lastCheckPoint = lastCheckPoint + _growThreshold;
 		if (lastCheckPoint > 1.0) {

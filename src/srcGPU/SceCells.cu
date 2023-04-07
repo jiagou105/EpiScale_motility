@@ -3079,9 +3079,15 @@ void SceCells::stretchCellGivenLenDiff_M() {
 					allocPara_m.maxMembrNodePerCell));
 }
 
+// to do: transfer myosin data and update myosin value on new node, JG040623
 void SceCells::addPointIfScheduledToGrow_M() {
 	uint seed = time(NULL);
 	uint activeCellCount = allocPara_m.currentActiveCellCount;
+
+	uint maxAllNodePerCell = allocPara_m.maxAllNodePerCell;
+    uint maxMemNodePerCell = allocPara_m.maxMembrNodePerCell;
+	double* myosinLevelAddr = thrust::raw_pointer_cast(
+		&(nodes->getInfoVecs().myosinLevel[0])); // pointer to the vector storing myosin level 
 	thrust::counting_iterator<uint> iBegin(0);
 	thrust::counting_iterator<uint> iEnd(activeCellCount);
 	thrust::transform(
@@ -3108,7 +3114,7 @@ void SceCells::addPointIfScheduledToGrow_M() {
 			AddPtOp_M(seed, miscPara.addNodeDistance, miscPara.growThreshold,
 					growthAuxData.nodeXPosAddress,
 					growthAuxData.nodeYPosAddress,
-					growthAuxData.nodeIsActiveAddress));
+					growthAuxData.nodeIsActiveAddress,maxAllNodePerCell,maxMemNodePerCell,myosinLevelAddr));
 }
 
 
@@ -5097,7 +5103,7 @@ void SceCells::applySceCellMyosin() {
 			thrust::make_zip_iterator(
 					thrust::make_tuple(
 							thrust::make_permutation_iterator(
-									cellInfoVecs.activeMembrNodeCounts.begin(),
+									cellInfoVecs.activeMembrNodeCounts.begin(), // comments: the two first arguments are used to find the active nodes for a cell calculated by divide function
 									make_transform_iterator(iBegin,
 											DivideFunctor(maxAllNodePerCell))),
 							thrust::make_permutation_iterator(
