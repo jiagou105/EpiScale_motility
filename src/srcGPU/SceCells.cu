@@ -5116,7 +5116,15 @@ void SceCells::applySceCellMyosin() {
 									ModuloFunctor(maxAllNodePerCell)),
 							nodes->getInfoVecs().myosinLevel.begin(),
 							nodes->getInfoVecs().nodeVelX.begin(),
-							nodes->getInfoVecs().nodeVelY.begin())),
+							nodes->getInfoVecs().nodeVelY.begin(),
+							thrust::make_permutation_iterator(
+									cellInfoVecs.centerCoordX.begin(),
+									make_transform_iterator(iBegin,
+											DivideFunctor(maxAllNodePerCell))),
+							thrust::make_permutation_iterator(
+									cellInfoVecs.centerCoordY.begin(),
+									make_transform_iterator(iBegin,
+											DivideFunctor(maxAllNodePerCell))))),
 			thrust::make_zip_iterator(
 					thrust::make_tuple(
 							thrust::make_permutation_iterator(
@@ -5133,7 +5141,15 @@ void SceCells::applySceCellMyosin() {
 									ModuloFunctor(maxAllNodePerCell)),
 							nodes->getInfoVecs().myosinLevel.begin(),
 							nodes->getInfoVecs().nodeVelX.begin(),
-							nodes->getInfoVecs().nodeVelY.begin()))
+							nodes->getInfoVecs().nodeVelY.begin(),
+							thrust::make_permutation_iterator(
+									cellInfoVecs.centerCoordX.begin(),
+									make_transform_iterator(iBegin,
+											DivideFunctor(maxAllNodePerCell))),
+							thrust::make_permutation_iterator(
+									cellInfoVecs.centerCoordY.begin(),
+									make_transform_iterator(iBegin,
+											DivideFunctor(maxAllNodePerCell)))))
 					+ totalNodeCountForActiveCells,
 			thrust::make_zip_iterator(
 					thrust::make_tuple(nodes->getInfoVecs().nodeVelX.begin(),
