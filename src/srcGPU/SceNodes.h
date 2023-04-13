@@ -907,7 +907,7 @@ class SceNodes {
 	NodeInfoVecs infoVecs;
 	NodeAuxVecs auxVecs;
 	ControlPara controlPara;
-	double myosin_level = 0;
+	// double myosin_level = 0;
 
 	NodeAllocPara_M allocPara_M;
 	SceMechPara_M mechPara_M;  
