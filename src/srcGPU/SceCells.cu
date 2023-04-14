@@ -2711,7 +2711,7 @@ void SceCells::growAtRandom_M(double dt) {
 
 	//stretchCellGivenLenDiff_M();
 
-	addPointIfScheduledToGrow_M();
+	// addPointIfScheduledToGrow_M();
 
 	addPointDueToActin(); // JG041123
 
@@ -3130,7 +3130,14 @@ void SceCells::addPointDueToActin() {
 	uint maxAllNodePerCell = allocPara_m.maxAllNodePerCell;
     uint maxMemNodePerCell = allocPara_m.maxMembrNodePerCell;
 	double* myosinLevelAddr = thrust::raw_pointer_cast(
-		&(nodes->getInfoVecs().myosinLevel[0])); // pointer to the vector storing myosin level 
+		&(nodes->getInfoVecs().myosinLevel[0])); // pointer to the vector storing myosin level
+	
+	double* nodeVelXAddr = thrust::raw_pointer_cast(
+            &(nodes->getInfoVecs().nodeVelX[0]));
+    double* nodeVelYAddr = thrust::raw_pointer_cast(
+            &(nodes->getInfoVecs().nodeVelY[0]));
+	int timeStep = curTime;
+
 	thrust::counting_iterator<uint> iBegin(0);
 	thrust::counting_iterator<uint> iEnd(activeCellCount);
 	thrust::transform(
@@ -3157,7 +3164,9 @@ void SceCells::addPointDueToActin() {
 			AddDelPtDueToActinTemp(seed, miscPara.addNodeDistance, miscPara.growThreshold,
 					growthAuxData.nodeXPosAddress,
 					growthAuxData.nodeYPosAddress,
-					growthAuxData.nodeIsActiveAddress,maxAllNodePerCell,maxMemNodePerCell,myosinLevelAddr));
+					growthAuxData.nodeIsActiveAddress,
+					maxAllNodePerCell,maxMemNodePerCell,myosinLevelAddr,nodeVelXAddr,nodeVelYAddr,
+					timeStep, growthAuxData.adhIndxAddr));
 }
 
 
