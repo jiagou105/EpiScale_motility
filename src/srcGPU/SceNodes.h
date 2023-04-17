@@ -629,7 +629,7 @@ struct AddForceDisc_M: public thrust::unary_function<Tuuudd, CVec2> {
 			}
 		}
 		if (isSuccess) {
-			_nodeAdhereIndex[myValue] = index;
+			_nodeAdhereIndex[myValue] = index; // membrane nodes on different cells 
 		}
 
 		return thrust::make_tuple(xRes, yRes);

@@ -1804,18 +1804,20 @@ struct AddDelPtDueToActinTemp: thrust::unary_function<BoolUIDDUID, DUi> {
 
 	int _timeStep;
 	int* _adhIndxAddr;
+	double _InitTimeStage;
+	double _ddt;
 	// comment prevents bad formatting issues of __host__ and __device__ in Nsight
 	__host__ __device__ AddDelPtDueToActinTemp(uint seed, double addNodeDistance,
 			double growThreshold, double* nodeXPosAddress,
 			double* nodeYPosAddress, bool* nodeIsActiveAddress, 
 			uint maxNodePerCell, uint maxMemNodePerCell, double* myosinLevelAddr,
-			double* nodeVelXAddr, double* nodeVelYAddr, int timeStep, int* adhIndxAddr) :
+			double* nodeVelXAddr, double* nodeVelYAddr, int timeStep, int* adhIndxAddr, double InitTimeStage, double ddt) :
 			_seed(seed), _addNodeDistance(addNodeDistance), _growThreshold(
 					growThreshold), _nodeXPosAddress(nodeXPosAddress), _nodeYPosAddress(
 					nodeYPosAddress), _nodeIsActiveAddress(nodeIsActiveAddress), 
 					_maxNodePerCell(maxNodePerCell), _maxMemNodePerCell(maxMemNodePerCell), 
 					_myosinLevelAddr(myosinLevelAddr), _nodeVelXAddr(nodeVelXAddr), _nodeVelYAddr(nodeVelYAddr),
-					_timeStep(timeStep), _adhIndxAddr(adhIndxAddr) {
+					_timeStep(timeStep), _adhIndxAddr(adhIndxAddr), _InitTimeStage(InitTimeStage), _ddt(ddt) {
 	}
 	// comment prevents bad formatting issues of __host__ and __device__ in Nsight 
 	__device__ DUi operator()(const BoolUIDDUID &biddi) {
@@ -1832,8 +1834,10 @@ struct AddDelPtDueToActinTemp: thrust::unary_function<BoolUIDDUID, DUi> {
 		double cellCenterYCoord = thrust::get<3>(biddi);
 		uint cellRank = thrust::get<4>(biddi);
 		double randomAngle = obtainRandAngle(cellRank, _seed);
-		double xOffset = _addNodeDistance * cos(randomAngle);
-		double yOffset = _addNodeDistance * sin(randomAngle);
+		// double xOffset = _addNodeDistance * cos(randomAngle);
+		// double yOffset = _addNodeDistance * sin(randomAngle);
+		// double xOffset = _addNodeDistance;
+		// double yOffset = _addNodeDistance;
 
 		uint cellNodeEndPos = obtainNewIntnlNodeIndex(cellRank,
 		 		activeIntnlNodeThis);
@@ -1847,9 +1851,11 @@ struct AddDelPtDueToActinTemp: thrust::unary_function<BoolUIDDUID, DUi> {
 		double nodeMyosinCur;
 		double nodeXAdd;
 		double nodeYAdd;
+		double nodeXDel;
+		double nodeYDel;
 		
 		double delta = 0.000001;
-		if (/*!isIntnlEmptied*/activeIntnlNodeThis>1 && _timeStep%100==0){
+		if (/*!isIntnlEmptied*/activeIntnlNodeThis>1 && _timeStep%10000==0 && _timeStep * _ddt >=_InitTimeStage){
 			for (index_intnl = intnlIndxBegin; index_intnl < intnlIndxEnd;
                     index_intnl++) {
 					nodeMyosinCur = _myosinLevelAddr[index_intnl];
@@ -1863,10 +1869,21 @@ struct AddDelPtDueToActinTemp: thrust::unary_function<BoolUIDDUID, DUi> {
 					}
 					}
 
+			nodeXDel = _nodeXPosAddress[index_highstMyo];
+			nodeYDel = _nodeYPosAddress[index_highstMyo];
+
 			nodeXAdd = _nodeXPosAddress[index_lowstMyo];
 			nodeYAdd = _nodeYPosAddress[index_lowstMyo]; 
-			double xCoordNewPt = nodeXAdd + xOffset;
-			double yCoordNewPt = nodeYAdd + yOffset;
+
+			double vectorDelAddX = nodeXAdd - nodeXDel;
+			double vectorDelAddY = nodeYAdd - nodeYDel;
+			double lenVectDelAdd = sqrt(vectorDelAddX*vectorDelAddX + vectorDelAddY*vectorDelAddY);
+			if (lenVectDelAdd > 0.0){
+				vectorDelAddX = vectorDelAddX/lenVectDelAdd;
+				vectorDelAddY = vectorDelAddY/lenVectDelAdd;
+			}
+			double xCoordNewPt = nodeXAdd - _addNodeDistance * vectorDelAddX * cos(randomAngle);
+			double yCoordNewPt = nodeYAdd - _addNodeDistance * vectorDelAddY * sin(randomAngle);
 
 			uint cellNodeEndPos = obtainNewIntnlNodeIndex(cellRank,
 				activeIntnlNodeThis);
@@ -1878,13 +1895,14 @@ struct AddDelPtDueToActinTemp: thrust::unary_function<BoolUIDDUID, DUi> {
 		for (int m=index_highstMyo; m<cellNodeEndPos; m++){
 			_nodeXPosAddress[m] = _nodeXPosAddress[m+1];
 			_nodeYPosAddress[m] = _nodeYPosAddress[m+1];
-			_adhIndxAddr[m] = _adhIndxAddr[m+1];
+			// _adhIndxAddr[m] = _adhIndxAddr[m+1];
 			_nodeIsActiveAddress[m] = _nodeIsActiveAddress[m+1];}
 
 			_nodeXPosAddress[cellNodeEndPos-1] = 0.0 + delta;
 			_nodeYPosAddress[cellNodeEndPos-1] = 0.0 + delta;
 			_nodeIsActiveAddress[cellNodeEndPos-1] = false;
-			_adhIndxAddr[cellNodeEndPos-1] = -1;
+			// _adhIndxAddr[cellNodeEndPos-1] = -1;
+			cellNodeEndPos = cellNodeEndPos - 1;
 			}
 		// _nodeXPosAddress[index_highstMyo] = xCoordNewPt;
 		// _nodeYPosAddress[index_highstMyo] = yCoordNewPt;

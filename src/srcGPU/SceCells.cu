@@ -3124,7 +3124,10 @@ void SceCells::addPointIfScheduledToGrow_M() {
 
 // JG041123
 void SceCells::addPointDueToActin() {
-	uint seed = time(NULL);
+	random_device rd;
+ 	uint seed = time(NULL);
+ 	seed = rd();
+
 	uint activeCellCount = allocPara_m.currentActiveCellCount;
 
 	uint maxAllNodePerCell = allocPara_m.maxAllNodePerCell;
@@ -3136,7 +3139,9 @@ void SceCells::addPointDueToActin() {
             &(nodes->getInfoVecs().nodeVelX[0]));
     double* nodeVelYAddr = thrust::raw_pointer_cast(
             &(nodes->getInfoVecs().nodeVelY[0]));
-	int timeStep = curTime;
+	int timeStep = curTime/dt;
+	double initTimePeriod = InitTimeStage;
+	double ddt = dt;
 
 	thrust::counting_iterator<uint> iBegin(0);
 	thrust::counting_iterator<uint> iEnd(activeCellCount);
@@ -3166,7 +3171,7 @@ void SceCells::addPointDueToActin() {
 					growthAuxData.nodeYPosAddress,
 					growthAuxData.nodeIsActiveAddress,
 					maxAllNodePerCell,maxMemNodePerCell,myosinLevelAddr,nodeVelXAddr,nodeVelYAddr,
-					timeStep, growthAuxData.adhIndxAddr));
+					timeStep, growthAuxData.adhIndxAddr, initTimePeriod, ddt));
 }
 
 
