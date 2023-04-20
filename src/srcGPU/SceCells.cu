@@ -1481,6 +1481,7 @@ void SceCells::runAllCellLogicsDisc_M(double dt, double Damp_Coef, double InitTi
 	applySceCellDisc_M();
 	calSceCellMyosin();
 	applySceCellMyosin();
+	calSubAdhForce();
 	std::cout << "     *** 3 ***" << endl;
 	std::cout.flush();
 //Ali        
@@ -2713,7 +2714,7 @@ void SceCells::growAtRandom_M(double dt) {
 
 	// addPointIfScheduledToGrow_M();
 
-	addPointDueToActin(); // JG041123
+	// addPointDueToActin(); // JG041123
 
 	//decideIsScheduleToShrink_M();// AAMIRI May5
 
@@ -5313,6 +5314,115 @@ void SceCells::calSceCellMyosin() {
 }
 
 // end of modification from Mar 29, 2023
+
+
+
+
+
+
+
+
+// JG041923
+void SceCells::calSubAdhForce() {
+	totalNodeCountForActiveCells = allocPara_m.currentActiveCellCount
+			* allocPara_m.maxAllNodePerCell;
+	uint maxAllNodePerCell = allocPara_m.maxAllNodePerCell;
+	uint maxMemNodePerCell = allocPara_m.maxMembrNodePerCell;
+	thrust::counting_iterator<uint> iBegin(0);
+
+	double* nodeLocXAddr = thrust::raw_pointer_cast(
+			&(nodes->getInfoVecs().nodeLocX[0]));
+	double* nodeLocYAddr = thrust::raw_pointer_cast(
+			&(nodes->getInfoVecs().nodeLocY[0]));
+	bool* nodeIsActiveAddr = thrust::raw_pointer_cast(
+			&(nodes->getInfoVecs().nodeIsActive[0])); // 
+
+	double* myosinLevelAddr = thrust::raw_pointer_cast(
+		&(nodes->getInfoVecs().myosinLevel[0])); 
+		
+	double* subAdhLocXAddr = thrust::raw_pointer_cast(
+		&(nodes->getInfoVecs().subAdhLocX[0])); 
+	double* subAdhLocYAddr = thrust::raw_pointer_cast(
+		&(nodes->getInfoVecs().subAdhLocY[0])); 
+	bool* subAdhIsBoundAddr = thrust::raw_pointer_cast(
+		&(nodes->getInfoVecs().subAdhIsBound[0])); 
+
+	double timeStep = dt;
+	double timeNow = curTime;
+	uint maxSubSitePerNode = 10;
+
+	random_device rd;
+    uint seed = time(NULL);
+    seed = rd();
+
+	thrust::transform(
+			thrust::make_zip_iterator(
+					thrust::make_tuple(
+							thrust::make_permutation_iterator(
+									cellInfoVecs.activeMembrNodeCounts.begin(),
+									make_transform_iterator(iBegin,
+											DivideFunctor(maxAllNodePerCell))),
+							thrust::make_permutation_iterator(
+									cellInfoVecs.activeIntnlNodeCounts.begin(),
+									make_transform_iterator(iBegin,
+											DivideFunctor(maxAllNodePerCell))),
+							thrust::make_permutation_iterator(
+                                    cellInfoVecs.centerCoordX.begin(),
+                                    make_transform_iterator(iBegin,
+                                            DivideFunctor(maxAllNodePerCell))),
+                            thrust::make_permutation_iterator(
+                                    cellInfoVecs.centerCoordY.begin(),
+                                    make_transform_iterator(iBegin,
+                                            DivideFunctor(maxAllNodePerCell))),
+							make_transform_iterator(iBegin,
+									DivideFunctor(maxAllNodePerCell)),
+							make_transform_iterator(iBegin,
+									ModuloFunctor(maxAllNodePerCell)),
+							nodes->getInfoVecs().myosinLevel.begin(),
+							nodes->getInfoVecs().nodeVelX.begin(),
+							nodes->getInfoVecs().nodeVelY.begin()
+							)),
+			thrust::make_zip_iterator(
+					thrust::make_tuple(
+							thrust::make_permutation_iterator(
+									cellInfoVecs.activeMembrNodeCounts.begin(),
+									make_transform_iterator(iBegin,
+											DivideFunctor(maxAllNodePerCell))),
+							thrust::make_permutation_iterator(
+									cellInfoVecs.activeIntnlNodeCounts.begin(),
+									make_transform_iterator(iBegin,
+											DivideFunctor(maxAllNodePerCell))),
+						    thrust::make_permutation_iterator(
+                                    cellInfoVecs.centerCoordX.begin(),
+                                    make_transform_iterator(iBegin,
+                                            DivideFunctor(maxAllNodePerCell))),
+                            thrust::make_permutation_iterator(
+                                    cellInfoVecs.centerCoordY.begin(),
+                                    make_transform_iterator(iBegin,
+                                            DivideFunctor(maxAllNodePerCell))),
+							make_transform_iterator(iBegin,
+									DivideFunctor(maxAllNodePerCell)),
+							make_transform_iterator(iBegin,
+									ModuloFunctor(maxAllNodePerCell)),
+							nodes->getInfoVecs().myosinLevel.begin(),
+							nodes->getInfoVecs().nodeVelX.begin(),
+							nodes->getInfoVecs().nodeVelY.begin()
+							))
+					+ totalNodeCountForActiveCells,
+			thrust::make_zip_iterator(
+					thrust::make_tuple(nodes->getInfoVecs().nodeVelX.begin(),
+							   nodes->getInfoVecs().nodeVelY.begin()
+							   //nodes->getInfoVecs().subAdhLocX.begin(), // different length compared with VelXY, Okay? probably not!!! change in place
+							   //nodes->getInfoVecs().subAdhLocY.begin(),
+							   //nodes->getInfoVecs().subAdhIsBound.begin(),
+								)), 
+			addSceCellAdhForce(maxAllNodePerCell, maxMemNodePerCell, nodeLocXAddr,
+					nodeLocYAddr, nodeIsActiveAddr, myosinLevelAddr, timeStep, timeNow, 
+					subAdhLocXAddr, subAdhLocYAddr, subAdhIsBoundAddr, maxSubSitePerNode, seed));
+}
+
+
+
 
 
 

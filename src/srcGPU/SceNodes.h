@@ -866,6 +866,11 @@ public:
 	thrust::device_vector<double> actinForceY;
 
 	thrust::device_vector<double> myosinLevel;
+
+	thrust::device_vector<double> subAdhLocX; 
+	thrust::device_vector<double> subAdhLocY;
+	thrust::device_vector<bool> subAdhIsBound;
+
 };
 
 /**
@@ -907,7 +912,7 @@ class SceNodes {
 	NodeInfoVecs infoVecs;
 	NodeAuxVecs auxVecs;
 	ControlPara controlPara;
-	// double myosin_level = 0;
+	
 
 	NodeAllocPara_M allocPara_M;
 	SceMechPara_M mechPara_M;  

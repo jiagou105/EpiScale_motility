@@ -255,6 +255,7 @@ SceNodes::SceNodes(uint totalBdryNodeCount, uint maxProfileNodeCount,
 	copyParaToGPUConstMem();
 }
 
+// used to initialize nodes in SimulationDomainGPU
 SceNodes::SceNodes(uint maxTotalCellCount, uint maxAllNodePerCell) {
 	//initControlPara (isStab);
 	int simuTypeConfigValue =
@@ -2483,6 +2484,9 @@ void SceNodes::allocSpaceForNodes(uint maxTotalNodeCount) {
 		infoVecs.actinForceY.resize(maxTotalNodeCount,0);
 		infoVecs.myosinLevel.resize(maxTotalNodeCount,0);
 
+		infoVecs.subAdhLocX.resize(maxTotalNodeCount * 10,0); // for substrate binding 
+		infoVecs.subAdhLocY.resize(maxTotalNodeCount * 10,0); // the * 10 is for ten possible binding sites, to be changed or pass as a parameter
+		infoVecs.subAdhIsBound.resize(maxTotalNodeCount * 10,0);
 
 		auxVecs.bucketKeys.resize(maxTotalNodeCount);
 		auxVecs.bucketValues.resize(maxTotalNodeCount);
