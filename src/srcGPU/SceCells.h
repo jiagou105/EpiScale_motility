@@ -1163,7 +1163,8 @@ struct addSceCellAdhForce: public thrust::unary_function<UUDDUUDDD, CVec2> {
 		
 		double pX =  sqrt(2.0)/2.0; // to be added as cell property later, JG041123
         double pY = -sqrt(2.0)/2.0;
-		double projLen = (nodeX - Cell_CenterX)*pX + (nodeY - Cell_CenterY)*pY;
+		// double projLen = (nodeX - Cell_CenterX)*pX + (nodeY - Cell_CenterY)*pY;
+		double projLen;
 		double tempCellRad = 1.25;
 
 		thrust::default_random_engine rng(_seed);
@@ -1191,11 +1192,11 @@ struct addSceCellAdhForce: public thrust::unary_function<UUDDUUDDD, CVec2> {
 		double siteX;
 		double siteY;
 		uint siteIndex;
-		double charUnbindDist = 0.05;
+		double charUnbindDist = 0.1;
 		double distNodeSite;
 		double adhForceX = 0.0;
 		double adhForceY = 0.0;
-		double kAdh = 2.0;
+		double kAdh = 10.0;
 		if (_timeNow > 55800.0 && _isActiveAddr[index] == true && (nodeRank < _maxMemNodePerCell)) {
 			// starting of the index of the substrate site corresponding to this node is: index*10, 10 is the max subs sites
 			for (int bindSiteIndex = 0; bindSiteIndex < _maxSubSitePerNode; // interaction between cur internal node and other internal node
@@ -1222,31 +1223,42 @@ struct addSceCellAdhForce: public thrust::unary_function<UUDDUUDDD, CVec2> {
 			}
 			if (bindSiteCounts < _maxSubSitePerNode){
 				// compute possibility for binding to the closest site
-				double randomN2 = u01(rng);
+				double randomN2;
 				// compute the nearest site
-				double nearestX = round(nodeX*10.0)/10.0; // with 0.1 as grid increment, what is the function for rounding???
-				double nearestY = round(nodeY*10.0)/10.0; // 
-				bool siteAlreadyBound = false;
+				double nearestX = floor(nodeX*10.0)/10.0; // with 0.1 as grid increment, what is the function for rounding???
+				double nearestY = floor(nodeY*10.0)/10.0; //
+				double nearestOther4X[4] = {nearestX, nearestX+1.0/10.0, nearestX+1.0/10.0, nearestX}; // four neighbors
+				double nearestOther4Y[4] = {nearestY, nearestY, nearestY+1.0/10.0, nearestY+1.0/10.0};
+
+				bool siteAlreadyBound[4] = {false, false, false, false}; // four neighboring sites 
 				// double nearest9Neigh[9];
 				for (int bindSiteIndex = 0; bindSiteIndex < _maxSubSitePerNode; bindSiteIndex++){
 					siteIndex = index*_maxSubSitePerNode + bindSiteIndex; 
 					// check if the nearest site is already bound to the current node 
-					if (_subAdhIsBoundAddr[siteIndex] == 1 && abs(nearestX-_subAdhLocXAddr[siteIndex])<0.00001 && abs(nearestY-_subAdhLocYAddr[siteIndex])<0.00001) {
-						siteAlreadyBound = true;
-						break;
+					for (int allNbrIndex = 0; allNbrIndex < 4; allNbrIndex++){
+						if (_subAdhIsBoundAddr[siteIndex] == 1 && abs(nearestOther4X[allNbrIndex]-_subAdhLocXAddr[siteIndex])<0.00001 && abs(nearestOther4Y[allNbrIndex]-_subAdhLocYAddr[siteIndex])<0.00001) {
+							siteAlreadyBound[allNbrIndex] = true;
+							break;
+						}
 					}
 				}
-				if (randomN2<1-exp(-projLen/tempCellRad) && siteAlreadyBound == false) {
-					for (int bindSiteIndex = 0; bindSiteIndex < _maxSubSitePerNode; bindSiteIndex++){
-					siteIndex = index*_maxSubSitePerNode + bindSiteIndex; 
-					if (_subAdhIsBoundAddr[siteIndex] == 0){
-						_subAdhLocXAddr[siteIndex] = nearestX;
-						_subAdhLocYAddr[siteIndex] = nearestY;
-						_subAdhIsBoundAddr[siteIndex] = true;
-						break;
+				// construct a neighbor list 0 to 3 with permulated numbers 
+				for (int allNbrIndex = 0; allNbrIndex < 4; allNbrIndex++){
+					randomN2= u01(rng);
+					projLen = (nearestOther4X[allNbrIndex] - Cell_CenterX)*pX + (nearestOther4Y[allNbrIndex] - Cell_CenterY)*pY;
+					if (randomN2<1-exp(-projLen/tempCellRad) && siteAlreadyBound[allNbrIndex] == false && bindSiteCounts<_maxSubSitePerNode) { // all sites using the same prob 
+						for (int bindSiteIndex = 0; bindSiteIndex < _maxSubSitePerNode; bindSiteIndex++){
+							siteIndex = index*_maxSubSitePerNode + bindSiteIndex; 
+							if (_subAdhIsBoundAddr[siteIndex] == 0){
+								_subAdhLocXAddr[siteIndex] = nearestOther4X[allNbrIndex]; // add permutated arry and change the code to nearestOther4X[nbrListPerm[allNbrIndex]]
+								_subAdhLocYAddr[siteIndex] = nearestOther4Y[allNbrIndex];
+								_subAdhIsBoundAddr[siteIndex] = true;
+								bindSiteCounts += 1; // changing this inside the if condition involving bindSiteCounts 
+								break;
+							}
+						}
 					}
 				}
-			}
 			
 			// Compute the updated force depending on updated distance for each binding site
 			for (int bindSiteIndex = 0; bindSiteIndex < _maxSubSitePerNode; bindSiteIndex++){
@@ -1261,11 +1273,11 @@ struct addSceCellAdhForce: public thrust::unary_function<UUDDUUDDD, CVec2> {
 							velX += kAdh * distNodeSite * adhForceX;
 							velY += kAdh * distNodeSite * adhForceY;
 						}
+					}
 				}
-			}
 			return thrust::make_tuple(velX, velY); 
 		} else {
-			return thrust::make_tuple(velX, velY); 
+			return thrust::make_tuple(velX, velY); // determines return type !!!
 		}
 
 	}

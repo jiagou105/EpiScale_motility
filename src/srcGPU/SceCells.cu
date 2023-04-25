@@ -3525,7 +3525,7 @@ AniRawData SceCells::obtainAniRawDataGivenCellColor(vector<double>& cellColors,
 	thrust::host_vector<double> hostTmpVectorExtForceTangent(maxActiveNode);//AAMIRI
 	thrust::host_vector<double> hostTmpVectorExtForceNormal(maxActiveNode);//AAMIRI
 	thrust::host_vector<double> hostMyosinLevel(maxActiveNode);//apr 05
-
+	thrust::host_vector<double> hostSubAdhIsBound(maxActiveNode*10);//apr 05
 
 
 	thrust::copy(
@@ -3581,6 +3581,22 @@ AniRawData SceCells::obtainAniRawDataGivenCellColor(vector<double>& cellColors,
 							hostTmpVectorF_MI_M_T.begin(), hostTmpVectorF_MI_M_N.begin(), hostMyosinLevel.begin()
 							)));
 
+	thrust::copy(
+			thrust::make_zip_iterator(
+					thrust::make_tuple(
+							nodes->getInfoVecs().subAdhIsBound.begin()
+							)),
+			thrust::make_zip_iterator(
+					thrust::make_tuple(
+							nodes->getInfoVecs().subAdhIsBound.begin()
+							))
+					+ maxActiveNode * 10, // to be changed to an input parameter later, JG042123
+			thrust::make_zip_iterator(
+					thrust::make_tuple(
+							hostSubAdhIsBound.begin()
+				)));
+
+
 
 	thrust::host_vector<uint> curActiveMemNodeCounts =
 			cellInfoVecs.activeMembrNodeCounts;
@@ -3605,12 +3621,13 @@ AniRawData SceCells::obtainAniRawDataGivenCellColor(vector<double>& cellColors,
 	double aniVal2;
 	double tempMyosinLevel;
 
+	int tempAdhSiteCount = 0;
         double tmpF_MI_M_MagN_Int[activeCellCount-1] ; //AliE
 
-         //This is how the VTK file is intended to be written. First the memmbraen nodes are going to be written and then internal nodes.
+         //This is how the VTK file is intended to be written. First the membrane nodes are going to be written and then internal nodes.
         //loop on membrane nodes
 	for (uint i = 0; i < activeCellCount; i++) {
-		tmpF_MI_M_MagN_Int[i]=0.0   ;   
+		tmpF_MI_M_MagN_Int[i]=0.0;   
 		for (uint j = 0; j < curActiveMemNodeCounts[i]; j++) {
 			index1 = beginIndx + i * maxNodePerCell + j;
 			if ( hostIsActiveVec[index1]==true) {
@@ -3632,7 +3649,13 @@ AniRawData SceCells::obtainAniRawDataGivenCellColor(vector<double>& cellColors,
 				tempMyosinLevel = hostMyosinLevel[index1];
 				rawAniData.myoLevel.push_back(tempMyosinLevel);
 
-				rawAniData.aniNodeRank.push_back(i);//AAMIRI
+				tempAdhSiteCount = 0;
+				for (uint k = 0; k<10; k++){
+					tempAdhSiteCount += hostSubAdhIsBound[index1*10 + k]; //???
+				}
+
+				rawAniData.adhSiteCount.push_back(tempAdhSiteCount);
+				rawAniData.aniNodeRank.push_back(i);
 
 				}
 			
@@ -3660,7 +3683,14 @@ AniRawData SceCells::obtainAniRawDataGivenCellColor(vector<double>& cellColors,
 				tempMyosinLevel = hostMyosinLevel[index1];
 				rawAniData.myoLevel.push_back(tempMyosinLevel);
 
-				rawAniData.aniNodeRank.push_back(i);//AAMIRI
+
+				tempAdhSiteCount = 0;
+				for (uint k = 0; k<10; k++){
+					tempAdhSiteCount += hostSubAdhIsBound[index1*10 + k]; //???
+				}
+
+				rawAniData.adhSiteCount.push_back(tempAdhSiteCount);
+				rawAniData.aniNodeRank.push_back(i);
 				}
 			
 			}
@@ -4090,6 +4120,7 @@ VtkAnimationData SceCells::outputVtkData(AniRawData& rawAniData, //apr 05
 		ptAniData.rankScale = rawAniData.aniNodeRank[i];//AAMIRI
 		ptAniData.extForce = rawAniData.aniNodeExtForceArr[i];//AAMIRI
 		ptAniData.myoLevel1= rawAniData.myoLevel[i]; 
+		ptAniData.adhSiteCount1= rawAniData.adhSiteCount[i];
 		vtkData.pointsAniData.push_back(ptAniData);
 	}
 	for (uint i = 0; i < rawAniData.internalLinks.size(); i++) {

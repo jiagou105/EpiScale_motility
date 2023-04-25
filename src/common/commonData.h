@@ -574,6 +574,7 @@ struct PointAniData {
 	double colorScale2;//AAMIRI
 	int rankScale;//AAMIRI
 	double myoLevel1; // apr 05 
+	int adhSiteCount1;
 };
 
 /**
@@ -640,6 +641,7 @@ struct AniRawData {
 	std::vector<BondInfo> bondsArr;
 	std::vector<double> dppLevel; //Ali
 	std::vector<double> myoLevel;
+	std::vector<int> adhSiteCount;
 };
 
 struct VecVal {
