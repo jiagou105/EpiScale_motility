@@ -1118,6 +1118,8 @@ struct UpdateSceCellMyosin: public thrust::unary_function<UUDDUUD, double> {
 
 
 // JG041923
+// four binding grids, not randomly permuted 
+/*
 struct addSceCellAdhForce: public thrust::unary_function<UUDDUUDDD, CVec2> {
 	uint _maxNodePerCell;
 	uint _maxMemNodePerCell;
@@ -1283,6 +1285,168 @@ struct addSceCellAdhForce: public thrust::unary_function<UUDDUUDDD, CVec2> {
 	}
 }
 };
+
+*/
+
+
+
+// JG042523 
+struct addSceCellAdhForce: public thrust::unary_function<UUDDUUDDD, CVec2> {
+	uint _maxNodePerCell;
+	uint _maxMemNodePerCell;
+	double* _locXAddr;
+	double* _locYAddr;
+	bool* _isActiveAddr;
+	double* _myosinLevelAddr;
+	double _timeStep;
+	double _timeNow;
+	double* _subAdhLocXAddr; 
+	double* _subAdhLocYAddr;
+	bool* _subAdhIsBoundAddr;
+	uint _maxSubSitePerNode; 
+	uint _seed;
+	// double _grthPrgrCriVal_M;
+	// comment prevents bad formatting issues of __host__ and __device__ in Nsight
+	__host__ __device__ addSceCellAdhForce(uint maxNodePerCell,
+			uint maxMemNodePerCell, double* locXAddr, double* locYAddr,
+			bool* isActiveAddr, double* myosinLevelAddr, double timeStep, double timeNow,
+			double* subAdhLocXAddr, double* subAdhLocYAddr, bool* subAdhIsBoundAddr, uint maxSubSitePerNode, uint seed) :
+			_maxNodePerCell(maxNodePerCell), _maxMemNodePerCell(
+					maxMemNodePerCell), _locXAddr(locXAddr), _locYAddr(
+					locYAddr), _isActiveAddr(isActiveAddr), _myosinLevelAddr(myosinLevelAddr), 
+					_timeStep(timeStep), _timeNow(timeNow), 
+					_subAdhLocXAddr(subAdhLocXAddr), _subAdhLocYAddr(subAdhLocYAddr), _subAdhIsBoundAddr(subAdhIsBoundAddr), _maxSubSitePerNode(maxSubSitePerNode), _seed(seed)  {
+	}
+	// comment prevents bad formatting issues of __host__ and __device__ in Nsight
+	__device__ CVec2 operator()(const UUDDUUDDD &cData) const {
+		uint activeMembrCount = thrust::get<0>(cData);
+		uint activeIntnlCount = thrust::get<1>(cData);
+		double Cell_CenterX = thrust::get<2>(cData);
+        double Cell_CenterY = thrust::get<3>(cData);
+		uint cellRank = thrust::get<4>(cData);
+		uint nodeRank = thrust::get<5>(cData); // Is the node 
+		double nodeMyosin = thrust::get<6>(cData);
+		double velX = thrust::get<7>(cData);
+		double velY = thrust::get<8>(cData);
+		uint index = cellRank * _maxNodePerCell + nodeRank;
+		// uint intnlIndxMemBegin = cellRank * _maxNodePerCell;
+
+		double nodeX = _locXAddr[index];
+		double nodeY = _locYAddr[index];
+		
+		double pX =  sqrt(2.0)/2.0; // to be added as cell property later, JG041123
+        double pY = -sqrt(2.0)/2.0;
+		// double projLen = (nodeX - Cell_CenterX)*pX + (nodeY - Cell_CenterY)*pY;
+		double projLen;
+		double tempCellRad = 1.25;
+		double twoPi = 2.0*2.0*3.1415926535897932384626;
+		double randAngle;
+		double randLen;
+		thrust::default_random_engine rng(_seed);
+		// rng.discard(cellRank);
+    	thrust::uniform_real_distribution<double> u01(0, 1.0);
+		thrust::uniform_real_distribution<double> u02(0, twoPi);
+
+
+		uint bindSiteCounts = 0;
+		double posBind = 0.0; // initialize probability for binding and unbinding 
+		double posUnbind = 0.0; 
+		double siteX;
+		double siteY;
+		uint siteIndex;
+		double charUnbindDist = 0.1;
+		double distNodeSite;
+		double adhForceX = 0.0;
+		double adhForceY = 0.0;
+		double kAdh = 10.0;
+		if (_timeNow > 55800.0 && _isActiveAddr[index] == true && (nodeRank < _maxMemNodePerCell)) {
+			// starting of the index of the substrate site corresponding to this node is: index*10, 10 is the max subs sites
+			for (int bindSiteIndex = 0; bindSiteIndex < _maxSubSitePerNode; // interaction between cur internal node and other internal node
+					bindSiteIndex++) {
+						bindSiteCounts += _subAdhIsBoundAddr[index*_maxSubSitePerNode + bindSiteIndex];
+					}
+			// Perform the unbinding and binding events by adding the location of the site to the siteXY vector 
+			if (bindSiteCounts > 0){
+				// means there are possibilities for unbinding, compute the unbinding probability 
+				for (int bindSiteIndex = 0; bindSiteIndex < _maxSubSitePerNode; bindSiteIndex++){
+					double randomN1 = u01(rng);
+					siteIndex = index*_maxSubSitePerNode + bindSiteIndex; 
+					if (_subAdhIsBoundAddr[siteIndex] == 1){
+						siteX = _subAdhLocXAddr[siteIndex];
+						siteY = _subAdhLocYAddr[siteIndex];
+						distNodeSite = compDist2D(nodeX, nodeY, siteX, siteY);  
+						if (randomN1 < (1.0-exp(-distNodeSite/charUnbindDist))){
+							// _subAdhLocXAddr = ;
+							// _subAdhLocYAddr = ;
+							_subAdhIsBoundAddr[siteIndex] = false;
+						}
+					}
+				}
+			}
+			if (bindSiteCounts < _maxSubSitePerNode){
+				// compute possibility for binding to the closest site
+				double randomN2;
+				// compute the nearest site
+				double nearestX = floor(nodeX*10.0)/10.0; // with 0.1 as grid increment, what is the function for rounding???
+				double nearestY = floor(nodeY*10.0)/10.0; //
+				double nearestOther4X[4] = {nearestX, nearestX+1.0/10.0, nearestX+1.0/10.0, nearestX}; // four neighbors
+				double nearestOther4Y[4] = {nearestY, nearestY, nearestY+1.0/10.0, nearestY+1.0/10.0};
+
+				bool siteAlreadyBound[4] = {false, false, false, false}; // four neighboring sites 
+				// double nearest9Neigh[9];
+				for (int bindSiteIndex = 0; bindSiteIndex < _maxSubSitePerNode; bindSiteIndex++){
+					siteIndex = index*_maxSubSitePerNode + bindSiteIndex; 
+					// check if the nearest site is already bound to the current node 
+					for (int allNbrIndex = 0; allNbrIndex < 4; allNbrIndex++){
+						if (_subAdhIsBoundAddr[siteIndex] == 1 && abs(nearestOther4X[allNbrIndex]-_subAdhLocXAddr[siteIndex])<0.00001 && abs(nearestOther4Y[allNbrIndex]-_subAdhLocYAddr[siteIndex])<0.00001) {
+							siteAlreadyBound[allNbrIndex] = true;
+							break;
+							}
+						}
+					}
+					
+				// construct a neighbor list 0 to 3 with permulated numbers 
+				for (int allNbrIndex = 0; allNbrIndex < 4; allNbrIndex++){
+					randomN2= u01(rng);
+					projLen = (nearestOther4X[allNbrIndex] - Cell_CenterX)*pX + (nearestOther4Y[allNbrIndex] - Cell_CenterY)*pY;
+					if (randomN2<1-exp(-projLen/tempCellRad) && siteAlreadyBound[allNbrIndex] == false && bindSiteCounts<_maxSubSitePerNode) { // all sites using the same prob 
+						for (int bindSiteIndex = 0; bindSiteIndex < _maxSubSitePerNode; bindSiteIndex++){
+							siteIndex = index*_maxSubSitePerNode + bindSiteIndex; 
+							if (_subAdhIsBoundAddr[siteIndex] == 0){
+								_subAdhLocXAddr[siteIndex] = nearestOther4X[allNbrIndex]; // add permutated arry and change the code to nearestOther4X[nbrListPerm[allNbrIndex]]
+								_subAdhLocYAddr[siteIndex] = nearestOther4Y[allNbrIndex];
+								_subAdhIsBoundAddr[siteIndex] = true;
+								bindSiteCounts += 1; // changing this inside the if condition involving bindSiteCounts 
+								break;
+							}
+						}
+					}
+				}
+			}
+			
+			// Compute the updated force depending on updated distance for each binding site
+			for (int bindSiteIndex = 0; bindSiteIndex < _maxSubSitePerNode; bindSiteIndex++){
+				siteIndex = index*_maxSubSitePerNode + bindSiteIndex; 
+				if (_subAdhIsBoundAddr[siteIndex] == 1){
+						siteX = _subAdhLocXAddr[siteIndex];
+						siteY = _subAdhLocYAddr[siteIndex];
+						distNodeSite = compDist2D(nodeX, nodeY, siteX, siteY);  
+						if (distNodeSite > 0.0){
+							adhForceX = (siteX - nodeX)/distNodeSite;
+							adhForceY = (siteY - nodeY)/distNodeSite;
+							velX += kAdh * distNodeSite * adhForceX;
+							velY += kAdh * distNodeSite * adhForceY;
+						}
+					}
+				}
+		return thrust::make_tuple(velX, velY);
+	} else {
+			return thrust::make_tuple(velX, velY); // determines return type !!!
+		}
+	}
+};
+
+
 
 
 
