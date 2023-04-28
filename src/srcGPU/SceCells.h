@@ -1103,7 +1103,7 @@ struct UpdateSceCellMyosin: public thrust::unary_function<UUDDUUD, double> {
 				// distNodes = compDist2D(nodeX,nodeY,nodeXOther,nodeYOther);
 				// myosinDiffer = kDiff * max((1.0-distNodes/_myosinDiffusionThreshold),0.0) * (myosinOther-nodeMyosin);
 				// nodeMyosin = nodeMyosin + myosinDiffer * _timeStep;
-				nodeMyosin = -((nodeX-Cell_CenterX)*pX + (nodeY-Cell_CenterY)*pY) +1.0;
+				nodeMyosin = -((nodeX-Cell_CenterX)*pX + (nodeY-Cell_CenterY)*pY) + 2.0; // make sure it is positive
 
 			}
 		}
@@ -1168,10 +1168,13 @@ struct addSceCellAdhForce: public thrust::unary_function<UUDDUUDDD, CVec2> {
 		// double projLen = (nodeX - Cell_CenterX)*pX + (nodeY - Cell_CenterY)*pY;
 		double projLen;
 		double tempCellRad = 1.25;
-
+		double twoPi = 2.0*2.0*3.1415926535897932384626;
+		double randAngle;
+		double randLen;
 		thrust::default_random_engine rng(_seed);
 		// rng.discard(cellRank);
     	thrust::uniform_real_distribution<double> u01(0, 1.0);
+		thrust::uniform_real_distribution<double> u02(0, twoPi);
 
 
 		// To be implemented: 
@@ -1241,9 +1244,10 @@ struct addSceCellAdhForce: public thrust::unary_function<UUDDUUDDD, CVec2> {
 						if (_subAdhIsBoundAddr[siteIndex] == 1 && abs(nearestOther4X[allNbrIndex]-_subAdhLocXAddr[siteIndex])<0.00001 && abs(nearestOther4Y[allNbrIndex]-_subAdhLocYAddr[siteIndex])<0.00001) {
 							siteAlreadyBound[allNbrIndex] = true;
 							break;
+							}
 						}
 					}
-				}
+				// 0, 1, 2, 3 
 				// construct a neighbor list 0 to 3 with permulated numbers 
 				for (int allNbrIndex = 0; allNbrIndex < 4; allNbrIndex++){
 					randomN2= u01(rng);
@@ -1261,6 +1265,7 @@ struct addSceCellAdhForce: public thrust::unary_function<UUDDUUDDD, CVec2> {
 						}
 					}
 				}
+			}
 			
 			// Compute the updated force depending on updated distance for each binding site
 			for (int bindSiteIndex = 0; bindSiteIndex < _maxSubSitePerNode; bindSiteIndex++){
@@ -1277,13 +1282,11 @@ struct addSceCellAdhForce: public thrust::unary_function<UUDDUUDDD, CVec2> {
 						}
 					}
 				}
-			return thrust::make_tuple(velX, velY); 
-		} else {
+		return thrust::make_tuple(velX, velY);
+	} else {
 			return thrust::make_tuple(velX, velY); // determines return type !!!
 		}
-
 	}
-}
 };
 
 */
@@ -1328,7 +1331,7 @@ struct addSceCellAdhForce: public thrust::unary_function<UUDDUUDDD, CVec2> {
 		double nodeMyosin = thrust::get<6>(cData);
 		double velX = thrust::get<7>(cData);
 		double velY = thrust::get<8>(cData);
-		uint index = cellRank * _maxNodePerCell + nodeRank;
+		uint index = cellRank * _maxNodePerCell + nodeRank;// 
 		// uint intnlIndxMemBegin = cellRank * _maxNodePerCell;
 
 		double nodeX = _locXAddr[index];
@@ -1339,9 +1342,10 @@ struct addSceCellAdhForce: public thrust::unary_function<UUDDUUDDD, CVec2> {
 		// double projLen = (nodeX - Cell_CenterX)*pX + (nodeY - Cell_CenterY)*pY;
 		double projLen;
 		double tempCellRad = 1.25;
-		double twoPi = 2.0*2.0*3.1415926535897932384626;
+		double twoPi = 2.0*3.1415926535897932384626;
 		double randAngle;
 		double randLen;
+		double lambda = 10.0; // parameter for the exponential distribution
 		thrust::default_random_engine rng(_seed);
 		// rng.discard(cellRank);
     	thrust::uniform_real_distribution<double> u01(0, 1.0);
@@ -1358,8 +1362,17 @@ struct addSceCellAdhForce: public thrust::unary_function<UUDDUUDDD, CVec2> {
 		double distNodeSite;
 		double adhForceX = 0.0;
 		double adhForceY = 0.0;
-		double kAdh = 10.0;
-		if (_timeNow > 55800.0 && _isActiveAddr[index] == true && (nodeRank < _maxMemNodePerCell)) {
+		double kAdh = 30.0;
+		double siteBindThreshold;
+		
+		double randomN1;
+		double randomN2;
+		double randomN3;
+		double ngbrSiteX;
+		double ngbrSiteY;
+
+		// if (_timeNow > 55800.0 && _isActiveAddr[index] == true && (nodeRank < _maxMemNodePerCell)) {
+		if (_timeNow > 55800.0 && _isActiveAddr[index] == true) {
 			// starting of the index of the substrate site corresponding to this node is: index*10, 10 is the max subs sites
 			for (int bindSiteIndex = 0; bindSiteIndex < _maxSubSitePerNode; // interaction between cur internal node and other internal node
 					bindSiteIndex++) {
@@ -1369,7 +1382,7 @@ struct addSceCellAdhForce: public thrust::unary_function<UUDDUUDDD, CVec2> {
 			if (bindSiteCounts > 0){
 				// means there are possibilities for unbinding, compute the unbinding probability 
 				for (int bindSiteIndex = 0; bindSiteIndex < _maxSubSitePerNode; bindSiteIndex++){
-					double randomN1 = u01(rng);
+					randomN1 = u01(rng);
 					siteIndex = index*_maxSubSitePerNode + bindSiteIndex; 
 					if (_subAdhIsBoundAddr[siteIndex] == 1){
 						siteX = _subAdhLocXAddr[siteIndex];
@@ -1384,46 +1397,34 @@ struct addSceCellAdhForce: public thrust::unary_function<UUDDUUDDD, CVec2> {
 				}
 			}
 			if (bindSiteCounts < _maxSubSitePerNode){
-				// compute possibility for binding to the closest site
-				double randomN2;
-				// compute the nearest site
-				double nearestX = floor(nodeX*10.0)/10.0; // with 0.1 as grid increment, what is the function for rounding???
-				double nearestY = floor(nodeY*10.0)/10.0; //
-				double nearestOther4X[4] = {nearestX, nearestX+1.0/10.0, nearestX+1.0/10.0, nearestX}; // four neighbors
-				double nearestOther4Y[4] = {nearestY, nearestY, nearestY+1.0/10.0, nearestY+1.0/10.0};
-
-				bool siteAlreadyBound[4] = {false, false, false, false}; // four neighboring sites 
-				// double nearest9Neigh[9];
-				for (int bindSiteIndex = 0; bindSiteIndex < _maxSubSitePerNode; bindSiteIndex++){
-					siteIndex = index*_maxSubSitePerNode + bindSiteIndex; 
-					// check if the nearest site is already bound to the current node 
-					for (int allNbrIndex = 0; allNbrIndex < 4; allNbrIndex++){
-						if (_subAdhIsBoundAddr[siteIndex] == 1 && abs(nearestOther4X[allNbrIndex]-_subAdhLocXAddr[siteIndex])<0.00001 && abs(nearestOther4Y[allNbrIndex]-_subAdhLocYAddr[siteIndex])<0.00001) {
-							siteAlreadyBound[allNbrIndex] = true;
-							break;
-							}
-						}
-					}
-					
-				// construct a neighbor list 0 to 3 with permulated numbers 
-				for (int allNbrIndex = 0; allNbrIndex < 4; allNbrIndex++){
+				// compute possibility for binding to an arbitrary site 
+				// 
+				for (int allNbrIndex = 0; allNbrIndex < (_maxSubSitePerNode-bindSiteCounts); allNbrIndex++){
 					randomN2= u01(rng);
-					projLen = (nearestOther4X[allNbrIndex] - Cell_CenterX)*pX + (nearestOther4Y[allNbrIndex] - Cell_CenterY)*pY;
-					if (randomN2<1-exp(-projLen/tempCellRad) && siteAlreadyBound[allNbrIndex] == false && bindSiteCounts<_maxSubSitePerNode) { // all sites using the same prob 
+					randomN3 = u01(rng);
+					randAngle = u02(rng);
+					randLen = -logf(1-randomN2)/lambda;
+					ngbrSiteX = nodeX + randLen*cos(randAngle); // compute the X location of the neighboring site
+					ngbrSiteY = nodeY + randLen*sin(randAngle);
+					projLen = (ngbrSiteX - Cell_CenterX)*pX + (ngbrSiteY - Cell_CenterY)*pY; 
+					if (nodeRank < _maxMemNodePerCell) {
+						siteBindThreshold = 1-exp(-projLen/tempCellRad);
+					} else{
+						siteBindThreshold = 0.5;
+					}
+					if (randomN3<siteBindThreshold) { 
 						for (int bindSiteIndex = 0; bindSiteIndex < _maxSubSitePerNode; bindSiteIndex++){
 							siteIndex = index*_maxSubSitePerNode + bindSiteIndex; 
 							if (_subAdhIsBoundAddr[siteIndex] == 0){
-								_subAdhLocXAddr[siteIndex] = nearestOther4X[allNbrIndex]; // add permutated arry and change the code to nearestOther4X[nbrListPerm[allNbrIndex]]
-								_subAdhLocYAddr[siteIndex] = nearestOther4Y[allNbrIndex];
+								_subAdhLocXAddr[siteIndex] = ngbrSiteX; 
+								_subAdhLocYAddr[siteIndex] = ngbrSiteY;
 								_subAdhIsBoundAddr[siteIndex] = true;
-								bindSiteCounts += 1; // changing this inside the if condition involving bindSiteCounts 
 								break;
 							}
 						}
 					}
 				}
 			}
-			
 			// Compute the updated force depending on updated distance for each binding site
 			for (int bindSiteIndex = 0; bindSiteIndex < _maxSubSitePerNode; bindSiteIndex++){
 				siteIndex = index*_maxSubSitePerNode + bindSiteIndex; 
@@ -1448,7 +1449,10 @@ struct addSceCellAdhForce: public thrust::unary_function<UUDDUUDDD, CVec2> {
 
 
 
-
+// To do list:
+// 1. adhesion to all internal nodes independent of P, random binding; check 
+// 2. add force = k*grad(m)+ adh on all internal nodes (how to compute grad(m)?), 
+// 3. add randomness to the removing and adding nodes function (keep the total number of internal nodes in some range), unbinding depending on myosin level 
 
 
 
@@ -1509,7 +1513,7 @@ struct InitializeMyosinLevel: public thrust::unary_function<UUDDUU, double> {
 			// assign initial value of myosin in the following block 
 			// gradient is along to the potive direction of y-axis
 			// nodeMyosin = baseMyosin + (nodeY-Cell_CenterY)*gradientMyosin; // dot prodect, 
-			nodeMyosin = -((nodeX-Cell_CenterX)*pX + (nodeY-Cell_CenterY)*pY) + 1.0;
+			nodeMyosin = -((nodeX-Cell_CenterX)*pX + (nodeY-Cell_CenterY)*pY) + 2.0; // plus 
 		}
 		
 		return nodeMyosin;
@@ -2124,7 +2128,8 @@ struct AddPtOp_M: thrust::unary_function<BoolUIDDUID, DUi> {
 
 
 // JG041123
-// to be implemented 
+// add and delete one node
+/*
 struct AddDelPtDueToActinTemp: thrust::unary_function<BoolUIDDUID, DUi> {
 	uint _seed;
 	double _addNodeDistance;
@@ -2192,7 +2197,7 @@ struct AddDelPtDueToActinTemp: thrust::unary_function<BoolUIDDUID, DUi> {
 		double nodeYDel;
 		
 		double delta = 0.000001;
-		if (/*!isIntnlEmptied*/activeIntnlNodeThis>1 && _timeStep%10000==0 && _timeStep * _ddt >=_InitTimeStage){
+		if (activeIntnlNodeThis>1 && _timeStep%10000==0 && _timeStep * _ddt >=_InitTimeStage){ // !isIntnlEmptied
 			for (index_intnl = intnlIndxBegin; index_intnl < intnlIndxEnd;
                     index_intnl++) {
 					nodeMyosinCur = _myosinLevelAddr[index_intnl];
@@ -2256,14 +2261,161 @@ struct AddDelPtDueToActinTemp: thrust::unary_function<BoolUIDDUID, DUi> {
 		
 		return thrust::make_tuple(lastCheckPoint, activeIntnlNodeThis);
 	}
-
 };
+*/
 
 
+// JG042723
+// add and delete multiple internal nodes
+struct AddDelPtDueToActinTemp: thrust::unary_function<BoolUIDDUID, DUi> {
+	uint _seed;
+	double _addNodeDistance;
+	double _growThreshold;
+	double* _nodeXPosAddress;
+	double* _nodeYPosAddress;
+	bool* _nodeIsActiveAddress;
 
-// JG041223
-// delete node due to actin  
+	uint _maxNodePerCell;
+    uint _maxMemNodePerCell;
+	double* _myosinLevelAddr;
+	double* _nodeVelXAddr;
+	double* _nodeVelYAddr;
 
+	int _timeStep;
+	int* _adhIndxAddr;
+	double _InitTimeStage;
+	double _ddt;
+	// comment prevents bad formatting issues of __host__ and __device__ in Nsight
+	__host__ __device__ AddDelPtDueToActinTemp(uint seed, double addNodeDistance,
+			double growThreshold, double* nodeXPosAddress,
+			double* nodeYPosAddress, bool* nodeIsActiveAddress, 
+			uint maxNodePerCell, uint maxMemNodePerCell, double* myosinLevelAddr,
+			double* nodeVelXAddr, double* nodeVelYAddr, int timeStep, int* adhIndxAddr, double InitTimeStage, double ddt) :
+			_seed(seed), _addNodeDistance(addNodeDistance), _growThreshold(
+					growThreshold), _nodeXPosAddress(nodeXPosAddress), _nodeYPosAddress(
+					nodeYPosAddress), _nodeIsActiveAddress(nodeIsActiveAddress), 
+					_maxNodePerCell(maxNodePerCell), _maxMemNodePerCell(maxMemNodePerCell), 
+					_myosinLevelAddr(myosinLevelAddr), _nodeVelXAddr(nodeVelXAddr), _nodeVelYAddr(nodeVelYAddr),
+					_timeStep(timeStep), _adhIndxAddr(adhIndxAddr), _InitTimeStage(InitTimeStage), _ddt(ddt) {
+	}
+	// comment prevents bad formatting issues of __host__ and __device__ in Nsight 
+	__device__ DUi operator()(const BoolUIDDUID &biddi) {
+		bool isScheduledToGrow = thrust::get<0>(biddi);
+		uint activeIntnlNodeThis = thrust::get<1>(biddi);
+		double lastCheckPoint = thrust::get<5>(biddi);
+
+		bool isFull = isAllIntnlFilled(activeIntnlNodeThis);
+		if (isFull) {
+			return thrust::make_tuple(lastCheckPoint, activeIntnlNodeThis);
+		}
+
+		double cellCenterXCoord = thrust::get<2>(biddi);
+		double cellCenterYCoord = thrust::get<3>(biddi);
+		uint cellRank = thrust::get<4>(biddi);
+		double randomAngle = obtainRandAngle(cellRank, _seed);
+		// double xOffset = _addNodeDistance * cos(randomAngle);
+		// double yOffset = _addNodeDistance * sin(randomAngle);
+		// double xOffset = _addNodeDistance;
+		// double yOffset = _addNodeDistance;
+
+		uint cellNodeEndPos = obtainNewIntnlNodeIndex(cellRank,
+		 		activeIntnlNodeThis); // size of the vector until the last active node in the current cell (inclusive)
+		uint intnlIndxBegin = cellRank * _maxNodePerCell + _maxMemNodePerCell;
+        uint intnlIndxEnd = cellNodeEndPos; 
+		uint index_intnl;
+		// uint index_highstMyo;
+		// uint index_lowstMyo;
+		double nodeMyosinOldL = 100;
+		double nodeMyosinOldH = -100;
+		double nodeMyosinCur;
+		double maxAddDelNum = 5;
+		double nodeXAddAll[5]; // manual
+		double nodeYAddAll[5];
+		double nodeXDelAll[5];
+		double nodeYDelAll[5];
+		uint index_delAll[5];
+		uint index_addAll[5];
+
+		uint nodeCountAdd = 0;
+		uint nodeCountDel = 0;
+		
+		double delta = 0.000001;
+		if (/*!isIntnlEmptied*/activeIntnlNodeThis>1 && _timeStep%10000==0 && _timeStep * _ddt >=_InitTimeStage){
+			for (index_intnl = intnlIndxBegin; index_intnl < intnlIndxEnd;
+                    index_intnl++) {
+					nodeMyosinCur = _myosinLevelAddr[index_intnl];
+					if (nodeMyosinCur<nodeMyosinOldL) { // lowest myosin location 
+						nodeMyosinOldL = nodeMyosinCur;
+						// index_lowstMyo = index_intnl;
+					}
+					if (nodeMyosinCur>=nodeMyosinOldH){
+						nodeMyosinOldH = nodeMyosinCur; // highest myosin location 
+						// index_highstMyo = index_intnl;
+					}
+				}
+			//
+			// record myosin level is about 120% of the lowest value
+			// record myosin level is about 80% of the highest value 
+			for (index_intnl = intnlIndxBegin; index_intnl < intnlIndxEnd;
+                    index_intnl++) {
+					nodeMyosinCur = _myosinLevelAddr[index_intnl];
+				if (nodeMyosinCur<1.05*nodeMyosinOldL && nodeCountAdd<maxAddDelNum) { // manual!!! to be changed // add 
+					nodeXAddAll[nodeCountAdd] = _nodeXPosAddress[index_intnl];
+					nodeYAddAll[nodeCountAdd] = _nodeYPosAddress[index_intnl]; 
+					index_addAll[nodeCountAdd] = index_intnl;
+					nodeCountAdd +=1;
+				}
+				if (nodeMyosinCur>0.98*nodeMyosinOldH && nodeCountDel<maxAddDelNum) { // delete
+					nodeXDelAll[nodeCountDel] = _nodeXPosAddress[index_intnl]; // not used???
+					nodeYDelAll[nodeCountDel] = _nodeYPosAddress[index_intnl]; 
+					index_delAll[nodeCountDel] = index_intnl;
+					nodeCountDel +=1;
+				}
+			} 
+			uint maxIntnlNodePerCell = _maxNodePerCell-_maxMemNodePerCell; // check this 
+			uint tempIndexAddDel;
+			uint index_delStart;
+			// uint cellNodeEndPos = obtainNewIntnlNodeIndex(cellRank,
+			//	activeIntnlNodeThis); // this is the index in the global vector ???
+			// the following delete node 
+			for (tempIndexAddDel=0; tempIndexAddDel < nodeCountDel; tempIndexAddDel++){
+				index_delStart = index_delAll[tempIndexAddDel]-tempIndexAddDel; //check this, wrong! following the order? 
+				// add a condition to check if there is active internal node
+				for (int m=index_delStart; m<cellNodeEndPos; m++){
+					_nodeXPosAddress[m] = _nodeXPosAddress[m+1];
+					_nodeYPosAddress[m] = _nodeYPosAddress[m+1];
+					// _adhIndxAddr[m] = _adhIndxAddr[m+1];
+					_nodeIsActiveAddress[m] = _nodeIsActiveAddress[m+1];}
+
+					_nodeXPosAddress[cellNodeEndPos-1] = 0.0 + delta;
+					_nodeYPosAddress[cellNodeEndPos-1] = 0.0 + delta;
+					_nodeIsActiveAddress[cellNodeEndPos-1] = false;
+					// _adhIndxAddr[cellNodeEndPos-1] = -1;
+					cellNodeEndPos = cellNodeEndPos - 1;
+
+			}
+			// the following add node
+			double xCoordNewPt;
+			double yCoordNewPt;
+			for (tempIndexAddDel=0; tempIndexAddDel < nodeCountAdd; tempIndexAddDel++){
+				xCoordNewPt = nodeXAddAll[tempIndexAddDel] - _addNodeDistance * cos(randomAngle); // same for all new node 
+				yCoordNewPt = nodeYAddAll[tempIndexAddDel] - _addNodeDistance * sin(randomAngle); 
+				if (cellNodeEndPos-intnlIndxBegin < maxIntnlNodePerCell) { // if the number of internal node is less than the maximum internal node // double check this 
+					_nodeXPosAddress[cellNodeEndPos] = xCoordNewPt;
+					_nodeYPosAddress[cellNodeEndPos] = yCoordNewPt;
+					_nodeIsActiveAddress[cellNodeEndPos] = true;
+					cellNodeEndPos = cellNodeEndPos + 1;
+				}
+			}
+		}
+
+		lastCheckPoint = lastCheckPoint + _growThreshold;
+		if (lastCheckPoint > 1.0) {
+			lastCheckPoint = 1.0;
+		}
+		return thrust::make_tuple(lastCheckPoint, activeIntnlNodeThis);
+	}
+};
 
 
 

@@ -270,7 +270,7 @@ SceNodes::SceNodes(uint maxTotalCellCount, uint maxAllNodePerCell) {
 			"MaxIntnlNodeCountPerCell").toInt();
 
 	initNodeAllocPara_M(0, maxTotalCellCount, maxMembrNodeCountPerCell,
-			maxIntnlNodeCountPerCell);
+			maxIntnlNodeCountPerCell); // first parameter is the totalBdryNodeCount
 
 	std::cout << "    Number of boundary nodes = " << allocPara_M.bdryNodeCount
 			<< std::endl;

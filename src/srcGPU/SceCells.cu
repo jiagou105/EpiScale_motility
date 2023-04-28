@@ -2714,7 +2714,7 @@ void SceCells::growAtRandom_M(double dt) {
 
 	// addPointIfScheduledToGrow_M();
 
-	// addPointDueToActin(); // JG041123
+	addPointDueToActin(); // JG041123
 
 	//decideIsScheduleToShrink_M();// AAMIRI May5
 
