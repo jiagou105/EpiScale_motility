@@ -1364,6 +1364,7 @@ struct addSceCellAdhForce: public thrust::unary_function<UUDDUUDDD, CVec2> {
 		double adhForceY = 0.0;
 		double kAdh = 30.0;
 		double siteBindThreshold;
+		double charMyosin = 3.0; // check: to be added as a parameter
 		
 		double randomN1;
 		double randomN2;
@@ -1388,7 +1389,7 @@ struct addSceCellAdhForce: public thrust::unary_function<UUDDUUDDD, CVec2> {
 						siteX = _subAdhLocXAddr[siteIndex];
 						siteY = _subAdhLocYAddr[siteIndex];
 						distNodeSite = compDist2D(nodeX, nodeY, siteX, siteY);  
-						if (randomN1 < (1.0-exp(-distNodeSite/charUnbindDist))){
+						if (randomN1 < (1.0-exp(-distNodeSite/charUnbindDist-nodeMyosin/charMyosin))){ // check: make sure node myosin level is > 0
 							// _subAdhLocXAddr = ;
 							// _subAdhLocYAddr = ;
 							_subAdhIsBoundAddr[siteIndex] = false;
@@ -2301,7 +2302,7 @@ struct AddDelPtDueToActinTemp: thrust::unary_function<BoolUIDDUID, DUi> {
 	// comment prevents bad formatting issues of __host__ and __device__ in Nsight 
 	__device__ DUi operator()(const BoolUIDDUID &biddi) {
 		bool isScheduledToGrow = thrust::get<0>(biddi);
-		uint activeIntnlNodeThis = thrust::get<1>(biddi);
+		uint activeIntnlNodeThis = thrust::get<1>(biddi); // number of active internal node???
 		double lastCheckPoint = thrust::get<5>(biddi);
 
 		bool isFull = isAllIntnlFilled(activeIntnlNodeThis);
@@ -2313,23 +2314,20 @@ struct AddDelPtDueToActinTemp: thrust::unary_function<BoolUIDDUID, DUi> {
 		double cellCenterYCoord = thrust::get<3>(biddi);
 		uint cellRank = thrust::get<4>(biddi);
 		double randomAngle = obtainRandAngle(cellRank, _seed);
-		// double xOffset = _addNodeDistance * cos(randomAngle);
-		// double yOffset = _addNodeDistance * sin(randomAngle);
-		// double xOffset = _addNodeDistance;
-		// double yOffset = _addNodeDistance;
+
 
 		uint cellNodeEndPos = obtainNewIntnlNodeIndex(cellRank,
-		 		activeIntnlNodeThis); // size of the vector until the last active node in the current cell (inclusive)
-		uint intnlIndxBegin = cellRank * _maxNodePerCell + _maxMemNodePerCell;
-        uint intnlIndxEnd = cellNodeEndPos; 
+		 		activeIntnlNodeThis); // size of the vector until the last active node in the current cell (inclusive), index to add a new node?
+		uint intnlIndxBegin = cellRank * _maxNodePerCell + _maxMemNodePerCell; // length of the vector before the first internal node, index of the first internal node 
+        uint intnlIndxEnd = cellNodeEndPos; // index of the new node to be added. 
 		uint index_intnl;
 		// uint index_highstMyo;
 		// uint index_lowstMyo;
 		double nodeMyosinOldL = 100;
 		double nodeMyosinOldH = -100;
 		double nodeMyosinCur;
-		double maxAddDelNum = 5;
-		double nodeXAddAll[5]; // manual
+		double maxAddDelNum = 5; // must agree with the number in [] in the following 6 arrays 
+		double nodeXAddAll[5]; 
 		double nodeYAddAll[5];
 		double nodeXDelAll[5];
 		double nodeYDelAll[5];
@@ -2354,8 +2352,8 @@ struct AddDelPtDueToActinTemp: thrust::unary_function<BoolUIDDUID, DUi> {
 					}
 				}
 			//
-			// record myosin level is about 120% of the lowest value
-			// record myosin level is about 80% of the highest value 
+			// record myosin level is about 105% of the lowest value
+			// record myosin level is about 98% of the highest value 
 			for (index_intnl = intnlIndxBegin; index_intnl < intnlIndxEnd;
                     index_intnl++) {
 					nodeMyosinCur = _myosinLevelAddr[index_intnl];
@@ -2377,24 +2375,25 @@ struct AddDelPtDueToActinTemp: thrust::unary_function<BoolUIDDUID, DUi> {
 			uint index_delStart;
 			// uint cellNodeEndPos = obtainNewIntnlNodeIndex(cellRank,
 			//	activeIntnlNodeThis); // this is the index in the global vector ???
-			// the following delete node 
+			// the following delete nodes 
 			for (tempIndexAddDel=0; tempIndexAddDel < nodeCountDel; tempIndexAddDel++){
-				index_delStart = index_delAll[tempIndexAddDel]-tempIndexAddDel; //check this, wrong! following the order? 
+				index_delStart = index_delAll[tempIndexAddDel]-tempIndexAddDel; //check this, following the order? 
 				// add a condition to check if there is active internal node
-				for (int m=index_delStart; m<cellNodeEndPos; m++){
+				for (int m=index_delStart; m<cellNodeEndPos; m++){ // cellNodeEndPos-1 
 					_nodeXPosAddress[m] = _nodeXPosAddress[m+1];
 					_nodeYPosAddress[m] = _nodeYPosAddress[m+1];
 					// _adhIndxAddr[m] = _adhIndxAddr[m+1];
-					_nodeIsActiveAddress[m] = _nodeIsActiveAddress[m+1];}
+					_nodeIsActiveAddress[m] = _nodeIsActiveAddress[m+1];
+					}
 
-					_nodeXPosAddress[cellNodeEndPos-1] = 0.0 + delta;
-					_nodeYPosAddress[cellNodeEndPos-1] = 0.0 + delta;
-					_nodeIsActiveAddress[cellNodeEndPos-1] = false;
-					// _adhIndxAddr[cellNodeEndPos-1] = -1;
-					cellNodeEndPos = cellNodeEndPos - 1;
-
+				_nodeXPosAddress[cellNodeEndPos-1] = 0.0 + delta;
+				_nodeYPosAddress[cellNodeEndPos-1] = 0.0 + delta;
+				_nodeIsActiveAddress[cellNodeEndPos-1] = false;
+				// _adhIndxAddr[cellNodeEndPos-1] = -1;
+				cellNodeEndPos = cellNodeEndPos - 1;
+				activeIntnlNodeThis = activeIntnlNodeThis-1;
 			}
-			// the following add node
+			// the following add nodes
 			double xCoordNewPt;
 			double yCoordNewPt;
 			for (tempIndexAddDel=0; tempIndexAddDel < nodeCountAdd; tempIndexAddDel++){
@@ -2405,6 +2404,7 @@ struct AddDelPtDueToActinTemp: thrust::unary_function<BoolUIDDUID, DUi> {
 					_nodeYPosAddress[cellNodeEndPos] = yCoordNewPt;
 					_nodeIsActiveAddress[cellNodeEndPos] = true;
 					cellNodeEndPos = cellNodeEndPos + 1;
+					activeIntnlNodeThis = activeIntnlNodeThis + 1;
 				}
 			}
 		}
