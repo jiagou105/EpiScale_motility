@@ -45,8 +45,8 @@ double obtainRandAngle(uint& cellRank, uint& seed) {
 	thrust::default_random_engine rng(seed);
 	// discard n numbers to avoid correlation
 	rng.discard(cellRank);
-	thrust::uniform_real_distribution<double> u0Pi(0, 2.0 * pI);
-	double randomAngle = u0Pi(rng);
+	thrust::uniform_real_distribution<double> u0TwoPi(0, 2.0 * pI);
+	double randomAngle = u0TwoPi(rng);
 	return randomAngle;
 }
 
@@ -726,8 +726,19 @@ void SceCells::initCellInfoVecs_M() {
 	cellInfoVecs.membrGrowProgress.resize(allocPara_m.maxCellCount, 0.0);
 	cellInfoVecs.membrGrowSpeed.resize(allocPara_m.maxCellCount, 0.0);
 	cellInfoVecs.cellAreaVec.resize(allocPara_m.maxCellCount, 0.0);
-        cellInfoVecs.cellPerimVec.resize(allocPara_m.maxCellCount, 0.0);//AAMIRI
-        std::cout << "finished " << std::endl;
+    cellInfoVecs.cellPerimVec.resize(allocPara_m.maxCellCount, 0.0);//AAMIRI
+
+	// JG050823
+	cellInfoVecs.cellFilopX.resize(allocPara_m.maxCellCount*5, 0.0);// 5 is the maximum number of filopodium in one cell, to be defined as a par later
+	cellInfoVecs.cellFilopY.resize(allocPara_m.maxCellCount*5, 0.0);
+	cellInfoVecs.cellFilopAngle.resize(allocPara_m.maxCellCount*5, 0.0);
+	cellInfoVecs.cellFilopIsActive.resize(allocPara_m.maxCellCount*5, false); // boolean vector 
+	cellInfoVecs.cellFilopBirthTime.resize(allocPara_m.maxCellCount*5, 0.0);
+
+	cellInfoVecs.cellPolarX.resize(allocPara_m.maxCellCount, 0.0);
+	cellInfoVecs.cellPolarY.resize(allocPara_m.maxCellCount, 0.0);
+	cellInfoVecs.cellPolarAngle.resize(allocPara_m.maxCellCount, 0.0);
+    std::cout << "finished " << std::endl;
 }
 
 void SceCells::initCellNodeInfoVecs() {
@@ -863,7 +874,7 @@ void SceCells::initMyosinLevel() {
                             ))
                     + totalNodeCountForActiveCells,
             nodes->getInfoVecs().myosinLevel.begin(), 
-            InitializeMyosinLevel(maxAllNodePerCell, maxMemNodePerCell, nodeLocXAddr,
+            initializeMyosinLevel(maxAllNodePerCell, maxMemNodePerCell, nodeLocXAddr,
                     nodeLocYAddr, nodeIsActiveAddr, myosinLevelAddr));
 }
 // end of modification from Mar 31, 2023
@@ -1479,6 +1490,7 @@ void SceCells::runAllCellLogicsDisc_M(double dt, double Damp_Coef, double InitTi
 	std::cout << "     *** 2 ***" << endl;
 	std::cout.flush();
 	applySceCellDisc_M();
+	updateCellPolar();
 	calSceCellMyosin();
 	applySceCellMyosin();
 	calSubAdhForce();
@@ -5251,7 +5263,7 @@ void SceCells::applySceCellMyosin() {
 					thrust::make_tuple(nodes->getInfoVecs().nodeVelX.begin(),
 							   nodes->getInfoVecs().nodeVelY.begin()
 								)),
-			AddSceCellMyosinForce(maxAllNodePerCell, maxMemNodePerCell, nodeLocXAddr,
+			addSceCellMyosinForce(maxAllNodePerCell, maxMemNodePerCell, nodeLocXAddr,
 					nodeLocYAddr, nodeIsActiveAddr, myosinLevelAddr));
 }
 
@@ -5312,7 +5324,11 @@ void SceCells::calSceCellMyosin() {
 									DivideFunctor(maxAllNodePerCell)),
 							make_transform_iterator(iBegin,
 									ModuloFunctor(maxAllNodePerCell)),
-							nodes->getInfoVecs().myosinLevel.begin()
+							nodes->getInfoVecs().myosinLevel.begin(),
+							thrust::make_permutation_iterator(
+									cellInfoVecs.cellPolarAngle.begin(),
+									make_transform_iterator(iBegin,
+											DivideFunctor(maxAllNodePerCell)))
 							)),
 			thrust::make_zip_iterator(
 					thrust::make_tuple(
@@ -5336,15 +5352,74 @@ void SceCells::calSceCellMyosin() {
 									DivideFunctor(maxAllNodePerCell)),
 							make_transform_iterator(iBegin,
 									ModuloFunctor(maxAllNodePerCell)),
-							nodes->getInfoVecs().myosinLevel.begin()
+							nodes->getInfoVecs().myosinLevel.begin(),
+							thrust::make_permutation_iterator(
+									cellInfoVecs.cellPolarAngle.begin(),
+									make_transform_iterator(iBegin,
+											DivideFunctor(maxAllNodePerCell)))
 							))
 					+ totalNodeCountForActiveCells,
 			nodes->getInfoVecs().myosinLevel.begin(), 
-			UpdateSceCellMyosin(maxAllNodePerCell, maxMemNodePerCell, nodeLocXAddr,
+			updateCellMyosin(maxAllNodePerCell, maxMemNodePerCell, nodeLocXAddr,
 					nodeLocYAddr, nodeIsActiveAddr, myosinLevelAddr, myosinDiffusionThreshold, timeStep, timeNow));
 }
 
 // end of modification from Mar 29, 2023
+
+
+
+
+
+
+
+
+
+void SceCells::updateCellPolar() {
+	random_device rd;
+ 	uint seed = time(NULL);
+ 	seed = rd();
+
+	uint activeCellCount = allocPara_m.currentActiveCellCount;
+
+	// double* myosinLevelAddr = thrust::raw_pointer_cast(
+	//	&(nodes->getInfoVecs().myosinLevel[0])); // pointer to the vector storing myosin level
+	
+	double* cellFilopXAddr = thrust::raw_pointer_cast(
+            &(cellInfoVecs.cellFilopX[0]));
+    double* cellFilopYAddr = thrust::raw_pointer_cast(
+            &(cellInfoVecs.cellFilopY[0]));
+    double* cellFilopAngleAddr = thrust::raw_pointer_cast(
+            &(cellInfoVecs.cellFilopAngle[0]));
+    bool* cellFilopIsActiveAddr = thrust::raw_pointer_cast(
+            &(cellInfoVecs.cellFilopIsActive[0]));
+    double* cellFilopBirthTimeAddr = thrust::raw_pointer_cast(
+            &(cellInfoVecs.cellFilopBirthTime[0]));
+	double timeNow = curTime;
+	// double initTimePeriod = InitTimeStage;
+	double ddt = dt;
+
+	thrust::counting_iterator<uint> iBegin(0);
+	thrust::counting_iterator<uint> iEnd(activeCellCount); // make sure not iterate on inactive cells already 
+	thrust::transform(
+			thrust::make_zip_iterator(
+					thrust::make_tuple(iBegin,
+							cellInfoVecs.centerCoordX.begin(),
+							cellInfoVecs.centerCoordY.begin(),
+							cellInfoVecs.cellPolarAngle.begin() 
+							)),
+			thrust::make_zip_iterator(
+					thrust::make_tuple(
+							iEnd,
+							cellInfoVecs.centerCoordX.begin() + activeCellCount,
+							cellInfoVecs.centerCoordY.begin() + activeCellCount,
+							cellInfoVecs.cellPolarAngle.begin() + activeCellCount
+							)),
+			cellInfoVecs.cellPolarAngle.begin(),
+			updateCellFilop(seed, ddt, timeNow, 
+			cellFilopXAddr,cellFilopYAddr,cellFilopAngleAddr,cellFilopIsActiveAddr,cellFilopBirthTimeAddr));
+}
+
+
 
 
 
@@ -5411,7 +5486,11 @@ void SceCells::calSubAdhForce() {
 									ModuloFunctor(maxAllNodePerCell)),
 							nodes->getInfoVecs().myosinLevel.begin(),
 							nodes->getInfoVecs().nodeVelX.begin(),
-							nodes->getInfoVecs().nodeVelY.begin()
+							nodes->getInfoVecs().nodeVelY.begin(),
+							thrust::make_permutation_iterator(
+                                    cellInfoVecs.cellPolarAngle.begin(),
+                                    make_transform_iterator(iBegin,
+                                            DivideFunctor(maxAllNodePerCell)))
 							)),
 			thrust::make_zip_iterator(
 					thrust::make_tuple(
@@ -5437,7 +5516,11 @@ void SceCells::calSubAdhForce() {
 									ModuloFunctor(maxAllNodePerCell)),
 							nodes->getInfoVecs().myosinLevel.begin(),
 							nodes->getInfoVecs().nodeVelX.begin(),
-							nodes->getInfoVecs().nodeVelY.begin()
+							nodes->getInfoVecs().nodeVelY.begin(),
+							thrust::make_permutation_iterator(
+                                    cellInfoVecs.cellPolarAngle.begin(),
+                                    make_transform_iterator(iBegin,
+                                            DivideFunctor(maxAllNodePerCell)))
 							))
 					+ totalNodeCountForActiveCells,
 			thrust::make_zip_iterator(
