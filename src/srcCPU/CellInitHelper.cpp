@@ -861,8 +861,13 @@ vector<CVector> CellInitHelper::generateInitMembrNodes(CVector& center,
 	double unitAngle = 2 * acos(-1.0) / (double)(initMembrNodeCount);
 	for (uint i = 0; i < initMembrNodeCount; i++) {
 		CVector node;
-		node.x = initRadius * cos(unitAngle * i) + center.x;
-		node.y = initRadius * sin(unitAngle * i) + center.y;
+		if (center.x<0 && center.y<0){
+			node.x = 2*initRadius * cos(unitAngle * i) + center.x;
+			node.y = 2*initRadius * sin(unitAngle * i) + center.y;
+		} else{
+			node.x = initRadius * cos(unitAngle * i) + center.x;
+			node.y = initRadius * sin(unitAngle * i) + center.y;
+		}
 		initMembrNodes.push_back(node);
 	}
 	return initMembrNodes;

@@ -11,6 +11,7 @@
 typedef thrust::tuple<double, double, SceNodeType> CVec2Type;
 typedef thrust::tuple<bool, double, double> BoolDD;
 typedef thrust::tuple<uint, double, double> UiDD;
+typedef thrust::tuple<uint, double, double, uint> UiDDU;
 typedef thrust::tuple<double, double, double,double> DDDD; //Ali 
 typedef thrust::tuple<uint, double, double, bool> UiDDBool;//AAMIRI
 typedef thrust::tuple<uint, uint> UiUi;
@@ -1124,7 +1125,7 @@ struct updateCellMyosin: public thrust::unary_function<UUDDUUDD, double> {
 
 
 // JG050823
-struct updateCellFilop: public thrust::unary_function<UiDDD, double> {
+struct updateCellFilop: public thrust::unary_function<UiDDDD, double> {
 	// uint _maxNodePerCell;
 	// uint _maxMemNodePerCell;
 	// double* _locXAddr;
@@ -1138,20 +1139,27 @@ struct updateCellFilop: public thrust::unary_function<UiDDD, double> {
 	double* _cellFilopAngleAddr;
 	bool* _cellFilopIsActiveAddr;
 	double* _cellFilopBirthTimeAddr;
+	uint _activeCellCount;
+	double* _cellCenterXAddr;
+	double* _cellCenterYAddr;
+	double* _cellRadiusAddr;
 	// double _grthPrgrCriVal_M;
 	// comment prevents bad formatting issues of __host__ and __device__ in Nsight
 	__host__ __device__ updateCellFilop(uint seed, double timeStep, double timeNow, 
-			double* cellFilopXAddr, double* cellFilopYAddr, double* cellFilopAngleAddr, bool* cellFilopIsActiveAddr, double* cellFilopBirthTimeAddr) :
+			double* cellFilopXAddr, double* cellFilopYAddr, double* cellFilopAngleAddr, bool* cellFilopIsActiveAddr, double* cellFilopBirthTimeAddr,
+			uint activeCellCount, double* cellCenterXAddr, double* cellCenterYAddr, double* cellRadiusAddr) :
 			_seed(seed), _timeStep(timeStep), _timeNow(timeNow),
 			_cellFilopXAddr(cellFilopXAddr), _cellFilopYAddr(cellFilopYAddr), _cellFilopAngleAddr(cellFilopAngleAddr),
-			_cellFilopIsActiveAddr(cellFilopIsActiveAddr), _cellFilopBirthTimeAddr(cellFilopBirthTimeAddr){
+			_cellFilopIsActiveAddr(cellFilopIsActiveAddr), _cellFilopBirthTimeAddr(cellFilopBirthTimeAddr), _activeCellCount(activeCellCount), 
+			_cellCenterXAddr(cellCenterXAddr), _cellCenterYAddr(cellCenterYAddr), _cellRadiusAddr(cellRadiusAddr){
 	}
 	// comment prevents bad formatting issues of __host__ and __device__ in Nsight
-	__device__ double operator()(const UiDDD &cData) const {
+	__device__ double operator()(const UiDDDD &cData) const {
 		uint cellRank = thrust::get<0>(cData);
-		double Cell_CenterX = thrust::get<1>(cData);
-        double Cell_CenterY = thrust::get<2>(cData);
-		double cellAngle = thrust::get<3>(cData);
+		double cell_CenterX = thrust::get<1>(cData);
+        double cell_CenterY = thrust::get<2>(cData);
+		double cell_Radius = thrust::get<3>(cData);
+		double cellAngle = thrust::get<4>(cData);
 		
 		
 		thrust::default_random_engine rng(_seed);
@@ -1171,6 +1179,10 @@ struct updateCellFilop: public thrust::unary_function<UiDDD, double> {
 		// uint intnlIndxMemBegin = cellRank * _maxNodePerCell;
 		uint filopIndxBegin = cellRank * maxFilopPerCell;
 		uint filopIndxEnd = filopIndxBegin + maxFilopPerCell;
+
+		double filopTipX;
+		double filopTipY;
+		double distCells;
 
 		if (_timeNow < 55800.0) {
 			return cellAngle;
@@ -1200,16 +1212,28 @@ struct updateCellFilop: public thrust::unary_function<UiDDD, double> {
 						_cellFilopIsActiveAddr[filopIndex] = true;
 						randomAngle = u0TwoPi(rng);
 						_cellFilopAngleAddr[filopIndex] = randomAngle;
-						_cellFilopXAddr[filopIndex] = 0.0; // zero length??? 
+						_cellFilopXAddr[filopIndex] = 0.0; // zero length 
 						_cellFilopYAddr[filopIndex] = 0.0;
 						_cellFilopBirthTimeAddr[filopIndex] = _timeNow;
-
 					}
 				}
 			}
+
 			for (uint filopIndex=filopIndxBegin; filopIndex<filopIndxEnd; filopIndex++){
 				if (_cellFilopIsActiveAddr[filopIndex] == true){
-					// add all filopodia together, include the filopodia which is just born, although its lenght is 0
+					filopTipX = cell_CenterX+cell_Radius*cos(_cellFilopAngleAddr[filopIndex])+_cellFilopXAddr[filopIndex];
+					filopTipY = cell_CenterY+cell_Radius*sin(_cellFilopAngleAddr[filopIndex])+_cellFilopYAddr[filopIndex];
+					for (uint cellNghbrIndex = 0; cellNghbrIndex<_activeCellCount; cellNghbrIndex++) { // location of the filopodia tip, 
+						if (cellNghbrIndex!=cellRank){
+							distCells = compDist2D(_cellCenterXAddr[cellNghbrIndex], _cellCenterYAddr[cellNghbrIndex], filopTipX, filopTipY);
+							if (distCells<2*_cellRadiusAddr[cellNghbrIndex]) { 
+								cellAngle = cellAngle + _timeStep*10*(_cellFilopYAddr[filopIndex]*cos(cellAngle)-_cellFilopXAddr[filopIndex]*sin(cellAngle));
+							}
+						}
+					// for (nodeIndex = 0; nodeIndex<maxActiveMembNode; nodeIndex++)
+
+					}
+					// add all filopodia together, include the filopodia which is just born, although its length is 0
 					filopAllX += _cellFilopXAddr[filopIndex];
 					filopAllY += _cellFilopYAddr[filopIndex];
 				} 
@@ -1218,6 +1242,49 @@ struct updateCellFilop: public thrust::unary_function<UiDDD, double> {
 			return cellAngle;
 		}
 	}
+};
+
+
+
+
+
+
+
+
+
+
+// JG051223
+struct calCellRadius: public thrust::unary_function<UiDDU, double> {
+	uint _maxNodePerCell;
+	uint _maxMemNodePerCell;
+	double* _locXAddr;
+	double* _locYAddr;
+	bool* _isActiveAddr;
+	// comment prevents bad formatting issues of __host__ and __device__ in Nsight
+	__host__ __device__ calCellRadius(uint maxNodePerCell, uint maxMemNodePerCell, 
+			double* locXAddr, double* locYAddr, bool* isActiveAddr) :
+			_maxNodePerCell(maxNodePerCell), _maxMemNodePerCell(maxMemNodePerCell), _locXAddr(locXAddr), _locYAddr(locYAddr), _isActiveAddr(isActiveAddr){
+	}
+	// comment prevents bad formatting issues of __host__ and __device__ in Nsight
+	__device__ double operator()(const UiDDU &cData) const {
+		uint cellRank = thrust::get<0>(cData);
+		double cell_CenterX = thrust::get<1>(cData);
+        double cell_CenterY = thrust::get<2>(cData);
+		uint activeMembrCount = thrust::get<3>(cData);
+	
+		uint indexMemBegin = cellRank * _maxNodePerCell;
+		double cellRadius=0.0;
+		double distCenterMemb;
+		uint nodeIndex;
+		for (uint memNodeIndex=0; memNodeIndex<activeMembrCount;memNodeIndex++){
+			nodeIndex = indexMemBegin+memNodeIndex;
+			distCenterMemb = compDist2D(cell_CenterX,cell_CenterY,_locXAddr[nodeIndex],_locYAddr[nodeIndex]);
+			if (distCenterMemb>cellRadius){
+				cellRadius = distCenterMemb;
+			}
+		}
+		return cellRadius;
+		}
 };
 
 
@@ -3437,6 +3504,7 @@ struct CellInfoVecs {
 	thrust::device_vector<double> cellPolarX;
 	thrust::device_vector<double> cellPolarY;
 	thrust::device_vector<double> cellPolarAngle;
+	thrust::device_vector<double> cellRadius;
 };
 
 struct CellNodeInfoVecs {
@@ -3807,6 +3875,8 @@ class SceCells {
 	void calSubAdhForce();
 
 	void computeCenterPos_M();
+
+	void computeCellRadius();
 
 	void growAtRandom_M(double dt);
 

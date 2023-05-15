@@ -738,6 +738,7 @@ void SceCells::initCellInfoVecs_M() {
 	cellInfoVecs.cellPolarX.resize(allocPara_m.maxCellCount, 0.0);
 	cellInfoVecs.cellPolarY.resize(allocPara_m.maxCellCount, 0.0);
 	cellInfoVecs.cellPolarAngle.resize(allocPara_m.maxCellCount, 0.0);
+	cellInfoVecs.cellRadius.resize(allocPara_m.maxCellCount, 0.0); // avg distance between cell center to membrane nodes
     std::cout << "finished " << std::endl;
 }
 
@@ -1498,6 +1499,7 @@ void SceCells::runAllCellLogicsDisc_M(double dt, double Damp_Coef, double InitTi
 	std::cout.flush();
 //Ali        
 	computeCenterPos_M();
+	computeCellRadius();
     exchSignal(); // use files in srcCPU for chemical concentrations
     BC_Imp_M(); 
 	std::cout << "     *** 3.5 ***" << endl;
@@ -2604,6 +2606,53 @@ void SceCells::computeCenterPos_M() {
 					thrust::make_tuple(cellInfoVecs.centerCoordX.begin(),
 							cellInfoVecs.centerCoordY.begin())), CVec2Divide());
 }
+
+
+
+void SceCells::computeCellRadius() {
+	uint activeCellCount = allocPara_m.currentActiveCellCount;
+
+	// double* myosinLevelAddr = thrust::raw_pointer_cast(
+	//	&(nodes->getInfoVecs().myosinLevel[0])); // pointer to the vector storing myosin level
+	
+	// cell center, cell rank, maxmembranenode, 
+	double* nodeLocXAddr = thrust::raw_pointer_cast(
+			&(nodes->getInfoVecs().nodeLocX[0]));
+	double* nodeLocYAddr = thrust::raw_pointer_cast(
+			&(nodes->getInfoVecs().nodeLocY[0]));
+	bool* nodeIsActiveAddr = thrust::raw_pointer_cast(
+			&(nodes->getInfoVecs().nodeIsActive[0])); // 
+//	double* cellCenterXAddr = thrust::raw_pointer_cast(
+//            &(cellInfoVecs.centerCoordX[0]));
+//	double* cellCenterYAddr = thrust::raw_pointer_cast(
+//            &(cellInfoVecs.centerCoordY[0]));
+	uint maxMembrNode = allocPara_m.maxMembrNodePerCell;
+	uint maxAllNodePerCell = allocPara_m.maxAllNodePerCell;
+
+	thrust::counting_iterator<uint> iBegin(0);
+	thrust::counting_iterator<uint> iEnd(activeCellCount); // make sure not iterate on inactive cells already 
+	thrust::transform(
+			thrust::make_zip_iterator(
+					thrust::make_tuple(iBegin,
+							cellInfoVecs.centerCoordX.begin(),
+							cellInfoVecs.centerCoordY.begin(),
+							cellInfoVecs.activeMembrNodeCounts.begin()
+							)),
+			thrust::make_zip_iterator(
+					thrust::make_tuple(
+							iEnd,
+							cellInfoVecs.centerCoordX.begin() + activeCellCount,
+							cellInfoVecs.centerCoordY.begin() + activeCellCount,
+							cellInfoVecs.activeMembrNodeCounts.begin() + activeCellCount
+							)),
+			cellInfoVecs.cellRadius.begin(),
+			calCellRadius(maxAllNodePerCell,maxMembrNode,nodeLocXAddr,nodeLocYAddr,nodeIsActiveAddr));
+}
+
+
+
+
+
 
 
 void SceCells::BC_Imp_M() {
@@ -5394,6 +5443,12 @@ void SceCells::updateCellPolar() {
             &(cellInfoVecs.cellFilopIsActive[0]));
     double* cellFilopBirthTimeAddr = thrust::raw_pointer_cast(
             &(cellInfoVecs.cellFilopBirthTime[0]));
+	double* cellCenterXAddr = thrust::raw_pointer_cast(
+            &(cellInfoVecs.centerCoordX[0]));
+	double* cellCenterYAddr = thrust::raw_pointer_cast(
+            &(cellInfoVecs.centerCoordY[0]));
+	double* cellRadiusAddr = thrust::raw_pointer_cast(
+            &(cellInfoVecs.cellRadius[0]));
 	double timeNow = curTime;
 	// double initTimePeriod = InitTimeStage;
 	double ddt = dt;
@@ -5405,6 +5460,7 @@ void SceCells::updateCellPolar() {
 					thrust::make_tuple(iBegin,
 							cellInfoVecs.centerCoordX.begin(),
 							cellInfoVecs.centerCoordY.begin(),
+							cellInfoVecs.cellRadius.begin(),
 							cellInfoVecs.cellPolarAngle.begin() 
 							)),
 			thrust::make_zip_iterator(
@@ -5412,11 +5468,12 @@ void SceCells::updateCellPolar() {
 							iEnd,
 							cellInfoVecs.centerCoordX.begin() + activeCellCount,
 							cellInfoVecs.centerCoordY.begin() + activeCellCount,
+							cellInfoVecs.cellRadius.begin() + activeCellCount,
 							cellInfoVecs.cellPolarAngle.begin() + activeCellCount
 							)),
 			cellInfoVecs.cellPolarAngle.begin(),
 			updateCellFilop(seed, ddt, timeNow, 
-			cellFilopXAddr,cellFilopYAddr,cellFilopAngleAddr,cellFilopIsActiveAddr,cellFilopBirthTimeAddr));
+			cellFilopXAddr,cellFilopYAddr,cellFilopAngleAddr,cellFilopIsActiveAddr,cellFilopBirthTimeAddr,activeCellCount,cellCenterXAddr,cellCenterYAddr,cellRadiusAddr));
 }
 
 
