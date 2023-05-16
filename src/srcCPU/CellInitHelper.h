@@ -95,7 +95,7 @@ class CellInitHelper {
 	 * Attempt to generate an array that represents relative position of nodes in a cell.
 	 */
 	vector<CVector> tryGenInitCellNodes();
-	vector<CVector> tryGenInitCellNodes(uint initNodeCt);
+	vector<CVector> tryGenInitCellNodes(uint initNodeCt, CVector& center);
 	/**
 	 * Determine if an array, representing relative position of nodes in a cell,
 	 * is qualified for initialization purpose.

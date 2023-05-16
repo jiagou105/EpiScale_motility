@@ -829,7 +829,7 @@ vector<CVector> CellInitHelper::generateInitIntnlNodes(CVector& center,
 
 	vector<CVector> attemptedPoss;
 	while (!isSuccess) {
-		attemptedPoss = tryGenInitCellNodes(initIntnlNodeCt);
+		attemptedPoss = tryGenInitCellNodes(initIntnlNodeCt,center);
 		if (isPosQualify(attemptedPoss)) {
 			isSuccess = true;
 		}
@@ -900,7 +900,7 @@ vector<CVector> CellInitHelper::tryGenInitCellNodes() {
 	return poss;
 }
 
-vector<CVector> CellInitHelper::tryGenInitCellNodes(uint initNodeCt) {
+vector<CVector> CellInitHelper::tryGenInitCellNodes(uint initNodeCt, CVector& center) {
 	double radius =
 		globalConfigVars.getConfigValue("InitCellRadius").toDouble();
 	vector<CVector> poss;
@@ -913,12 +913,16 @@ vector<CVector> CellInitHelper::tryGenInitCellNodes(uint initNodeCt) {
 	//Ali
 	while (foundCount < initNodeCt) {
 		bool isInCircle = false;
-		//while (!isInCircle) {
-		randX = getRandomNum(-radius, radius);
-		randY = getRandomNum(-radius, radius);
-		isInCircle = (sqrt(randX * randX + randY * randY) < radius);
-		//	}
-					//Ali
+		if(center.x<0 && center.y<0){
+			randX = getRandomNum(-radius*2.0, radius*2.0);
+			randY = getRandomNum(-radius*2.0, radius*2.0);
+			isInCircle = (sqrt(randX * randX + randY * randY) < radius*2.0);
+		} else {
+			randX = getRandomNum(-radius, radius);
+			randY = getRandomNum(-radius, radius);
+			isInCircle = (sqrt(randX * randX + randY * randY) < radius);
+		}
+
 		if (isInCircle) {
 			//Ali
 			poss.push_back(CVector(randX, randY, 0));
