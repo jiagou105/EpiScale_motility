@@ -7,6 +7,7 @@ add_library(SceInit STATIC
         CellInitHelper.cpp
         Signal_MakeInterface.h
 		Signal_MakeInterface.cpp
+		#[[
 		Signal_Calculator.h
 		Signal_Calculator.cpp
 		SignalTissue.hpp
@@ -17,6 +18,7 @@ add_library(SceInit STATIC
 		SignalCell.cpp
 		SignalCommon.cpp
 		SignalCommon.hpp
+		]]
         ${COMMON_INCLUDES}/Point2D.cpp
         ${COMMON_INCLUDES}/Point2D.h
         ${COMMON_INCLUDES}/ConfigParser.h
