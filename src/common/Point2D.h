@@ -12,6 +12,7 @@ namespace GEOMETRY {
 
 class Point2D {
 	bool isOnBdry;
+	bool isLeader;
 	double x;
 	double y;
 public:
@@ -43,7 +44,13 @@ public:
 	void setIsOnBdry(bool isOnBdry) {
 		this->isOnBdry = isOnBdry;
 	}
+	bool isIsLeader() const {
+		return isLeader;
+	}
 
+	void setIsLeader(bool isOnBdry) {
+		this->isLeader = isLeader;
+	}
         void Assign_M2(double inputx1, double inputy1) ; 
                  
 

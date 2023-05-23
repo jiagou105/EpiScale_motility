@@ -3188,6 +3188,7 @@ struct RandomizeGrow_M: public thrust::unary_function<CVec3BoolInt, CVec3Bool> {
 	}
 };
 
+// division 
 struct DppGrowRegulator: public thrust::unary_function<DDDD, double> {
 	double _dt ;
 	double _mitoticCheckPoint ; 

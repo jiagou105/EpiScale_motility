@@ -1491,15 +1491,15 @@ void SceCells::runAllCellLogicsDisc_M(double dt, double Damp_Coef, double InitTi
 	std::cout << "     *** 2 ***" << endl;
 	std::cout.flush();
 	applySceCellDisc_M();
-	updateCellPolar();
-	calSceCellMyosin();
-	applySceCellMyosin();
-	calSubAdhForce();
+	// updateCellPolar();
+	// calSceCellMyosin();
+	// applySceCellMyosin();
+	// calSubAdhForce();
 	std::cout << "     *** 3 ***" << endl;
 	std::cout.flush();
 //Ali        
 	computeCenterPos_M();
-	computeCellRadius();
+	// computeCellRadius();
     exchSignal(); // use files in srcCPU for chemical concentrations
     BC_Imp_M(); 
 	std::cout << "     *** 3.5 ***" << endl;
@@ -2773,9 +2773,9 @@ void SceCells::growAtRandom_M(double dt) {
 
 	//stretchCellGivenLenDiff_M();
 
-	// addPointIfScheduledToGrow_M();
+	addPointIfScheduledToGrow_M();
 
-	addPointDueToActin(); // JG041123
+	// addPointDueToActin(); // JG041123
 
 	//decideIsScheduleToShrink_M();// AAMIRI May5
 

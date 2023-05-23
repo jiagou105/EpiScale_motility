@@ -10,6 +10,7 @@
 namespace GEOMETRY {
 
 Point2D::Point2D() {
+	isLeader = false;
 	isOnBdry = false;
 	x = 0.0;
 	y = 0.0;
@@ -20,6 +21,7 @@ Point2D::~Point2D() {
 }
 
 void Point2D::Assign_M2(double inputx1, double inputy1) {
+	isLeader = false;
 	isOnBdry = false;
 	x = inputx1;
 	y = inputy1;
@@ -27,6 +29,7 @@ void Point2D::Assign_M2(double inputx1, double inputy1) {
 
 
 GEOMETRY::Point2D::Point2D(double inputX, double inputY) {
+	isLeader = false;
 	isOnBdry = false;
 	x = inputX;
 	y = inputY;

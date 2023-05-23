@@ -562,6 +562,7 @@ RawDataInput_M CellInitHelper::generateRawInput_M() {
 	rawData.simuType = simuType;
 	vector<CVector> insideCellCenters;
 	vector<CVector> outsideBdryNodePos;
+	vector<bool> isLeaderVec;
 	std::string bdryInputFileName = globalConfigVars.getConfigValue(
 		"Bdry_InputFileName").toString();
 
@@ -581,7 +582,7 @@ RawDataInput_M CellInitHelper::generateRawInput_M() {
 	//Ali
 	std::vector<GEOMETRY::Point2D> insideCenterCenters;
 	for (int ii = 0; ii < ForReadingData2.CellNumber; ii = ii + 1) {
-
+		if (ii==ForReadingData2.CellNumber-1){Point2D1[ii].setIsLeader(true);}
 		Point2D1[ii].Assign_M2(ForReadingData2.TempSX[ii], ForReadingData2.TempSY[ii]);
 		cout << "x coordinate=" << Point2D1[ii].getX() << "y coordinate=" << Point2D1[ii].getY() << "Is on Boundary=" << Point2D1[ii].isIsOnBdry() << endl;
 		insideCenterCenters.push_back(Point2D1[ii]);
@@ -602,6 +603,7 @@ RawDataInput_M CellInitHelper::generateRawInput_M() {
 		insideCellCenters.push_back(
 			CVector(insideCenterCenters[i].getX(),
 				insideCenterCenters[i].getY(), 0));
+		isLeaderVec.push_back(insideCenterCenters[i].isIsLeader());
 	}
 
 
@@ -621,7 +623,7 @@ RawDataInput_M CellInitHelper::generateRawInput_M() {
 
 	std::cout << "Printing initial cell center positions ......" << std::endl;
 	for (unsigned int i = 0; i < insideCellCenters.size(); i++) {
-		CVector centerPos = insideCellCenters[i];
+		CVector centerPos = insideCellCenters[i]; // dummy variable
 		rawData.initCellCenters.push_back(centerPos);
 		std::cout << "    ";
 		centerPos.Print();
@@ -824,8 +826,7 @@ vector<CVector> CellInitHelper::generateInitIntnlNodes(CVector& center,
 	//	uint initIntnlNodeCt = minInitNodeCount ; 
 	//Ali
 	//Ali comment
-	uint initIntnlNodeCt = minInitNodeCount
-		+ (maxInitNodeCount - minInitNodeCount) * initProg;
+	uint initIntnlNodeCt = minInitNodeCount;// + (maxInitNodeCount - minInitNodeCount) * initProg;
 
 	vector<CVector> attemptedPoss;
 	while (!isSuccess) {
