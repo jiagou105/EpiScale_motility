@@ -455,6 +455,7 @@ struct RawDataInput_M {
 	std::vector<double> cellGrowProgVec;
 	std::vector<std::vector<CVector> > initIntnlNodePoss;
 	std::vector<std::vector<CVector> > initMembrNodePoss;
+	std::vector<double> initCellRadii;
 };
 
 /**

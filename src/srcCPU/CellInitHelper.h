@@ -28,7 +28,7 @@ using namespace std;
  //Ali
 struct ForReadingData_M2 {
 public:
-	vector <double> TempSX, TempSY, TempSZ;
+	vector <double> TempSX, TempSY, TempSZ, TempRad;
 	int    CellNumber;
 };
 
@@ -68,7 +68,7 @@ class CellInitHelper {
 	void generateCellInitNodeInfo_v2(vector<CVector> &initPos);
 	void generateCellInitNodeInfo_v3(vector<CVector>& initCenters,
 		vector<double>& initGrowProg, vector<vector<CVector> >& initBdryPos,
-		vector<vector<CVector> >& initInternalPos);
+		vector<vector<CVector> >& initInternalPos, vector<double>& initCellRadii);
 	void generateECMInitNodeInfo(vector<CVector> &initECMNodePoss,
 		int initNodeCountPerECM);
 	void generateECMCenters(vector<CVector> &ECMCenters,
@@ -87,15 +87,15 @@ class CellInitHelper {
 	 * generates an array that could qualify for initial position of nodes in a cell.
 	 */
 	vector<CVector> generateInitCellNodes();
-	vector<CVector> generateInitIntnlNodes(CVector& center, double initProg);
+	vector<CVector> generateInitIntnlNodes(CVector& center, double initProg, double radius);
 
-	vector<CVector> generateInitMembrNodes(CVector& center, double initProg);
+	vector<CVector> generateInitMembrNodes(CVector& center, double initProg, double radius);
 
 	/**
 	 * Attempt to generate an array that represents relative position of nodes in a cell.
 	 */
 	vector<CVector> tryGenInitCellNodes();
-	vector<CVector> tryGenInitCellNodes(uint initNodeCt, CVector& center);
+	vector<CVector> tryGenInitCellNodes(uint initNodeCt, CVector& center, double radius);
 	/**
 	 * Determine if an array, representing relative position of nodes in a cell,
 	 * is qualified for initialization purpose.

@@ -13,6 +13,7 @@ ForReadingData_M2 ReadFile_M2(std::string CellCentersFileName) {
 	std::fstream inputc;
 	ForReadingData_M2  ForReadingData1;
 	double TempPos_X, TempPos_Y, TempPos_Z;
+	double cellRadii;
 	//inputc.open("./resources/CellCenters_General.txt");
 	//inputc.open("./resources/CellCenters_General.txt");
 //          inputc.open("./resources/CellCenters2.txt");
@@ -29,12 +30,13 @@ ForReadingData_M2 ReadFile_M2(std::string CellCentersFileName) {
 	inputc >> ForReadingData1.CellNumber;
 	for (int i = 0; i < ForReadingData1.CellNumber; i = i + 1) {
 		cout << "i=" << i << endl;
-		inputc >> TempPos_X >> TempPos_Y >> TempPos_Z;
+		inputc >> TempPos_X >> TempPos_Y >> TempPos_Z >> cellRadii;
 		ForReadingData1.TempSX.push_back(TempPos_X);
 		ForReadingData1.TempSY.push_back(TempPos_Y);
 		ForReadingData1.TempSZ.push_back(TempPos_Z);
+		ForReadingData1.TempRad.push_back(cellRadii);
 	}
-	cout << "Cell center positions read successfully";
+	cout << "Cell center positions and radii read successfully";
 
 	return ForReadingData1;
 }
@@ -563,6 +565,7 @@ RawDataInput_M CellInitHelper::generateRawInput_M() {
 	vector<CVector> insideCellCenters;
 	vector<CVector> outsideBdryNodePos;
 	vector<bool> isLeaderVec;
+	vector<double> insideCellRadii;
 	std::string bdryInputFileName = globalConfigVars.getConfigValue(
 		"Bdry_InputFileName").toString();
 
@@ -582,9 +585,9 @@ RawDataInput_M CellInitHelper::generateRawInput_M() {
 	//Ali
 	std::vector<GEOMETRY::Point2D> insideCenterCenters;
 	for (int ii = 0; ii < ForReadingData2.CellNumber; ii = ii + 1) {
-		if (ii==ForReadingData2.CellNumber-1){Point2D1[ii].setIsLeader(true);}
-		Point2D1[ii].Assign_M2(ForReadingData2.TempSX[ii], ForReadingData2.TempSY[ii]);
-		cout << "x coordinate=" << Point2D1[ii].getX() << "y coordinate=" << Point2D1[ii].getY() << "Is on Boundary=" << Point2D1[ii].isIsOnBdry() << endl;
+		// if (ii==ForReadingData2.CellNumber-1){Point2D1[ii].setIsLeader(true);}
+		Point2D1[ii].Assign_M2(ForReadingData2.TempSX[ii], ForReadingData2.TempSY[ii], ForReadingData2.TempRad[ii]);
+		cout << "x coordinate=" << Point2D1[ii].getX() << "y coordinate=" << Point2D1[ii].getY() << "cel radius="<< Point2D1[ii].getRad() << "Is on Boundary=" << Point2D1[ii].isIsOnBdry() << endl;
 		insideCenterCenters.push_back(Point2D1[ii]);
 	}
 
@@ -604,6 +607,7 @@ RawDataInput_M CellInitHelper::generateRawInput_M() {
 			CVector(insideCenterCenters[i].getX(),
 				insideCenterCenters[i].getY(), 0));
 		isLeaderVec.push_back(insideCenterCenters[i].isIsLeader());
+		insideCellRadii.push_back(insideCenterCenters[i].getRad());
 	}
 
 
@@ -625,13 +629,14 @@ RawDataInput_M CellInitHelper::generateRawInput_M() {
 	for (unsigned int i = 0; i < insideCellCenters.size(); i++) {
 		CVector centerPos = insideCellCenters[i]; // dummy variable
 		rawData.initCellCenters.push_back(centerPos);
+		rawData.initCellRadii.push_back(insideCellRadii[i]);
 		std::cout << "    ";
 		centerPos.Print();
 	}
 
 	generateCellInitNodeInfo_v3(rawData.initCellCenters,
 		rawData.cellGrowProgVec, rawData.initMembrNodePoss,
-		rawData.initIntnlNodePoss);
+		rawData.initIntnlNodePoss,rawData.initCellRadii); // pass pointers to the init positions 
 
 	//std::cout << "finished generate raw data" << std::endl;
 	//std::cout.flush();
@@ -767,20 +772,20 @@ CellInitHelper::~CellInitHelper() {
 }
 
 void CellInitHelper::generateCellInitNodeInfo_v2(vector<CVector>& initPos) {
-	initPos = generateInitCellNodes();
+	initPos = generateInitCellNodes(); // not used in May2023 version
 }
 
 void CellInitHelper::generateCellInitNodeInfo_v3(vector<CVector>& initCenters,
 	vector<double>& initGrowProg, vector<vector<CVector> >& initMembrPos,
-	vector<vector<CVector> >& initIntnlPos) {
+	vector<vector<CVector> >& initIntnlPos, vector<double>& initCellRadii) {
 	assert(initCenters.size() == initGrowProg.size());
 	vector<CVector> initMembrPosTmp;
 	vector<CVector> initIntnlPosTmp;
 	for (uint i = 0; i < initCenters.size(); i++) {
 		initMembrPosTmp = generateInitMembrNodes(initCenters[i],
-			initGrowProg[i]);
+			initGrowProg[i],initCellRadii[i]);
 		initIntnlPosTmp = generateInitIntnlNodes(initCenters[i],
-			initGrowProg[i]);
+			initGrowProg[i],initCellRadii[i]);
 		initMembrPos.push_back(initMembrPosTmp);
 		initIntnlPos.push_back(initIntnlPosTmp);
 	}
@@ -792,6 +797,7 @@ double CellInitHelper::getRandomNum(double min, double max) {
 	return randNum;
 }
 
+// this function is not used
 vector<CVector> CellInitHelper::generateInitCellNodes() {
 	bool isSuccess = false;
 	vector<CVector> attemptedPoss;
@@ -812,9 +818,10 @@ vector<CVector> CellInitHelper::generateInitCellNodes() {
 	}
 	return attemptedPoss;
 }
+//
 
 vector<CVector> CellInitHelper::generateInitIntnlNodes(CVector& center,
-	double initProg) {
+	double initProg, double radius) {
 	bool isSuccess = false;
 
 	uint minInitNodeCount =
@@ -824,14 +831,12 @@ vector<CVector> CellInitHelper::generateInitIntnlNodes(CVector& center,
 	//Ali
 
 	//	uint initIntnlNodeCt = minInitNodeCount ; 
-	//Ali
-	//Ali comment
-	uint initIntnlNodeCt = minInitNodeCount;// + (maxInitNodeCount - minInitNodeCount) * initProg;
+	uint initIntnlNodeCt = minInitNodeCount;// + (maxInitNodeCount - minInitNodeCount) * initProg; 
 
 	vector<CVector> attemptedPoss;
 	while (!isSuccess) {
-		attemptedPoss = tryGenInitCellNodes(initIntnlNodeCt,center);
-		if (isPosQualify(attemptedPoss)) {
+		attemptedPoss = tryGenInitCellNodes(initIntnlNodeCt,center,radius);
+		if (isPosQualify(attemptedPoss)) { // isPosQualify is to test if two nodes are "MinInitDistToOtherNodes" apart
 			isSuccess = true;
 		}
 	}
@@ -853,27 +858,25 @@ vector<CVector> CellInitHelper::generateInitIntnlNodes(CVector& center,
 }
 
 vector<CVector> CellInitHelper::generateInitMembrNodes(CVector& center,
-	double initProg) {
-	double initRadius =
-		globalConfigVars.getConfigValue("InitMembrRadius").toDouble();
+	double initProg, double radius) {
+	// double initRadius =
+	//	globalConfigVars.getConfigValue("InitMembrRadius").toDouble();
+	double radiusOffset =
+		globalConfigVars.getConfigValue("MembrRadiusOffset").toDouble();
 	uint initMembrNodeCount = globalConfigVars.getConfigValue(
 		"InitMembrNodeCount").toInt();
 	vector<CVector> initMembrNodes;
 	double unitAngle = 2 * acos(-1.0) / (double)(initMembrNodeCount);
 	for (uint i = 0; i < initMembrNodeCount; i++) {
 		CVector node;
-		if (center.x<0 && center.y<0){
-			node.x = 2*initRadius * cos(unitAngle * i) + center.x;
-			node.y = 2*initRadius * sin(unitAngle * i) + center.y;
-		} else{
-			node.x = initRadius * cos(unitAngle * i) + center.x;
-			node.y = initRadius * sin(unitAngle * i) + center.y;
-		}
+		node.x = (radius+radiusOffset) * cos(unitAngle * i) + center.x;
+		node.y = (radius+radiusOffset) * sin(unitAngle * i) + center.y;
 		initMembrNodes.push_back(node);
 	}
 	return initMembrNodes;
 }
 
+// this function is not used???
 vector<CVector> CellInitHelper::tryGenInitCellNodes() {
 	double radius =
 		globalConfigVars.getConfigValue("InitCellRadius").toDouble();
@@ -901,12 +904,13 @@ vector<CVector> CellInitHelper::tryGenInitCellNodes() {
 	return poss;
 }
 
-vector<CVector> CellInitHelper::tryGenInitCellNodes(uint initNodeCt, CVector& center) {
-	double radius =
-		globalConfigVars.getConfigValue("InitCellRadius").toDouble();
+vector<CVector> CellInitHelper::tryGenInitCellNodes(uint initNodeCt, CVector& center, double radius) {
+	// double radius =
+	//	globalConfigVars.getConfigValue("InitCellRadius").toDouble();
 	vector<CVector> poss;
 	uint foundCount = 0;
-	double randX, randY;
+	double randX, randY, randRad, randAngle;
+	static const double PI = acos(-1.0);
 
 	//Ali
 	cout << "I am in the right one" << endl;
@@ -914,15 +918,13 @@ vector<CVector> CellInitHelper::tryGenInitCellNodes(uint initNodeCt, CVector& ce
 	//Ali
 	while (foundCount < initNodeCt) {
 		bool isInCircle = false;
-		if(center.x<0 && center.y<0){
-			randX = getRandomNum(-radius*2.0, radius*2.0);
-			randY = getRandomNum(-radius*2.0, radius*2.0);
-			isInCircle = (sqrt(randX * randX + randY * randY) < radius*2.0);
-		} else {
-			randX = getRandomNum(-radius, radius);
-			randY = getRandomNum(-radius, radius);
-			isInCircle = (sqrt(randX * randX + randY * randY) < radius);
-		}
+//		randX = getRandomNum(-radius, radius);
+//		randY = getRandomNum(-radius, radius);
+//		isInCircle = (sqrt(randX * randX + randY * randY) < radius);
+		randRad = radius * getRandomNum(0.0, 1.0);
+		randAngle = getRandomNum(0.0, 1.0) * 2.0 * PI;
+		randX = 0.0 + randRad * cos(randAngle); // centered at (0, 0)
+		randY = 0.0 + randRad * sin(randAngle);
 
 		if (isInCircle) {
 			//Ali

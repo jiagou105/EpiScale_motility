@@ -15,9 +15,10 @@ class Point2D {
 	bool isLeader;
 	double x;
 	double y;
+	double rad;
 public:
 	Point2D();
-	Point2D(double inputX, double inputY);
+	Point2D(double inputX, double inputY, double inputRad);
 
 	virtual ~Point2D();
 
@@ -36,6 +37,14 @@ public:
 	void setY(double y) {
 		this->y = y;
 	}
+		
+	double getRad() const {
+		return rad;
+	}
+
+	void setRad(double rad) {
+		this->rad = rad;
+	}
 
 	bool isIsOnBdry() const {
 		return isOnBdry;
@@ -51,7 +60,7 @@ public:
 	void setIsLeader(bool isOnBdry) {
 		this->isLeader = isLeader;
 	}
-        void Assign_M2(double inputx1, double inputy1) ; 
+    void Assign_M2(double inputx1, double inputy1, double inputRad) ; 
                  
 
 };
