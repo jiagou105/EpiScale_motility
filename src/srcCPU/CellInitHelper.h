@@ -71,8 +71,8 @@ class CellInitHelper {
 		vector<vector<CVector> >& initInternalPos, vector<double>& initCellRadii);
 	void generateECMInitNodeInfo(vector<CVector> &initECMNodePoss,
 		int initNodeCountPerECM);
-	void generateECMCenters(vector<CVector> &ECMCenters,
-		vector<CVector> &CellCenters, vector<CVector> &bdryNodes);
+	// void generateECMCenters(vector<CVector> &ECMCenters,
+	//	vector<CVector> &CellCenters, vector<CVector> &bdryNodes);
 
 	bool anyECMCenterTooClose(vector<CVector> &ecmCenters, CVector position);
 	bool anyCellCenterTooClose(vector<CVector> &cellCenters, CVector position);

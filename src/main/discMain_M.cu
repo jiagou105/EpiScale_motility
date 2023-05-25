@@ -31,12 +31,12 @@ inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort =
 //test here
 void initializeSlurmConfig(int argc, char* argv[]) {
 	// read configuration.
+	cout<<"Flag 1"<<endl;
 	ConfigParser parser;
 	std::string configFileNameDefault = "./resources/disc_M.cfg";
 	globalConfigVars = parser.parseConfigFile(configFileNameDefault);
 	std::string configFileNameBaseL = "./resources/disc_";
 	std::string configFileNameBaseR = ".cfg";
-
 	// Unknown number of input arguments.
 	if (argc != 1 && argc != 3) {
 		std::cout << "ERROR: Incorrect input argument count.\n"
@@ -61,12 +61,12 @@ void initializeSlurmConfig(int argc, char* argv[]) {
 	}
 	// no input argument. Take default.
 	else if (argc == 1) {
-
 		// set GPU device.
 		int myDeviceID =
 				globalConfigVars.getConfigValue("GPUDeviceNumber").toInt();
 		gpuErrchk(cudaSetDevice(myDeviceID));
 	}
+	
 }
 
 void updateDivThres(double& curDivThred, uint& i, double& curTime,  //Ali
@@ -81,7 +81,6 @@ void updateDivThres(double& curDivThred, uint& i, double& curTime,  //Ali
 int main(int argc, char* argv[]) {
 	// initialize random seed.
 	srand(time(NULL));
-
 	// Slurm is computer-cluster management system.
 	initializeSlurmConfig(argc, argv);
 

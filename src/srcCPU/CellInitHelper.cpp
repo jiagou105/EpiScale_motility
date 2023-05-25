@@ -691,6 +691,8 @@ void CellInitHelper::generateECMInitNodeInfo(vector<CVector> &initECMNodePoss,
 	}
 }
 
+// this function is not used??? May 2023
+/*
 void CellInitHelper::generateECMCenters(vector<CVector> &ECMCenters,
 	vector<CVector> &CellCenters, vector<CVector> &bdryNodes) {
 	ECMCenters.clear();
@@ -728,6 +730,7 @@ void CellInitHelper::generateECMCenters(vector<CVector> &ECMCenters,
 		}
 	}
 }
+*/
 
 bool CellInitHelper::anyCellCenterTooClose(vector<CVector> &cellCenters,
 	CVector position) {
@@ -925,7 +928,8 @@ vector<CVector> CellInitHelper::tryGenInitCellNodes(uint initNodeCt, CVector& ce
 		randAngle = getRandomNum(0.0, 1.0) * 2.0 * PI;
 		randX = 0.0 + randRad * cos(randAngle); // centered at (0, 0)
 		randY = 0.0 + randRad * sin(randAngle);
-
+		isInCircle = (sqrt(randX * randX + randY * randY) < radius);
+		
 		if (isInCircle) {
 			//Ali
 			poss.push_back(CVector(randX, randY, 0));
