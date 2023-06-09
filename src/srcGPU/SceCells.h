@@ -1169,7 +1169,7 @@ struct updateCellFilop: public thrust::unary_function<UiDDDD, double> {
 		thrust::uniform_real_distribution<double> u0TwoPi(0, 2.0 * PI);
 		double randomAngle;
 		double filopLength;
-		double filopMaxLen = 5.0;
+		double filopMaxLen = 1.5; // leader does not extend filopodium, to be implemented later
 		double filopMaxLifeTime = 30.0;
 		double filopAllX = 0.0;
 		double filopAllY = 0.0;

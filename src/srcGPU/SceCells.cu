@@ -5241,7 +5241,7 @@ __device__ double calBendMulti(double& angle, uint activeMembrCt) {
 //AAMIRI
 __device__ double calBendMulti_Mitotic(double& angle, uint activeMembrCt, double& progress, double mitoticCri) {
 
-	double equAngle = PI - PI / activeMembrCt;
+	double equAngle = PI - PI / activeMembrCt; // PI - 2*PI/activeMembrCt?
 	
 	if (progress <= mitoticCri){
 		return bendCoeff * (angle - equAngle);}
