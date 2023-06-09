@@ -862,12 +862,12 @@ vector<CVector> CellInitHelper::generateInitIntnlNodes(CVector& center,
 
 vector<CVector> CellInitHelper::generateInitMembrNodes(CVector& center,
 	double initProg, double radius) {
-	// double initRadius =
-	//	globalConfigVars.getConfigValue("InitMembrRadius").toDouble();
+	double radiusRadiusM = globalConfigVars.getConfigValue("InitMembrRadius").toDouble();
 	double radiusOffset =
 		globalConfigVars.getConfigValue("MembrRadiusOffset").toDouble();
 	uint initMembrNodeCount = globalConfigVars.getConfigValue(
 		"InitMembrNodeCount").toInt();
+	if (radius > radiusRadiusM*3){initMembrNodeCount = initMembrNodeCount * 4;}
 	vector<CVector> initMembrNodes;
 	double unitAngle = 2 * acos(-1.0) / (double)(initMembrNodeCount);
 	for (uint i = 0; i < initMembrNodeCount; i++) {
@@ -914,11 +914,12 @@ vector<CVector> CellInitHelper::tryGenInitCellNodes(uint initNodeCt, CVector& ce
 	uint foundCount = 0;
 	double randX, randY, randRad, randAngle;
 	static const double PI = acos(-1.0);
-
+	double radiusFollower = globalConfigVars.getConfigValue("InitCellRadius").toDouble();
 	//Ali
 	cout << "I am in the right one" << endl;
 	cout << "# of internal Nodes" << initNodeCt << endl;
 	//Ali
+	if (radius>3.5*radiusFollower) {initNodeCt = initNodeCt * 16;} // for leader cell 
 	while (foundCount < initNodeCt) {
 		bool isInCircle = false;
 //		randX = getRandomNum(-radius, radius);

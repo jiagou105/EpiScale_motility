@@ -209,7 +209,7 @@ void SimulationDomainGPU::outputVtkFilesWithCri(std::string scriptNameBase,
 }
 
 void SimulationDomainGPU::outputVtkFilesWithCri_M(std::string scriptNameBase,
-		int rank, AnimationCriteria aniCri) {
+	int rank, AnimationCriteria aniCri) {
 	nodes.prepareSceForceComputation();
 	//std::cout << "started generate raw data" << std::endl;
 	AniRawData rawAni = cells.obtainAniRawData(aniCri);
@@ -221,12 +221,13 @@ void SimulationDomainGPU::outputVtkFilesWithCri_M(std::string scriptNameBase,
 }
 
 void SimulationDomainGPU::outputVtkGivenCellColor(std::string scriptNameBase,
-		int rank, AnimationCriteria aniCri, std::vector<double>& cellColorVal,std::vector<double>& cellsPerimeter, std::vector<double> & cellsDppLevel) {
+	int rank, AnimationCriteria aniCri, std::vector<double>& cellColorVal,std::vector<double>& cellsPerimeter, std::vector<double> & cellsDppLevel) {
 	nodes.prepareSceForceComputation();
 	AniRawData rawAni = cells.obtainAniRawDataGivenCellColor(cellColorVal,
 			aniCri,cellsPerimeter,cellsDppLevel); //AliE
 	VtkAnimationData aniData = cells.outputVtkData(rawAni, aniCri);
 	aniData.outputVtkAni(scriptNameBase, rank);
+	aniData.outputCellVtkAni(scriptNameBase, rank); // JG June 2023
 }
 
 void SimulationDomainGPU::outputVtkColorByCell_T1(std::string scriptNameBase,
@@ -253,7 +254,7 @@ void SimulationDomainGPU::outputVtkColorByCell_polySide(
 		std::string scriptNameBase, int rank, AnimationCriteria aniCri) {
 
         std::cout  <<"I am in modified function" <<std:: endl; 
-	assert(aniCri.animationType == PolySide);
+		assert(aniCri.animationType == PolySide);
         std:: vector<double> cellsPerimeter ;
 		std:: vector<double> cellsDppLevel ; 
 	std::vector<double> polySideColorVec = processPolySideColor(cellsPerimeter,cellsDppLevel);

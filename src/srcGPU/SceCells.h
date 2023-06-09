@@ -948,7 +948,7 @@ struct addSceCellMyosinForce: public thrust::unary_function<UUUUDDDDD, CVec2> {
 		double cellCenterYPos = thrust::get<8>(cData);
 		uint index = cellRank * _maxNodePerCell + nodeRank;
                 
-		double totalMyosin = 0.0;
+		// double totalMyosin = 0.0;
 		double distNodes = 0.0;
 		
 
@@ -965,7 +965,7 @@ struct addSceCellMyosinForce: public thrust::unary_function<UUUUDDDDD, CVec2> {
 		double nodeX = _locXAddr[index];
 		double nodeY = _locYAddr[index];
 		double nodeXOther, nodeYOther;
-		double myosinOther;
+		// double myosinOther;
 
 		int index_left;
 		int index_right;
@@ -1006,7 +1006,7 @@ struct addSceCellMyosinForce: public thrust::unary_function<UUUUDDDDD, CVec2> {
 				nodeYOther = _locYAddr[index_other]; 
 				distNodes = compDist2D(nodeX, nodeY, nodeXOther, nodeYOther);
 				if (distNodes < shortestDistantce) { // JG040623
-					totalMyosin = _myosinLevelAddr[index_other];
+					// totalMyosin = _myosinLevelAddr[index_other];
 					shortestDistantce = distNodes;
 					}
 				// myosinOther = _myosinLevelAddr[index_other];
@@ -1081,16 +1081,16 @@ struct updateCellMyosin: public thrust::unary_function<UUDDUUDD, double> {
 		uint index_other;
 		double nodeX = _locXAddr[index];
 		double nodeY = _locYAddr[index];
-		double nodeXOther, nodeYOther;
-		double distNodes = 0.0;
-		double myosinOther;
-		double myosinDiffer;
-		double kDiff = 0.0;
+		// double nodeXOther, nodeYOther;
+		// double distNodes = 0.0;
+		// double myosinOther;
+		// double myosinDiffer;
+		// double kDiff = 0.0;
 		double pX = cos(cellAngle); // to be added as cell property later, JG041123
 		double pY = sin(cellAngle);
 		double myosinTarget = 2.0-((nodeX-Cell_CenterX)*pX + (nodeY-Cell_CenterY)*pY);
 		double kmyo = 0.01; // rate of myosin approaching its target value
-		if (_timeNow > 55800.0) {kDiff = 0.0;} 
+		// if (_timeNow > 55800.0) {kDiff = 0.0;} 
 		// means membrane node
 		//Because we want to compute the force on the membrane nodes we modify this function 
 		if (nodeRank < _maxMemNodePerCell) {
@@ -1102,9 +1102,9 @@ struct updateCellMyosin: public thrust::unary_function<UUDDUUDD, double> {
 				if (index_other == index) {
 					continue;
 				}
-				nodeXOther = _locXAddr[index_other];
-				nodeYOther = _locYAddr[index_other];
-				myosinOther = _myosinLevelAddr[index_other];
+				// nodeXOther = _locXAddr[index_other];
+				// nodeYOther = _locYAddr[index_other];
+				// myosinOther = _myosinLevelAddr[index_other];
 				// distNodes = compDist2D(nodeX,nodeY,nodeXOther,nodeYOther);
 				// myosinDiffer = kDiff * max((1.0-distNodes/_myosinDiffusionThreshold),0.0) * (myosinOther-nodeMyosin);
 				// nodeMyosin = nodeMyosin + myosinDiffer * _timeStep;
@@ -1143,15 +1143,16 @@ struct updateCellFilop: public thrust::unary_function<UiDDDD, double> {
 	double* _cellCenterXAddr;
 	double* _cellCenterYAddr;
 	double* _cellRadiusAddr;
+	uint* _cellActiveFilopCountsAddr;
 	// double _grthPrgrCriVal_M;
 	// comment prevents bad formatting issues of __host__ and __device__ in Nsight
 	__host__ __device__ updateCellFilop(uint seed, double timeStep, double timeNow, 
 			double* cellFilopXAddr, double* cellFilopYAddr, double* cellFilopAngleAddr, bool* cellFilopIsActiveAddr, double* cellFilopBirthTimeAddr,
-			uint activeCellCount, double* cellCenterXAddr, double* cellCenterYAddr, double* cellRadiusAddr) :
+			uint activeCellCount, double* cellCenterXAddr, double* cellCenterYAddr, double* cellRadiusAddr, uint* cellActiveFilopCountsAddr) :
 			_seed(seed), _timeStep(timeStep), _timeNow(timeNow),
 			_cellFilopXAddr(cellFilopXAddr), _cellFilopYAddr(cellFilopYAddr), _cellFilopAngleAddr(cellFilopAngleAddr),
 			_cellFilopIsActiveAddr(cellFilopIsActiveAddr), _cellFilopBirthTimeAddr(cellFilopBirthTimeAddr), _activeCellCount(activeCellCount), 
-			_cellCenterXAddr(cellCenterXAddr), _cellCenterYAddr(cellCenterYAddr), _cellRadiusAddr(cellRadiusAddr){
+			_cellCenterXAddr(cellCenterXAddr), _cellCenterYAddr(cellCenterYAddr), _cellRadiusAddr(cellRadiusAddr), _cellActiveFilopCountsAddr(cellActiveFilopCountsAddr){
 	}
 	// comment prevents bad formatting issues of __host__ and __device__ in Nsight
 	__device__ double operator()(const UiDDDD &cData) const {
@@ -1204,17 +1205,19 @@ struct updateCellFilop: public thrust::unary_function<UiDDDD, double> {
 						_cellFilopXAddr[filopIndex] = 0.0;
 						_cellFilopYAddr[filopIndex] = 0.0;
 						_cellFilopBirthTimeAddr[filopIndex] = 0.0;
+						_cellActiveFilopCountsAddr[cellRank] = _cellActiveFilopCountsAddr[cellRank] - 1;
 					}
 				} else {
 					// else if this slot does not have an active filopodia
 					randomBirth = u01(rng);
-					if (randomBirth<0.001){ // probably of the filopodia can grow 
+					if (randomBirth<0.0001){ // probably of the filopodia can grow 
 						_cellFilopIsActiveAddr[filopIndex] = true;
 						randomAngle = u0TwoPi(rng);
 						_cellFilopAngleAddr[filopIndex] = randomAngle;
 						_cellFilopXAddr[filopIndex] = 0.0; // zero length 
 						_cellFilopYAddr[filopIndex] = 0.0;
 						_cellFilopBirthTimeAddr[filopIndex] = _timeNow;
+						_cellActiveFilopCountsAddr[cellRank] = _cellActiveFilopCountsAddr[cellRank] + 1;
 					}
 				}
 			}
@@ -1532,8 +1535,8 @@ struct addSceCellAdhForce: public thrust::unary_function<UUDDUUDDDD, CVec2> {
 
 
 		uint bindSiteCounts = 0;
-		double posBind = 0.0; // initialize probability for binding and unbinding 
-		double posUnbind = 0.0; 
+		// double posBind = 0.0; // initialize probability for binding and unbinding 
+		// double posUnbind = 0.0; 
 		double siteX;
 		double siteY;
 		uint siteIndex;
@@ -1668,15 +1671,15 @@ struct initializeMyosinLevel: public thrust::unary_function<UUDDUU, double> {
 		if (_isActiveAddr[index] == false) {
 			return nodeMyosin; //AliE
 		}
-		uint intnlIndxMemBegin = cellRank * _maxNodePerCell;
-		uint intnlIndxBegin = cellRank * _maxNodePerCell + _maxMemNodePerCell;
-		uint intnlIndxEnd = intnlIndxBegin + activeIntnlCount;
-		uint index_other;
+		// uint intnlIndxMemBegin = cellRank * _maxNodePerCell;
+		// uint intnlIndxBegin = cellRank * _maxNodePerCell + _maxMemNodePerCell;
+		// uint intnlIndxEnd = intnlIndxBegin + activeIntnlCount;
+		// uint index_other;
 		double nodeX = _locXAddr[index];
 		double nodeY = _locYAddr[index];
-		double nodeXOther, nodeYOther;
-		double baseMyosin = 10.0;
-		double gradientMyosin = 4.0;
+		// double nodeXOther, nodeYOther;
+		// double baseMyosin = 10.0;
+		// double gradientMyosin = 4.0;
 		double pX = 1.0;
 		double pY = 0.0;
 		// double distNodes = 0.0;
@@ -2261,7 +2264,7 @@ struct AddPtOp_M: thrust::unary_function<BoolUIDDUID, DUi> {
 		// double shortestDistantce = 100;
 		double distThreshold = 0.5;
 		double newNodeMyosin;
-		uint indexClosestNeighbr;
+		// uint indexClosestNeighbr;
 		double totalNeighbrMyosin;
 		uint neighbrNodesCounts = 0;
 		uint index_neighbr; // 
@@ -2509,10 +2512,10 @@ struct AddDelPtDueToActinTemp: thrust::unary_function<BoolUIDDUID, DUi> {
 		double maxAddDelNum = 5; // must agree with the number in [] in the following 6 arrays 
 		double nodeXAddAll[5]; 
 		double nodeYAddAll[5];
-		double nodeXDelAll[5];
-		double nodeYDelAll[5];
+		// double nodeXDelAll[5];
+		// double nodeYDelAll[5];
 		uint index_delAll[5];
-		uint index_addAll[5];
+		// uint index_addAll[5];
 
 		uint nodeCountAdd = 0;
 		uint nodeCountDel = 0;
@@ -2540,12 +2543,12 @@ struct AddDelPtDueToActinTemp: thrust::unary_function<BoolUIDDUID, DUi> {
 				if (nodeMyosinCur<1.05*nodeMyosinOldL && nodeCountAdd<maxAddDelNum) { // manual!!! to be changed // add 
 					nodeXAddAll[nodeCountAdd] = _nodeXPosAddress[index_intnl];
 					nodeYAddAll[nodeCountAdd] = _nodeYPosAddress[index_intnl]; 
-					index_addAll[nodeCountAdd] = index_intnl;
+					// index_addAll[nodeCountAdd] = index_intnl;
 					nodeCountAdd +=1;
 				}
 				if (nodeMyosinCur>0.98*nodeMyosinOldH && nodeCountDel<maxAddDelNum) { // delete
-					nodeXDelAll[nodeCountDel] = _nodeXPosAddress[index_intnl]; // not used???
-					nodeYDelAll[nodeCountDel] = _nodeYPosAddress[index_intnl]; 
+					// nodeXDelAll[nodeCountDel] = _nodeXPosAddress[index_intnl]; // not used???
+					// nodeYDelAll[nodeCountDel] = _nodeYPosAddress[index_intnl]; 
 					index_delAll[nodeCountDel] = index_intnl;
 					nodeCountDel +=1;
 				}
@@ -3206,13 +3209,13 @@ struct DppGrowRegulator: public thrust::unary_function<DDDD, double> {
 		double smallValue = 0.000001 ;
 	
 		progressNew=progress+speed*_dt ; 
-		//return progressNew ;	// Alireza : bypass if conditions means 2way coupling temporal model
+		return progressNew;	// Alireza : bypass if conditions means 2way coupling temporal model
 		if ((progress <= _mitoticCheckPoint) && (progressNew>_mitoticCheckPoint)) {
 			if (dpp/(dpp_Old+smallValue)>1.5) {
 				return (progressNew) ; 
 			}
 			else{
-				return (progress) ; 
+				return (progress); 
 			}
 		}
 		else {
@@ -3501,6 +3504,7 @@ struct CellInfoVecs {
 	thrust::device_vector<double> cellFilopAngle;
 	thrust::device_vector<bool> cellFilopIsActive;
 	thrust::device_vector<double> cellFilopBirthTime;
+	thrust::device_vector<uint> activeCellFilopCounts;
 
 	thrust::device_vector<double> cellPolarX;
 	thrust::device_vector<double> cellPolarY;

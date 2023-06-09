@@ -708,7 +708,7 @@ void SceCells::initCellInfoVecs_M() {
 	cellInfoVecs.centerCoordY.resize(allocPara_m.maxCellCount);
 	cellInfoVecs.centerCoordZ.resize(allocPara_m.maxCellCount);
 
-        cellInfoVecs.HertwigXdir.resize(allocPara_m.maxCellCount,0.0); //A&A 
+    cellInfoVecs.HertwigXdir.resize(allocPara_m.maxCellCount,0.0); //A&A 
 	cellInfoVecs.HertwigYdir.resize(allocPara_m.maxCellCount,0.0); //A&A 
 
 	cellInfoVecs.cellRanksTmpStorage.resize(allocPara_m.maxCellCount);
@@ -734,6 +734,7 @@ void SceCells::initCellInfoVecs_M() {
 	cellInfoVecs.cellFilopAngle.resize(allocPara_m.maxCellCount*5, 0.0);
 	cellInfoVecs.cellFilopIsActive.resize(allocPara_m.maxCellCount*5, false); // boolean vector 
 	cellInfoVecs.cellFilopBirthTime.resize(allocPara_m.maxCellCount*5, 0.0);
+	cellInfoVecs.activeCellFilopCounts.resize(allocPara_m.maxCellCount); // uint type
 
 	cellInfoVecs.cellPolarX.resize(allocPara_m.maxCellCount, 0.0);
 	cellInfoVecs.cellPolarY.resize(allocPara_m.maxCellCount, 0.0);
@@ -1491,17 +1492,17 @@ void SceCells::runAllCellLogicsDisc_M(double dt, double Damp_Coef, double InitTi
 	std::cout << "     *** 2 ***" << endl;
 	std::cout.flush();
 	applySceCellDisc_M();
-	// updateCellPolar();
-	// calSceCellMyosin();
-	// applySceCellMyosin();
-	// calSubAdhForce();
+	updateCellPolar(); // comment out start for no cell motion
+	calSceCellMyosin();
+	applySceCellMyosin();
+	calSubAdhForce(); // comment out end 
 	std::cout << "     *** 3 ***" << endl;
 	std::cout.flush();
 //Ali        
 	computeCenterPos_M();
 	// computeCellRadius();
     exchSignal(); // use files in srcCPU for chemical concentrations
-    BC_Imp_M(); 
+    BC_Imp_M(); // do nothing for now, changing damping coef
 	std::cout << "     *** 3.5 ***" << endl;
 	std::cout.flush();
         	
@@ -3560,6 +3561,8 @@ AniRawData SceCells::obtainAniRawDataGivenCellColor(vector<double>& cellColors,
 	uint maxNodePerCell = allocPara_m.maxAllNodePerCell;
 	uint maxMemNodePerCell = allocPara_m.maxMembrNodePerCell;
 	uint beginIndx = allocPara_m.bdryNodeCount;
+	uint maxFilopPerCell = 5; // to be modified later
+	uint maxFilopCount = activeCellCount * maxFilopPerCell;
 
 	assert(cellColors.size() >= activeCellCount);
 	assert(cellsPerimeter.size() == activeCellCount); //AliE
@@ -3570,6 +3573,7 @@ AniRawData SceCells::obtainAniRawDataGivenCellColor(vector<double>& cellColors,
 	// unordered_map is more efficient than map, but it is a c++ 11 feature
 	// and c++ 11 seems to be incompatible with Thrust.
 	IndexMap locIndexToAniIndexMap;
+	IndexMap filopCenterIndexMap;
 
 	uint maxActiveNode = activeCellCount * maxNodePerCell;
 
@@ -3587,7 +3591,13 @@ AniRawData SceCells::obtainAniRawDataGivenCellColor(vector<double>& cellColors,
 	thrust::host_vector<double> hostTmpVectorExtForceNormal(maxActiveNode);//AAMIRI
 	thrust::host_vector<double> hostMyosinLevel(maxActiveNode);//apr 05
 	thrust::host_vector<double> hostSubAdhIsBound(maxActiveNode*10);//apr 05
+	thrust::host_vector<double> hostFilopX(maxFilopCount);//= cellInfoVecs.cellFilopX; // 5 filopodia, 1 center location for each cell to be added later
+	thrust::host_vector<double> hostFilopY(maxFilopCount);// = cellInfoVecs.cellFilopY; // inactive cells are also included
+	thrust::host_vector<bool> hostFilopIsActive(maxFilopCount);
 
+	thrust::host_vector<double> hostCellCenterX(activeCellCount);
+	thrust::host_vector<double> hostCellCenterY(activeCellCount);
+	thrust::host_vector<double> hostCellCenterZ(activeCellCount);
 
 	thrust::copy(
 			thrust::make_zip_iterator(
@@ -3657,7 +3667,46 @@ AniRawData SceCells::obtainAniRawDataGivenCellColor(vector<double>& cellColors,
 							hostSubAdhIsBound.begin()
 				)));
 
+	thrust::copy(
+			thrust::make_zip_iterator(
+					thrust::make_tuple(
+							cellInfoVecs.cellFilopX.begin(),
+							cellInfoVecs.cellFilopY.begin(),
+							cellInfoVecs.cellFilopIsActive.begin()
+							)),
+			thrust::make_zip_iterator(
+					thrust::make_tuple(
+							cellInfoVecs.cellFilopX.begin(),
+							cellInfoVecs.cellFilopY.begin(),
+							cellInfoVecs.cellFilopIsActive.begin()
+							))
+					+ maxFilopCount, 
+			thrust::make_zip_iterator(
+					thrust::make_tuple(
+							hostFilopX.begin(), hostFilopY.begin(),hostFilopIsActive.begin()
+				)));
 
+	thrust::copy(
+			thrust::make_zip_iterator(
+					thrust::make_tuple(
+							cellInfoVecs.centerCoordX.begin(),
+							cellInfoVecs.centerCoordY.begin(),
+							cellInfoVecs.centerCoordZ.begin()
+							)),
+			thrust::make_zip_iterator(
+					thrust::make_tuple(
+							cellInfoVecs.centerCoordX.begin(),
+							cellInfoVecs.centerCoordY.begin(),
+							cellInfoVecs.centerCoordZ.begin()
+							))
+					+ activeCellCount, 
+			thrust::make_zip_iterator(
+					thrust::make_tuple(
+							hostCellCenterX.begin(), hostCellCenterY.begin(),hostCellCenterZ.begin()
+				)));
+
+	thrust::host_vector<uint> curActiveFilopCounts =
+			cellInfoVecs.activeCellFilopCounts;
 
 	thrust::host_vector<uint> curActiveMemNodeCounts =
 			cellInfoVecs.activeMembrNodeCounts;
@@ -3681,6 +3730,8 @@ AniRawData SceCells::obtainAniRawDataGivenCellColor(vector<double>& cellColors,
 	double aniVal;
 	double aniVal2;
 	double tempMyosinLevel;
+
+	
 
 	int tempAdhSiteCount = 0;
         double tmpF_MI_M_MagN_Int[activeCellCount-1] ; //AliE
@@ -3910,7 +3961,38 @@ AniRawData SceCells::obtainAniRawDataGivenCellColor(vector<double>& cellColors,
 		}
 	}
 
-        cout << "I am in obtainAniRawDataGivenCellColor end"<<endl; 
+	// June 2023
+	CVector tempCenterPos, tempFilopPos;
+	double filopX, filopY;
+	uint curtotFilopCounts = 0;
+	uint tempFilopCounts;
+	double tempRadius, tempLen;
+	// double PI = acos(-1.0);
+    for (uint i=0; i<activeCellCount; i++){ // i is the index of an active cell 
+			tempCenterPos = CVector(hostCellCenterX[i],hostCellCenterY[i],0); // store cell center 
+			rawAniData.aniFilopPos.push_back(tempCenterPos);
+			tempRadius = cellsPerimeter[i]/(2.0*PI);
+			tempFilopCounts = 0;
+			for (uint j=0; j<maxFilopPerCell; j++){ // loop through all all filopodia slots in each cell 
+				index1 = i * maxFilopPerCell + j; 
+				if (hostFilopIsActive[index1]== true){
+						tempLen = sqrt(hostFilopX[index1]*hostFilopX[index1] + hostFilopY[index1]* hostFilopY[index1]);
+						filopX = hostFilopX[index1] + tempRadius * hostFilopX[index1]/tempLen;
+						filopY = hostFilopY[index1] + tempRadius * hostFilopY[index1]/tempLen;
+						tempFilopPos = CVector(filopX, filopY, 0);
+						rawAniData.aniFilopPos.push_back(tempFilopPos);
+						tempFilopCounts = tempFilopCounts + 1;
+						
+						LinkAniCellData linkCellData;
+						linkCellData.node1Index = curtotFilopCounts; 
+						linkCellData.node2Index = curtotFilopCounts+tempFilopCounts; // double check if this index is correct or not
+						rawAniData.aniFilopLinks.push_back(linkCellData);
+					}
+
+			}
+			curtotFilopCounts = curtotFilopCounts + curActiveFilopCounts[i] + 1;
+		}
+	cout << "I am in obtainAniRawDataGivenCellColor end"<<endl; 
 	return rawAniData;
 }
 
@@ -4191,6 +4273,15 @@ VtkAnimationData SceCells::outputVtkData(AniRawData& rawAniData, //apr 05
 	for (uint i = 0; i < rawAniData.memLinks.size(); i++) {
 		LinkAniData linkData = rawAniData.memLinks[i];
 		vtkData.linksAniData.push_back(linkData);
+	}
+	for (uint i = 0; i<rawAniData.aniFilopPos.size(); i++){
+		PointAniCellData ptAniCellData; // to be changed
+		ptAniCellData.filopPos = rawAniData.aniFilopPos[i]; // ???
+		vtkData.pointsAniCellData.push_back(ptAniCellData);
+	}
+	for (uint i = 0; i < rawAniData.aniFilopLinks.size(); i++) {
+		LinkAniCellData linkCellData = rawAniData.aniFilopLinks[i];
+		vtkData.linksAniCellData.push_back(linkCellData);
 	}
 	vtkData.isArrowIncluded = false;
 	return vtkData;
@@ -5342,7 +5433,7 @@ void SceCells::calSceCellMyosin() {
 	double* myosinLevelAddr = thrust::raw_pointer_cast(
 		&(nodes->getInfoVecs().myosinLevel[0])); // pointer to the vector storing myosin level
 
-	double grthPrgrCriVal_M =growthAuxData.grthPrgrCriVal_M_Ori ; // for now constant  growthAuxData.grthProgrEndCPU
+	// double grthPrgrCriVal_M =growthAuxData.grthPrgrCriVal_M_Ori ; // for now constant  growthAuxData.grthProgrEndCPU
 	//		- growthAuxData.prolifDecay
 	//				* (growthAuxData.grthProgrEndCPU
 	//						- growthAuxData.grthPrgrCriVal_M_Ori);
@@ -5452,6 +5543,8 @@ void SceCells::updateCellPolar() {
 	double timeNow = curTime;
 	// double initTimePeriod = InitTimeStage;
 	double ddt = dt;
+	uint* cellActiveFilopCountsAddr = thrust::raw_pointer_cast(
+        &(cellInfoVecs.activeCellFilopCounts[0]));
 
 	thrust::counting_iterator<uint> iBegin(0);
 	thrust::counting_iterator<uint> iEnd(activeCellCount); // make sure not iterate on inactive cells already 
@@ -5473,7 +5566,9 @@ void SceCells::updateCellPolar() {
 							)),
 			cellInfoVecs.cellPolarAngle.begin(),
 			updateCellFilop(seed, ddt, timeNow, 
-			cellFilopXAddr,cellFilopYAddr,cellFilopAngleAddr,cellFilopIsActiveAddr,cellFilopBirthTimeAddr,activeCellCount,cellCenterXAddr,cellCenterYAddr,cellRadiusAddr));
+			cellFilopXAddr,cellFilopYAddr,cellFilopAngleAddr,cellFilopIsActiveAddr,
+			cellFilopBirthTimeAddr,activeCellCount,cellCenterXAddr,cellCenterYAddr,cellRadiusAddr,
+			cellActiveFilopCountsAddr));
 }
 
 

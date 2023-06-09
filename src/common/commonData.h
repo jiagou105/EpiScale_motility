@@ -578,10 +578,19 @@ struct PointAniData {
 	int adhSiteCount1;
 };
 
+struct PointAniCellData {
+	// position of the filopodia
+	CVector filopPos;
+};
+
 /**
  * Necessary information to animate a link in VTK.
  */
 struct LinkAniData {
+	uint node1Index, node2Index;
+};
+
+struct LinkAniCellData {
 	uint node1Index, node2Index;
 };
 
@@ -593,7 +602,10 @@ struct VtkAnimationData {
 	std::vector<BondInfo> bondsInfo;
 	std::vector<PointAniData> pointsAniData;
 	std::vector<LinkAniData> linksAniData;
+	std::vector<PointAniCellData> pointsAniCellData;
+	std::vector<LinkAniCellData> linksAniCellData;
 	void outputVtkAni(std::string scriptNameBase, int rank);
+	void outputCellVtkAni(std::string scriptNameBase, int rank);
 };
 
 template<class T>
@@ -643,6 +655,9 @@ struct AniRawData {
 	std::vector<double> dppLevel; //Ali
 	std::vector<double> myoLevel;
 	std::vector<int> adhSiteCount;
+
+	std::vector<CVector> aniFilopPos;
+	std::vector<LinkAniCellData> aniFilopLinks;
 };
 
 struct VecVal {
