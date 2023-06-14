@@ -1086,7 +1086,7 @@ struct updateCellMyosin: public thrust::unary_function<UUDDUUDD, double> {
 		// double myosinOther;
 		// double myosinDiffer;
 		// double kDiff = 0.0;
-		double pX = cos(cellAngle); // to be added as cell property later, JG041123
+		double pX = cos(cellAngle); 
 		double pY = sin(cellAngle);
 		double myosinTarget = 2.0-((nodeX-Cell_CenterX)*pX + (nodeY-Cell_CenterY)*pY);
 		double kmyo = 0.01; // rate of myosin approaching its target value
@@ -1241,7 +1241,7 @@ struct updateCellFilop: public thrust::unary_function<UiDDDD, double> {
 					filopAllY += _cellFilopYAddr[filopIndex];
 				} 
 			}
-			cellAngle = cellAngle + _timeStep*(filopAllY*cos(cellAngle)-filopAllX*sin(cellAngle));
+			cellAngle = 0;//cellAngle + _timeStep*(filopAllY*cos(cellAngle)-filopAllX*sin(cellAngle));
 			return cellAngle;
 		}
 	}

@@ -31,7 +31,7 @@ inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort =
 //test here
 void initializeSlurmConfig(int argc, char* argv[]) {
 	// read configuration.
-	cout<<"Flag 1"<<endl;
+	// cout<<"Flag 1"<<endl;
 	ConfigParser parser;
 	std::string configFileNameDefault = "./resources/disc_M.cfg";
 	globalConfigVars = parser.parseConfigFile(configFileNameDefault);
