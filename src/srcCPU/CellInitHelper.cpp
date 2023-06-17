@@ -439,6 +439,7 @@ SimulationInitData_V2_M CellInitHelper::initInputsV3_M(
 		initData.initActiveIntnlNodeCounts.push_back(
 			rawData_m.initIntnlNodePoss[i].size());
 		initData.initGrowProgVec.push_back(rawData_m.cellGrowProgVec[i]);
+		initData.initCellRadii.push_back(rawData_m.initCellRadii[i]);
 	}
 
 	for (uint i = 0; i < maxNodeInDomain; i++) {
@@ -919,7 +920,7 @@ vector<CVector> CellInitHelper::tryGenInitCellNodes(uint initNodeCt, CVector& ce
 	cout << "I am in the right one" << endl;
 	cout << "# of internal Nodes" << initNodeCt << endl;
 	//Ali
-	if (radius>3.5*radiusFollower) {initNodeCt = initNodeCt * 16;} // for leader cell 
+	if (radius>3*radiusFollower) {initNodeCt = initNodeCt * 16;} // for leader cell 
 	while (foundCount < initNodeCt) {
 		bool isInCircle = false;
 //		randX = getRandomNum(-radius, radius);

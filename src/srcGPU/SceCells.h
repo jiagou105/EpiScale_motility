@@ -13,6 +13,7 @@ typedef thrust::tuple<bool, double, double> BoolDD;
 typedef thrust::tuple<uint, double, double> UiDD;
 typedef thrust::tuple<uint, double, double, uint> UiDDU;
 typedef thrust::tuple<double, double, double,double> DDDD; //Ali 
+typedef thrust::tuple<double, double, double,double,int> DDDDi; //Ali 
 typedef thrust::tuple<uint, double, double, bool> UiDDBool;//AAMIRI
 typedef thrust::tuple<uint, uint> UiUi;
 typedef thrust::tuple<bool, SceNodeType> boolType;
@@ -3209,7 +3210,7 @@ struct RandomizeGrow_M: public thrust::unary_function<CVec3BoolInt, CVec3Bool> {
 };
 
 // division 
-struct DppGrowRegulator: public thrust::unary_function<DDDD, double> {
+struct DppGrowRegulator: public thrust::unary_function<DDDDi, double> {
 	double _dt ;
 	double _mitoticCheckPoint ; 
 
@@ -3217,15 +3218,20 @@ struct DppGrowRegulator: public thrust::unary_function<DDDD, double> {
 	__host__ __device__ DppGrowRegulator(double dt, double mitoticCheckPoint) :
 			_dt(dt),_mitoticCheckPoint(mitoticCheckPoint)  {
 	}
-	__host__ __device__ double  operator()(const DDDD &dDDD) {
+	__host__ __device__ double  operator()(const DDDDi &dDDD) {
 		double dpp = thrust::get<0>(dDDD);
 		double dpp_Old = thrust::get<1>(dDDD);
 		double progress = thrust::get<2>(dDDD);
 		double speed = thrust::get<3>(dDDD);
+		int cell_Type = thrust::get<4>(dDDD);
 		double progressNew ; 
 		double smallValue = 0.000001 ;
-	
-		progressNew=progress+speed*_dt ; 
+
+		if (cell_Type == 0){// followers
+			progressNew=progress+speed*_dt ;} 
+		else {
+			progressNew=progress;
+		}
 		return progressNew;	// Alireza : bypass if conditions means 2way coupling temporal model
 		if ((progress <= _mitoticCheckPoint) && (progressNew>_mitoticCheckPoint)) {
 			if (dpp/(dpp_Old+smallValue)>1.5) {
@@ -3727,7 +3733,8 @@ class SceCells {
 			std::vector<uint>& numOfInitActiveNodesOfCells);
 	void copyInitActiveNodeCount_M(std::vector<uint>& initMembrActiveNodeCounts,
 			std::vector<uint>& initIntnlActiveNodeCounts,
-			std::vector<double> &initGrowProgVec);
+			std::vector<double> &initGrowProgVec,
+			std::vector<double> &initCellRadii);
 
 	void initCellInfoVecs();
 	void initCellNodeInfoVecs();
@@ -4012,7 +4019,8 @@ public:
 	SceCells(SceNodes* nodesInput,
 			std::vector<uint> &numOfInitActiveMembrNodeCounts,
 			std::vector<uint> &numOfInitActiveIntnlNodeCounts,
-			std::vector<double> &initGrowProgVec, double InitTimeStage);
+			std::vector<double> &initGrowProgVec, 
+			std::vector<double> &initCellRadii, double InitTimeStage);
 
 	void runAllCellLevelLogicsDisc(double dt);
 

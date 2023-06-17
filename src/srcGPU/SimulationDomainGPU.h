@@ -91,7 +91,8 @@ class SimulationDomainGPU {
 			std::vector<bool> &nodeIsActive, std::vector<CVector> &initNodesVec,
 			std::vector<uint> &numOfInitActiveEpiNodeCounts,
 			std::vector<uint> &numOfInitActiveInternalNodeCounts,
-			std::vector<double> &initGrowProgVec, double InitTimeStage);
+			std::vector<double> &initGrowProgVec, 
+			std::vector<double> &initCellRadii, double InitTimeStage);
 
 	NetworkInfo buildNetInfo(CellsStatsData &polyData);
 	std::set<int> findT1Transition();

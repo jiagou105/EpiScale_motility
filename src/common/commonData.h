@@ -509,6 +509,7 @@ struct SimulationInitData_V2_M {
 	std::vector<SceNodeType> nodeTypes;
 	std::vector<CVector> initNodeVec;
 	std::vector<bool> initIsActive;
+	std::vector<double> initCellRadii;
 };
 
 std::vector<double> getArrayXComp(std::vector<CVector> &nodePosVec);
@@ -688,6 +689,7 @@ struct CellStats {
 	uint currentActiveMembrNodes;
 	CVector cellCenter;
 	void printToFile(ofstream& ofs);
+	int cell_Type;
 };
 
 struct CountEntry {

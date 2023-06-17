@@ -630,7 +630,8 @@ SceCells::SceCells(SceNodes* nodesInput,
 SceCells::SceCells(SceNodes* nodesInput,
 		std::vector<uint>& initActiveMembrNodeCounts,
 		std::vector<uint>& initActiveIntnlNodeCounts,
-		std::vector<double> &initGrowProgVec, double InitTimeStage) {
+		std::vector<double> &initGrowProgVec, 
+		std::vector<double> &initCellRadii, double InitTimeStage) {
 //	curTime = 0.0 + 55800.0;//AAMIRIi
         curTime=InitTimeStage ; 
         std ::cout << "I am in SceCells constructor with number of inputs "<<InitTimeStage<<std::endl ; 
@@ -651,7 +652,7 @@ SceCells::SceCells(SceNodes* nodesInput,
         cout<< "size of dpp in constructor  is "<< cellInfoVecs.cell_Dpp.size() << endl ;          
 	copyToGPUConstMem();
 	copyInitActiveNodeCount_M(initActiveMembrNodeCounts,
-			initActiveIntnlNodeCounts, initGrowProgVec);
+			initActiveIntnlNodeCounts,initGrowProgVec,initCellRadii);
 }
 
 void SceCells::initCellInfoVecs() {
@@ -804,6 +805,9 @@ void SceCells::initGrowthAuxData_M() {
 	growthAuxData.grthProgrEndCPU = globalConfigVars.getConfigValue(
 			"GrowthPrgrValEnd").toDouble();
 }
+
+
+
 
 // Mar 31
 void SceCells::initMyosinLevel() {
@@ -2935,8 +2939,7 @@ thrust::transform(
                                                             cellInfoVecs.growthSpeed.begin(),
 															cellInfoVecs.cell_Type.begin()))
                                         + allocPara_m.currentActiveCellCount,
-                        thrust::make_zip_iterator(
-                                        thrust::make_tuple(cellInfoVecs.growthProgress.begin(),cellInfoVecs.cell_Type.begin())),
+						cellInfoVecs.growthProgress.begin(),
                         DppGrowRegulator(dt,mitoticCheckPoint));
 
 
@@ -4005,7 +4008,8 @@ AniRawData SceCells::obtainAniRawDataGivenCellColor(vector<double>& cellColors,
 void SceCells::copyInitActiveNodeCount_M(
 		std::vector<uint>& initMembrActiveNodeCounts,
 		std::vector<uint>& initIntnlActiveNodeCounts,
-		std::vector<double> &initGrowProgVec) {
+		std::vector<double> &initGrowProgVec,
+		std::vector<double> &initCellRadii) {
 	assert(
 			initMembrActiveNodeCounts.size()
 					== initIntnlActiveNodeCounts.size());
@@ -4020,6 +4024,11 @@ void SceCells::copyInitActiveNodeCount_M(
 			cellInfoVecs.activeIntnlNodeCounts.begin());
 	thrust::copy(initGrowProgVec.begin(), initGrowProgVec.end(),
 			cellInfoVecs.growthProgress.begin());
+	for (uint cellRank=0; cellRank<allocPara_m.currentActiveCellCount; cellRank++)
+    {
+        if (initCellRadii[cellRank]>3.0){cellInfoVecs.cell_Type[cellRank] = 1;}
+    }
+	
 }
 
 void SceCells::myDebugFunction() {
@@ -5176,7 +5185,7 @@ CellsStatsData SceCells::outputPolyCountData() {
 		cellStatsData.cellArea = cellAreaHost[i];
         cellStatsData.cellPerim = cellPerimHost[i];//AAMIRI
         cellStatsData.cellDpp = cellDppHost[i];//Ali
-		cellStatsData.cell_type = cellTypeHost[i];
+		cellStatsData.cell_Type = cellTypeHost[i];
 		result.cellsStats.push_back(cellStatsData);
         sumX=sumX+cellStatsData.cellCenter.x ; 
         sumY=sumY+cellStatsData.cellCenter.y ;
