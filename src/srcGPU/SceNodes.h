@@ -606,7 +606,7 @@ struct AddForceDisc_M: public thrust::unary_function<Tuuudd, CVec2> {
 		bool isSuccess = false;
 		uint index;
 		double dist;
-                bool  Lennard_Jones =Is_Lennard_Jones() ; 
+        bool  Lennard_Jones =Is_Lennard_Jones() ; 
 		_nodeAdhereIndex[myValue] = -1 ; 
 		for (uint i = begin; i < end; i++) {
 			uint nodeRankOther = _extendedValuesAddress[i];

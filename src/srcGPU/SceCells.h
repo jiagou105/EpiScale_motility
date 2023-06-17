@@ -1126,11 +1126,6 @@ struct updateCellMyosin: public thrust::unary_function<UUDDUUDD, double> {
 
 // JG050823
 struct updateCellFilop: public thrust::unary_function<UiDDDD, double> {
-	// uint _maxNodePerCell;
-	// uint _maxMemNodePerCell;
-	// double* _locXAddr;
-	// double* _locYAddr;
-	// bool* _isActiveAddr;
 	uint _seed;
 	double _timeStep;
 	double _timeNow;
@@ -1144,15 +1139,23 @@ struct updateCellFilop: public thrust::unary_function<UiDDDD, double> {
 	double* _cellCenterYAddr;
 	double* _cellRadiusAddr;
 	uint* _cellActiveFilopCountsAddr;
+	uint _maxMemNodePerCell;
+	uint _maxNodePerCell;
+	double* _locXAddr;
+	double* _locYAddr;
+	bool* _isActiveAddr;
+	int* _nodeAdhereIndexAddr;
 	// double _grthPrgrCriVal_M;
 	// comment prevents bad formatting issues of __host__ and __device__ in Nsight
 	__host__ __device__ updateCellFilop(uint seed, double timeStep, double timeNow, 
 			double* cellFilopXAddr, double* cellFilopYAddr, double* cellFilopAngleAddr, bool* cellFilopIsActiveAddr, double* cellFilopBirthTimeAddr,
-			uint activeCellCount, double* cellCenterXAddr, double* cellCenterYAddr, double* cellRadiusAddr, uint* cellActiveFilopCountsAddr) :
+			uint activeCellCount, double* cellCenterXAddr, double* cellCenterYAddr, double* cellRadiusAddr, uint* cellActiveFilopCountsAddr,
+			uint maxMemNodePerCell, uint maxNodePerCell, double* locXAddr, double* locYAddr, bool* isActiveAddr, int* nodeAdhereIndexAddr) :
 			_seed(seed), _timeStep(timeStep), _timeNow(timeNow),
 			_cellFilopXAddr(cellFilopXAddr), _cellFilopYAddr(cellFilopYAddr), _cellFilopAngleAddr(cellFilopAngleAddr),
 			_cellFilopIsActiveAddr(cellFilopIsActiveAddr), _cellFilopBirthTimeAddr(cellFilopBirthTimeAddr), _activeCellCount(activeCellCount), 
-			_cellCenterXAddr(cellCenterXAddr), _cellCenterYAddr(cellCenterYAddr), _cellRadiusAddr(cellRadiusAddr), _cellActiveFilopCountsAddr(cellActiveFilopCountsAddr){
+			_cellCenterXAddr(cellCenterXAddr), _cellCenterYAddr(cellCenterYAddr), _cellRadiusAddr(cellRadiusAddr), _cellActiveFilopCountsAddr(cellActiveFilopCountsAddr),
+			_maxMemNodePerCell(maxMemNodePerCell),_maxNodePerCell(maxNodePerCell), _locXAddr(locXAddr), _locYAddr(locYAddr), _isActiveAddr(isActiveAddr), _nodeAdhereIndexAddr(nodeAdhereIndexAddr){
 	}
 	// comment prevents bad formatting issues of __host__ and __device__ in Nsight
 	__device__ double operator()(const UiDDDD &cData) const {
@@ -1162,9 +1165,9 @@ struct updateCellFilop: public thrust::unary_function<UiDDDD, double> {
 		double cell_Radius = thrust::get<3>(cData);
 		double cellAngle = thrust::get<4>(cData);
 		
-		
+		uint maxFilopPerCell = 5;
 		thrust::default_random_engine rng(_seed);
-		rng.discard(cellRank);
+		rng.discard(cellRank*maxFilopPerCell*7);
 		thrust::uniform_real_distribution<double> u01(0, 1.0);
 		thrust::uniform_real_distribution<double> u0TwoPi(0, 2.0 * PI);
 		double randomAngle;
@@ -1173,7 +1176,6 @@ struct updateCellFilop: public thrust::unary_function<UiDDDD, double> {
 		double filopMaxLifeTime = 30.0;
 		double filopAllX = 0.0;
 		double filopAllY = 0.0;
-		double maxFilopPerCell = 5.0;
 		double growthTime;
 		double randomBirth;
 
@@ -1185,10 +1187,14 @@ struct updateCellFilop: public thrust::unary_function<UiDDDD, double> {
 		double filopTipY;
 		double distCells;
 
+		// double PI = acos(-1.0);
+		uint nodeRank;
+		
 		if (_timeNow < 55800.0) {
 			return cellAngle;
 			}
-		else{
+		else{// if cell_type == 'follower'
+			if (_cellRadiusAddr[cellRank]<3.0){ // to be added 
 			for (uint filopIndex=filopIndxBegin; filopIndex<filopIndxEnd; filopIndex++){
 				if (_cellFilopIsActiveAddr[filopIndex] == true){
 					// if this slot has a filopodia already
@@ -1210,7 +1216,7 @@ struct updateCellFilop: public thrust::unary_function<UiDDDD, double> {
 				} else {
 					// else if this slot does not have an active filopodia
 					randomBirth = u01(rng);
-					if (randomBirth<0.0001){ // probably of the filopodia can grow 
+					if (randomBirth<0.00001){ // probably of the filopodia can grow 
 						_cellFilopIsActiveAddr[filopIndex] = true;
 						randomAngle = u0TwoPi(rng);
 						_cellFilopAngleAddr[filopIndex] = randomAngle;
@@ -1241,7 +1247,18 @@ struct updateCellFilop: public thrust::unary_function<UiDDDD, double> {
 					filopAllY += _cellFilopYAddr[filopIndex];
 				} 
 			}
-			cellAngle = 0;//cellAngle + _timeStep*(filopAllY*cos(cellAngle)-filopAllX*sin(cellAngle));
+			cellAngle = cellAngle + _timeStep*(filopAllY*cos(cellAngle)-filopAllX*sin(cellAngle));}
+			else{
+				double allPolar = 0;
+				double rateRep = 0.01;
+				for (uint memNodeIndex=0; memNodeIndex<_maxMemNodePerCell;memNodeIndex++){
+					nodeRank = cellRank*_maxNodePerCell + memNodeIndex; // add calculation to compute the total index
+					if (_isActiveAddr[nodeRank]&&_nodeAdhereIndexAddr[nodeRank]>-1){
+						allPolar = allPolar - sin(PI+atan2(cell_CenterY - _locYAddr[nodeRank],cell_CenterX - _locXAddr[nodeRank])-cellAngle);
+					}
+				}
+				cellAngle = cellAngle + _timeStep*rateRep*allPolar;
+			}
 			return cellAngle;
 		}
 	}
@@ -1919,7 +1936,7 @@ struct MemGrowFunc: public thrust::unary_function<UiDD, BoolD> {
 		//Ali double progress = thrust::get<0>(dui);
 		uint   curActiveMembrNode = thrust::get<0>(uidd); //Ali
 		double progress = thrust::get<1>(uidd); //Ali
-                double LengthMax=thrust::get<2>(uidd); //Ali
+        double LengthMax=thrust::get<2>(uidd); //Ali
 		//Ali uint curActiveMembrNode = thrust::get<1>(dui);
 		if (curActiveMembrNode < _bound && progress >= 1.0 && LengthMax>0.0975 ) {
 			return thrust::make_tuple(true, 0);
@@ -2028,10 +2045,10 @@ struct PtCondiOp: public thrust::unary_function<CVec2, bool> {
 		double lastCheckPoint = thrust::get<1>(d2);
 		bool resBool = false;
 		if (progress == 1.0 && lastCheckPoint < 1.0) {
-			resBool = false; // true;
+			resBool = true; // true;
 		}
 		if (progress - lastCheckPoint >= _threshold) {
-			resBool = false; //true; JG041123
+			resBool = true; //true; JG041123
 		}
 		return resBool;
 	}
@@ -3439,7 +3456,8 @@ struct CellInfoVecs {
 	thrust::device_vector<double> cell_Tkv;//Alireza
 	thrust::device_vector<double> cell_DppTkv;//Alireza
 	thrust::device_vector<double> cell_pMad;//Alireza
-        thrust::device_vector<double> cell_pMadOld;//Alireza
+    thrust::device_vector<double> cell_pMadOld;//Alireza
+	thrust::device_vector<int> cell_Type ;//Alireza
 
 	thrust::device_vector<double> growthProgressOld;  //A&A
 //Ali

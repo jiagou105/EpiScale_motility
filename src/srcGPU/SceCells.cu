@@ -685,6 +685,7 @@ void SceCells::initCellInfoVecs_M() {
 	cellInfoVecs.cell_DppTkv.resize(allocPara_m.maxCellCount, 0.0);   //Alireza
 	cellInfoVecs.cell_pMad.resize(allocPara_m.maxCellCount, 0.0);   //Alireza
 	cellInfoVecs.cell_pMadOld.resize(allocPara_m.maxCellCount, 0.0);   //Alireza
+	cellInfoVecs.cell_Type.resize(allocPara_m.maxCellCount, 0);   //Alireza
 	
         //cout<< "size of dpp in init is "<< cellInfoVecs.cell_Dpp.size() << endl ;          
 	cellInfoVecs.growthProgress.resize(allocPara_m.maxCellCount, 0.0); //A&A
@@ -1589,13 +1590,15 @@ if (firstTimeReadDpp) {
 		thrust:: copy (cellInfoVecs.cell_Tkv.begin(),cellInfoVecs.cell_Tkv.begin()+allocPara_m.currentActiveCellCount, signal.tkvLevel.begin());		//Alireza
 		thrust:: copy (cellInfoVecs.cell_DppTkv.begin(),cellInfoVecs.cell_DppTkv.begin()+allocPara_m.currentActiveCellCount, signal.dppTkvLevel.begin());	//Alireza
 		thrust:: copy (cellInfoVecs.cell_pMad.begin(),cellInfoVecs.cell_pMad.begin()+allocPara_m.currentActiveCellCount, signal.pMadLevel.begin());		//Alireza
-		
-        	signal.updateSignal(Tisu_MinX,Tisu_MaxX,Tisu_MinY,Tisu_MaxY,curTime,totalNodeCountForActiveCells,allocPara_m.currentActiveCellCount) ; //Ali
-        	assert(cellInfoVecs.cell_Dpp.size()==signal.dppLevel.size());
-        	thrust::copy(signal.dppLevel.begin(),signal.dppLevel.begin() + allocPara_m.currentActiveCellCount,cellInfoVecs.cell_Dpp.begin()) ;
+		// thrust:: copy (cellInfoVecs.cell_Type.begin(),cellInfoVecs.cell_Type.begin()+allocPara_m.currentActiveCellCount, signal.cellType.begin());             //Alireza
+
+        signal.updateSignal(Tisu_MinX,Tisu_MaxX,Tisu_MinY,Tisu_MaxY,curTime,totalNodeCountForActiveCells,allocPara_m.currentActiveCellCount) ; //Ali
+        assert(cellInfoVecs.cell_Dpp.size()==signal.dppLevel.size());
+        thrust::copy(signal.dppLevel.begin(),signal.dppLevel.begin() + allocPara_m.currentActiveCellCount,cellInfoVecs.cell_Dpp.begin()) ;
 		thrust::copy(signal.tkvLevel.begin(),signal.tkvLevel.begin() + allocPara_m.currentActiveCellCount,cellInfoVecs.cell_Tkv.begin()) ;		//Alireza
 		thrust::copy(signal.dppTkvLevel.begin(),signal.dppTkvLevel.begin() + allocPara_m.currentActiveCellCount,cellInfoVecs.cell_DppTkv.begin()) ;	//Alireza
 		thrust::copy(signal.pMadLevel.begin(),signal.pMadLevel.begin() + allocPara_m.currentActiveCellCount,cellInfoVecs.cell_pMad.begin()) ;		//Alireza
+		// thrust::copy(signal.cellType.begin(),signal.cellType.begin() + allocPara_m.currentActiveCellCount,cellInfoVecs.cell_Type.begin()) ; 	
 		//currentActiveCellCountOld=allocPara_m.currentActiveCellCount;
  
 	}
@@ -2787,7 +2790,7 @@ void SceCells::growAtRandom_M(double dt) {
 
 void SceCells::divide2D_M() {
 	bool isDivisionPresent = decideIfGoingToDivide_M();
-        bool isEnteringMitotic = decideIfAnyCellEnteringMitotic() ; //A&A
+    bool isEnteringMitotic = decideIfAnyCellEnteringMitotic() ; //A&A
         
         //A&A
 	if (isEnteringMitotic){
@@ -2923,14 +2926,17 @@ thrust::transform(
                                         thrust::make_tuple(cellInfoVecs.cell_pMad.begin(),
                                                            cellInfoVecs.cell_pMadOld.begin(),
                                                            cellInfoVecs.growthProgress.begin(),
-                                                           cellInfoVecs.growthSpeed.begin())),
+                                                           cellInfoVecs.growthSpeed.begin(),
+														   cellInfoVecs.cell_Type.begin())),
                         thrust::make_zip_iterator(
                                         thrust::make_tuple(cellInfoVecs.cell_pMad.begin(),
-                                                                   cellInfoVecs.cell_pMadOld.begin(),
-                                                                   cellInfoVecs.growthProgress.begin(),
-                                                                           cellInfoVecs.growthSpeed.begin()))
+                                                            cellInfoVecs.cell_pMadOld.begin(),
+                                                            cellInfoVecs.growthProgress.begin(),
+                                                            cellInfoVecs.growthSpeed.begin(),
+															cellInfoVecs.cell_Type.begin()))
                                         + allocPara_m.currentActiveCellCount,
-                                                   cellInfoVecs.growthProgress.begin(),
+                        thrust::make_zip_iterator(
+                                        thrust::make_tuple(cellInfoVecs.growthProgress.begin(),cellInfoVecs.cell_Type.begin())),
                         DppGrowRegulator(dt,mitoticCheckPoint));
 
 
@@ -3977,8 +3983,8 @@ AniRawData SceCells::obtainAniRawDataGivenCellColor(vector<double>& cellColors,
 				index1 = i * maxFilopPerCell + j; 
 				if (hostFilopIsActive[index1]== true){
 						tempLen = sqrt(hostFilopX[index1]*hostFilopX[index1] + hostFilopY[index1]* hostFilopY[index1]);
-						filopX = hostFilopX[index1] + tempRadius * hostFilopX[index1]/tempLen;
-						filopY = hostFilopY[index1] + tempRadius * hostFilopY[index1]/tempLen;
+						filopX = hostCellCenterX[i] + hostFilopX[index1] + tempRadius * hostFilopX[index1]/tempLen;
+						filopY = hostCellCenterY[i] + hostFilopY[index1] + tempRadius * hostFilopY[index1]/tempLen;
 						tempFilopPos = CVector(filopX, filopY, 0);
 						rawAniData.aniFilopPos.push_back(tempFilopPos);
 						tempFilopCounts = tempFilopCounts + 1;
@@ -5062,12 +5068,14 @@ CellsStatsData SceCells::outputPolyCountData() {
 	thrust::host_vector<double> cellAreaHost(
 			allocPara_m.currentActiveCellCount);
 
-        thrust::host_vector<double> cellPerimHost(
+    thrust::host_vector<double> cellPerimHost(
  			allocPara_m.currentActiveCellCount);//AAMIRI
 
-		thrust::host_vector<double> cellDppHost(
+	thrust::host_vector<double> cellDppHost(
  			allocPara_m.currentActiveCellCount);//Ali
 
+	thrust::host_vector<int> cellTypeHost(
+                        allocPara_m.currentActiveCellCount);//Alireza
 
 	thrust::copy(cellInfoVecs.cellAreaVec.begin(),
 			cellInfoVecs.cellAreaVec.begin()
@@ -5081,7 +5089,9 @@ CellsStatsData SceCells::outputPolyCountData() {
  			cellInfoVecs.cell_Dpp.begin()
 					+ allocPara_m.currentActiveCellCount, cellDppHost.begin());//Ali
 
-
+		thrust::copy(cellInfoVecs.cell_Type.begin(),
+                        cellInfoVecs.cell_Type.begin()
+                                        + allocPara_m.currentActiveCellCount, cellTypeHost.begin());//Alireza
         sumX=0 ; 
         sumY=0 ; 
 	for (uint i = 0; i < allocPara_m.currentActiveCellCount; i++) {
@@ -5157,18 +5167,19 @@ CellsStatsData SceCells::outputPolyCountData() {
 		cellStatsData.currentActiveIntnlNodes = activeIntnlNodeCountHost[i];
 		cellStatsData.neighborVec = neighbors;
 		cellStatsData.neighborVecV = neighborsV; //Ali
-                for (int iiii=0; iiii<10 ; iiii++){
-		cellStatsData.cellNeighborStrength[iiii] = neighborStrength[iiii];
+        for (int iiii=0; iiii<10 ; iiii++){
+				cellStatsData.cellNeighborStrength[iiii] = neighborStrength[iiii];
                  }    //Ali
 		cellStatsData.membrGrowthProgress = growthProMembrVecHost[i];
 		cellStatsData.cellCenter = CVector(centerCoordXHost[i],
 				centerCoordYHost[i], 0);
 		cellStatsData.cellArea = cellAreaHost[i];
-                cellStatsData.cellPerim = cellPerimHost[i];//AAMIRI
-                cellStatsData.cellDpp = cellDppHost[i];//Ali
+        cellStatsData.cellPerim = cellPerimHost[i];//AAMIRI
+        cellStatsData.cellDpp = cellDppHost[i];//Ali
+		cellStatsData.cell_type = cellTypeHost[i];
 		result.cellsStats.push_back(cellStatsData);
-                sumX=sumX+cellStatsData.cellCenter.x ; 
-                sumY=sumY+cellStatsData.cellCenter.y ;
+        sumX=sumX+cellStatsData.cellCenter.x ; 
+        sumY=sumY+cellStatsData.cellCenter.y ;
                 
 	}
 //Ali
@@ -5545,11 +5556,22 @@ void SceCells::updateCellPolar() {
             &(cellInfoVecs.centerCoordY[0]));
 	double* cellRadiusAddr = thrust::raw_pointer_cast(
             &(cellInfoVecs.cellRadius[0]));
+ 	int* nodeAdhIdxAddr = thrust::raw_pointer_cast(
+            &(nodes->getInfoVecs().nodeAdhereIndex[0]));
 	double timeNow = curTime;
 	// double initTimePeriod = InitTimeStage;
 	double ddt = dt;
 	uint* cellActiveFilopCountsAddr = thrust::raw_pointer_cast(
         &(cellInfoVecs.activeCellFilopCounts[0]));
+
+	uint maxMemNodePerCell = allocPara_m.maxMembrNodePerCell;
+	uint maxNodePerCell = allocPara_m.maxAllNodePerCell;
+    double* nodeLocXAddr = thrust::raw_pointer_cast(
+            &(nodes->getInfoVecs().nodeLocX[0]));
+    double* nodeLocYAddr = thrust::raw_pointer_cast(
+            &(nodes->getInfoVecs().nodeLocY[0]));
+    bool* nodeIsActiveAddr = thrust::raw_pointer_cast(
+            &(nodes->getInfoVecs().nodeIsActive[0])); // 
 
 	thrust::counting_iterator<uint> iBegin(0);
 	thrust::counting_iterator<uint> iEnd(activeCellCount); // make sure not iterate on inactive cells already 
@@ -5573,7 +5595,7 @@ void SceCells::updateCellPolar() {
 			updateCellFilop(seed, ddt, timeNow, 
 			cellFilopXAddr,cellFilopYAddr,cellFilopAngleAddr,cellFilopIsActiveAddr,
 			cellFilopBirthTimeAddr,activeCellCount,cellCenterXAddr,cellCenterYAddr,cellRadiusAddr,
-			cellActiveFilopCountsAddr));
+			cellActiveFilopCountsAddr,maxMemNodePerCell,maxNodePerCell,nodeLocXAddr,nodeLocYAddr,nodeIsActiveAddr,nodeAdhIdxAddr));
 }
 
 
