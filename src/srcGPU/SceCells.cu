@@ -272,10 +272,12 @@ void SceCells::decideIsScheduleToGrow() {
 	thrust::transform(
 			thrust::make_zip_iterator(
 					thrust::make_tuple(cellInfoVecs.growthProgress.begin(),
-							cellInfoVecs.lastCheckPoint.begin())),
+							cellInfoVecs.lastCheckPoint.begin(),
+							cellInfoVecs.cell_Type.begin())),
 			thrust::make_zip_iterator(
 					thrust::make_tuple(cellInfoVecs.growthProgress.begin(),
-							cellInfoVecs.lastCheckPoint.begin()))
+							cellInfoVecs.lastCheckPoint.begin(),
+							cellInfoVecs.cell_Type.begin()))
 					+ allocPara.currentActiveCellCount,
 			cellInfoVecs.isScheduledToGrow.begin(),
 			PtCondiOp(miscPara.growThreshold));
@@ -2942,18 +2944,18 @@ thrust::transform(
 						cellInfoVecs.growthProgress.begin(),
                         DppGrowRegulator(dt,mitoticCheckPoint));
 
-
-
 }
 
 void SceCells::decideIsScheduleToGrow_M() {
 	thrust::transform(
 			thrust::make_zip_iterator(
 					thrust::make_tuple(cellInfoVecs.growthProgress.begin(),
-							cellInfoVecs.lastCheckPoint.begin())),
+							cellInfoVecs.lastCheckPoint.begin(),
+							cellInfoVecs.cell_Type.begin())),
 			thrust::make_zip_iterator(
 					thrust::make_tuple(cellInfoVecs.growthProgress.begin(),
-							cellInfoVecs.lastCheckPoint.begin()))
+							cellInfoVecs.lastCheckPoint.begin(),
+							cellInfoVecs.cell_Type.begin()))
 					+ allocPara_m.currentActiveCellCount,
 			cellInfoVecs.isScheduledToGrow.begin(),
 			PtCondiOp(miscPara.growThreshold));
@@ -3306,6 +3308,8 @@ void SceCells::delPointIfScheduledToGrow_M() {
 
 
 bool SceCells::decideIfGoingToDivide_M() {
+	uint maxIntnlNodeCountPerFollower = globalConfigVars.getConfigValue(
+            "MaxIntnlNodeCountPerFollower").toInt();
 	thrust::transform(
 			thrust::make_zip_iterator(
 					thrust::make_tuple(cellInfoVecs.growthProgress.begin(),
@@ -3315,7 +3319,7 @@ bool SceCells::decideIfGoingToDivide_M() {
 							cellInfoVecs.activeIntnlNodeCounts.begin()))
 					+ allocPara_m.currentActiveCellCount,
 			cellInfoVecs.isDividing.begin(),
-			CompuIsDivide_M(allocPara_m.maxIntnlNodePerCell));
+			CompuIsDivide_M(maxIntnlNodeCountPerFollower));
 	// sum all bool values which indicate whether the cell is going to divide.
 	// toBeDivideCount is the total number of cells going to divide.
 	divAuxData.toBeDivideCount = thrust::reduce(cellInfoVecs.isDividing.begin(),
@@ -4024,6 +4028,12 @@ void SceCells::copyInitActiveNodeCount_M(
 			cellInfoVecs.activeIntnlNodeCounts.begin());
 	thrust::copy(initGrowProgVec.begin(), initGrowProgVec.end(),
 			cellInfoVecs.growthProgress.begin());
+	/*
+	for (int i=0;i<30;i++){
+        double tempProg = cellInfoVecs.growthProgress[i];
+        cout << tempProg << endl;
+    }
+	*/
 	for (uint cellRank=0; cellRank<allocPara_m.currentActiveCellCount; cellRank++)
     {
         if (initCellRadii[cellRank]>3.0){cellInfoVecs.cell_Type[cellRank] = 1;}
@@ -4425,10 +4435,12 @@ void SceCells::handleMembrGrowth_M() {
 // add membr nodes
 	addMembrNodes_M();
 	//membrDebug();
+	/*
 	for (int i=0;i<30;i++){
 		double tempProg = cellInfoVecs.growthProgress[i];
 		cout << tempProg << endl;
 	}
+	*/
 }
 
 

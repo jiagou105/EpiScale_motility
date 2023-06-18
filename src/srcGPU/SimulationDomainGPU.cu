@@ -85,6 +85,7 @@ void SimulationDomainGPU::initialize_v2_M(SimulationInitData_V2_M& initData, dou
 			initData.initNodeVec, initData.initActiveMembrNodeCounts,
 			initData.initActiveIntnlNodeCounts, initData.initGrowProgVec,initData.initCellRadii,InitTimeStage);  // Ali
 	std::cout << "Finished initializing nodes positions" << std::endl;
+	
 	nodes.initDimension(domainPara.minX, domainPara.maxX, domainPara.minY,
 			domainPara.maxY, domainPara.gridSpacing);
 	//std::cout << "finished init nodes dimension" << std::endl;

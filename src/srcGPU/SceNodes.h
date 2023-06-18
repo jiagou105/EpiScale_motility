@@ -40,6 +40,7 @@
  */
 
 typedef thrust::tuple<double, double> CVec2;
+typedef thrust::tuple<double, double, int> DDI;
 typedef thrust::tuple<double, double, bool> CVec2Bool;
 typedef thrust::tuple<double, double, bool> CVecBool;  //Ali 
 typedef thrust::tuple<double, uint> DUi;

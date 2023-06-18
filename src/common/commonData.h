@@ -230,6 +230,7 @@ struct SceMemPara {
 	uint maxMembrNodePerCell;
 	uint maxIntnlNodePerCell;
 	uint maxAllNodePerCell;
+	uint maxIntnlNodePerFollower;
 
 	// these parameters are useful in Beak project
 	uint maxECMInDomain;

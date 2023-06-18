@@ -2034,22 +2034,25 @@ struct SaxpyFunctorDim2_BC_Damp: public thrust::binary_function<CVec3, CVec2, CV
  * @return output1 is the cell going to add one more node?
  * @return output2 updated check point value (change or unchanged)
  */
-struct PtCondiOp: public thrust::unary_function<CVec2, bool> {
+struct PtCondiOp: public thrust::unary_function<DDI, bool> {
 	double _threshold;
 	// comment prevents bad formatting issues of __host__ and __device__ in Nsight__host__ __device__
 	__host__ __device__ PtCondiOp(double threshold) :
 			_threshold(threshold) {
 	}
 	__host__ __device__
-	bool operator()(const CVec2 &d2) const {
+	bool operator()(const DDI &d2) const {
 		double progress = thrust::get<0>(d2);
 		double lastCheckPoint = thrust::get<1>(d2);
+		int cell_Type = thrust::get<2>(d2);
 		bool resBool = false;
-		if (progress == 1.0 && lastCheckPoint < 1.0) {
-			resBool = true; // true;
+		// cell_Type == 0, follower
+		// cell_Type == 1, leader
+		if (progress == 1.0 && lastCheckPoint < 1.0 && cell_Type == 0) {
+			resBool = true; 
 		}
-		if (progress - lastCheckPoint >= _threshold) {
-			resBool = true; //true; JG041123
+		if (progress - lastCheckPoint >= _threshold && cell_Type == 0) {
+			resBool = true; 
 		}
 		return resBool;
 	}
@@ -3016,16 +3019,16 @@ struct CompuIsDivide: thrust::unary_function<CVec3Int, BoolD> {
 };
 
 struct CompuIsDivide_M: thrust::unary_function<DUi, bool> {
-	uint _maxIntnlNodePerCell;
+	uint _maxIntnlNodePerFollower;
 	// comment prevents bad formatting issues of __host__ and __device__ in Nsight
-	__host__ __device__ CompuIsDivide_M(uint maxIntnlNodePerCell) :
-			_maxIntnlNodePerCell(maxIntnlNodePerCell) {
+	__host__ __device__ CompuIsDivide_M(uint maxIntnlNodePerFollower) :
+			_maxIntnlNodePerFollower(maxIntnlNodePerFollower) {
 	}
 	__host__ __device__
 	bool operator()(const DUi &vec) {
 		double growthProgress = thrust::get<0>(vec);
 		uint nodeCount = thrust::get<1>(vec);
-		if (growthProgress >= 1.0 && nodeCount == _maxIntnlNodePerCell) {
+		if (growthProgress >= 1.0 && nodeCount == _maxIntnlNodePerFollower) { // should add another condition that cell_Type == 0, means follower
 			return true;
 		} else {
 			return false;
