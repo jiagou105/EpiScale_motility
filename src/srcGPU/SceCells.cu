@@ -692,7 +692,7 @@ void SceCells::initCellInfoVecs_M() {
 	
         //cout<< "size of dpp in init is "<< cellInfoVecs.cell_Dpp.size() << endl ;          
 	cellInfoVecs.growthProgress.resize(allocPara_m.maxCellCount, 0.0); //A&A
-        cellInfoVecs.growthProgressOld.resize(allocPara_m.maxCellCount, 0.0);//Ali
+    cellInfoVecs.growthProgressOld.resize(allocPara_m.maxCellCount, 0.0);//Ali
 	cellInfoVecs.Cell_Time.resize(allocPara_m.maxCellCount, 0.0); //Ali
 	cellInfoVecs.expectedLength.resize(allocPara_m.maxCellCount,
 			bioPara.cellInitLength);
@@ -4255,7 +4255,10 @@ void SceCells::divDebug() {
 }
 
 void SceCells::adjustGrowthInfo_M() {
-	uint halfMax = allocPara_m.maxIntnlNodePerCell / 2;
+	uint maxIntnlNodePerFollower = globalConfigVars.getConfigValue(
+            "MaxIntnlNodeCountPerFollower").toInt();
+	//uint halfMax = allocPara_m.maxIntnlNodePerCell / 2;
+	uint halfMax = maxIntnlNodePerFollower / 2;
 	thrust::transform_if(
 			thrust::make_zip_iterator(
 					thrust::make_tuple(
