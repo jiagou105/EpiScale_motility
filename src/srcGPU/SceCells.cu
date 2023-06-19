@@ -2820,11 +2820,13 @@ void SceCells::divide2D_M() {
 }
 
 void SceCells::distributeCellGrowthProgress_M() {
+	uint maxIntnlNodePerFollower = globalConfigVars.getConfigValue(
+            "MaxIntnlNodeCountPerFollower").toInt();
 	totalNodeCountForActiveCells = allocPara_m.currentActiveCellCount
-			* allocPara_m.maxAllNodePerCell;
+			* maxIntnlNodePerFollower; //allocPara_m.maxAllNodePerCell;
 	thrust::counting_iterator<uint> countingBegin(0);
 	thrust::counting_iterator<uint> countingEnd(totalNodeCountForActiveCells);
-
+	
 	thrust::copy(
 			thrust::make_permutation_iterator(
 					cellInfoVecs.growthProgress.begin(),
@@ -2836,7 +2838,7 @@ void SceCells::distributeCellGrowthProgress_M() {
 							DivideFunctor(allocPara_m.maxAllNodePerCell))),
 			nodes->getInfoVecs().nodeGrowPro.begin()
 					+ allocPara_m.bdryNodeCount);
-                        std::cout << "the vlaue of init time stage in distributeCellGrowthProgress_M is"<< InitTimeStage << std:: endl ; 
+    std::cout << "the vlaue of init time stage in distributeCellGrowthProgress_M is"<< InitTimeStage << std:: endl ; 
 			if (curTime <= InitTimeStage+dt)//AAMIRI   /A & A 
 				thrust::copy(
 					cellInfoVecs.growthProgress.begin(),
@@ -4435,12 +4437,12 @@ void SceCells::handleMembrGrowth_M() {
 // add membr nodes
 	addMembrNodes_M();
 	//membrDebug();
-	/*
+	
 	for (int i=0;i<30;i++){
 		double tempProg = cellInfoVecs.growthProgress[i];
 		cout << tempProg << endl;
 	}
-	*/
+	
 }
 
 
@@ -4455,6 +4457,8 @@ void SceCells::calMembrGrowSpeed_M() {
 // reduce_by_key, find value of max tension and their index
 	thrust::counting_iterator<uint> iBegin(0);
 	uint maxNPerCell = allocPara_m.maxAllNodePerCell;
+    //uint maxNPerCell = globalConfigVars.getConfigValue(
+    //        "MaxIntnlNodeCountPerCell").toInt();
 	thrust::reduce_by_key(
 			make_transform_iterator(iBegin, DivideFunctor(maxNPerCell)),
 			make_transform_iterator(iBegin, DivideFunctor(maxNPerCell))

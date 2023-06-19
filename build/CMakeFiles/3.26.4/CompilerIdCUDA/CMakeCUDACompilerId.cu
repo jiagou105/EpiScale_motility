@@ -73,6 +73,9 @@ char const* info_simulate = "INFO" ":" "simulate[" SIMULATE_ID "]";
 #if defined(__linux) || defined(__linux__) || defined(linux)
 # define PLATFORM_ID "Linux"
 
+#elif defined(__MSYS__)
+# define PLATFORM_ID "MSYS"
+
 #elif defined(__CYGWIN__)
 # define PLATFORM_ID "Cygwin"
 
@@ -169,6 +172,9 @@ char const* info_simulate = "INFO" ":" "simulate[" SIMULATE_ID "]";
 # else /* regular Integrity */
 #  define PLATFORM_ID "Integrity"
 # endif
+
+# elif defined(_ADI_COMPILER)
+#  define PLATFORM_ID "ADSP"
 
 #else /* unknown platform */
 # define PLATFORM_ID
@@ -298,6 +304,36 @@ char const* info_simulate = "INFO" ":" "simulate[" SIMULATE_ID "]";
 #  define ARCHITECTURE_ID ""
 # endif
 
+# elif defined(__ADSPSHARC__)
+#  define ARCHITECTURE_ID "SHARC"
+
+# elif defined(__ADSPBLACKFIN__)
+#  define ARCHITECTURE_ID "Blackfin"
+
+#elif defined(__TASKING__)
+
+# if defined(__CTC__) || defined(__CPTC__)
+#  define ARCHITECTURE_ID "TriCore"
+
+# elif defined(__CMCS__)
+#  define ARCHITECTURE_ID "MCS"
+
+# elif defined(__CARM__)
+#  define ARCHITECTURE_ID "ARM"
+
+# elif defined(__CARC__)
+#  define ARCHITECTURE_ID "ARC"
+
+# elif defined(__C51__)
+#  define ARCHITECTURE_ID "8051"
+
+# elif defined(__CPCP__)
+#  define ARCHITECTURE_ID "PCP"
+
+# else
+#  define ARCHITECTURE_ID ""
+# endif
+
 #else
 #  define ARCHITECTURE_ID
 #endif
@@ -324,8 +360,12 @@ char const* info_simulate = "INFO" ":" "simulate[" SIMULATE_ID "]";
   ('0' + ((n)>>4  & 0xF)), \
   ('0' + ((n)     & 0xF))
 
+/* Construct a string literal encoding the version number. */
+#ifdef COMPILER_VERSION
+char const* info_version = "INFO" ":" "compiler_version[" COMPILER_VERSION "]";
+
 /* Construct a string literal encoding the version number components. */
-#ifdef COMPILER_VERSION_MAJOR
+#elif defined(COMPILER_VERSION_MAJOR)
 char const info_version[] = {
   'I', 'N', 'F', 'O', ':',
   'c','o','m','p','i','l','e','r','_','v','e','r','s','i','o','n','[',
@@ -349,6 +389,8 @@ char const info_version_internal[] = {
   'c','o','m','p','i','l','e','r','_','v','e','r','s','i','o','n','_',
   'i','n','t','e','r','n','a','l','[',
   COMPILER_VERSION_INTERNAL,']','\0'};
+#elif defined(COMPILER_VERSION_INTERNAL_STR)
+char const* info_version_internal = "INFO" ":" "compiler_version_internal[" COMPILER_VERSION_INTERNAL_STR "]";
 #endif
 
 /* Construct a string literal encoding the version number components. */
@@ -378,7 +420,7 @@ char const* info_arch = "INFO" ":" "arch[" ARCHITECTURE_ID "]";
 
 
 
-const char* info_language_dialect_default = "INFO" ":" "dialect_default["
+const char* info_language_standard_default = "INFO" ":" "standard_default["
 #if __cplusplus > 202002L
   "23"
 #elif __cplusplus > 201703L
@@ -391,6 +433,15 @@ const char* info_language_dialect_default = "INFO" ":" "dialect_default["
   "11"
 #else
   "03"
+#endif
+"]";
+
+const char* info_language_extensions_default = "INFO" ":" "extensions_default["
+#if (defined(__clang__) || defined(__GNUC__)) &&                              \
+  !defined(__STRICT_ANSI__)
+  "ON"
+#else
+  "OFF"
 #endif
 "]";
 
@@ -410,7 +461,8 @@ int main(int argc, char* argv[])
 #ifdef SIMULATE_VERSION_MAJOR
   require += info_simulate_version[argc];
 #endif
-  require += info_language_dialect_default[argc];
+  require += info_language_standard_default[argc];
+  require += info_language_extensions_default[argc];
   (void)argv;
   return require;
 }

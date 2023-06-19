@@ -3228,7 +3228,7 @@ struct DppGrowRegulator: public thrust::unary_function<DDDDi, double> {
 		double speed = thrust::get<3>(dDDD);
 		int cell_Type = thrust::get<4>(dDDD);
 		double progressNew ; 
-		double smallValue = 0.000001 ;
+		// double smallValue = 0.000001 ;
 
 		if (cell_Type == 0){// followers
 			progressNew=progress+speed*_dt ;} 
@@ -3236,6 +3236,7 @@ struct DppGrowRegulator: public thrust::unary_function<DDDDi, double> {
 			progressNew=progress;
 		}
 		return progressNew;	// Alireza : bypass if conditions means 2way coupling temporal model
+		/*
 		if ((progress <= _mitoticCheckPoint) && (progressNew>_mitoticCheckPoint)) {
 			if (dpp/(dpp_Old+smallValue)>1.5) {
 				return (progressNew) ; 
@@ -3249,6 +3250,7 @@ struct DppGrowRegulator: public thrust::unary_function<DDDDi, double> {
 				return (progressNew) ; 
         
 		}
+		*/
 	}
 };
 
