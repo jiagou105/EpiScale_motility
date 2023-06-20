@@ -47,6 +47,7 @@ typedef thrust::tuple<double, uint> DUi;
 typedef thrust::tuple<double, uint, double, double> DUiDD;
 typedef thrust::tuple<uint, double, double,double> UiDDD;
 typedef thrust::tuple<uint, double, double,double, double> UiDDDD;
+typedef thrust::tuple<uint, double, double,double, double, int> UiDDDDi;
 typedef thrust::tuple<double, uint, double, double,double> DUiDDD;  //Ali 
 typedef thrust::tuple<bool, double> BoolD;
 typedef thrust::tuple<double, double, double, uint> DDDUi;//AAMIRI

@@ -1126,7 +1126,7 @@ struct updateCellMyosin: public thrust::unary_function<UUDDUUDD, double> {
 
 
 // JG050823
-struct updateCellFilop: public thrust::unary_function<UiDDDD, double> {
+struct updateCellFilop: public thrust::unary_function<UiDDDDi, double> {
 	uint _seed;
 	double _timeStep;
 	double _timeNow;
@@ -1159,12 +1159,13 @@ struct updateCellFilop: public thrust::unary_function<UiDDDD, double> {
 			_maxMemNodePerCell(maxMemNodePerCell),_maxNodePerCell(maxNodePerCell), _locXAddr(locXAddr), _locYAddr(locYAddr), _isActiveAddr(isActiveAddr), _nodeAdhereIndexAddr(nodeAdhereIndexAddr){
 	}
 	// comment prevents bad formatting issues of __host__ and __device__ in Nsight
-	__device__ double operator()(const UiDDDD &cData) const {
+	__device__ double operator()(const UiDDDDi &cData) const {
 		uint cellRank = thrust::get<0>(cData);
 		double cell_CenterX = thrust::get<1>(cData);
         double cell_CenterY = thrust::get<2>(cData);
 		double cell_Radius = thrust::get<3>(cData);
 		double cellAngle = thrust::get<4>(cData);
+		int cell_Type = thrust::get<5>(cData);
 		
 		uint maxFilopPerCell = 5;
 		thrust::default_random_engine rng(_seed);
@@ -1195,7 +1196,7 @@ struct updateCellFilop: public thrust::unary_function<UiDDDD, double> {
 			return cellAngle;
 			}
 		else{// if cell_type == 'follower'
-			if (_cellRadiusAddr[cellRank]<3.0){ // to be added 
+			if (cell_Type==0){
 			for (uint filopIndex=filopIndxBegin; filopIndex<filopIndxEnd; filopIndex++){
 				if (_cellFilopIsActiveAddr[filopIndex] == true){
 					// if this slot has a filopodia already
@@ -1254,8 +1255,8 @@ struct updateCellFilop: public thrust::unary_function<UiDDDD, double> {
 				double rateRep = 0.01;
 				for (uint memNodeIndex=0; memNodeIndex<_maxMemNodePerCell;memNodeIndex++){
 					nodeRank = cellRank*_maxNodePerCell + memNodeIndex; // add calculation to compute the total index
-					if (_isActiveAddr[nodeRank]&&_nodeAdhereIndexAddr[nodeRank]>-1){
-						allPolar = allPolar - sin(PI+atan2(cell_CenterY - _locYAddr[nodeRank],cell_CenterX - _locXAddr[nodeRank])-cellAngle);
+					if (_isActiveAddr[nodeRank]&&_nodeAdhereIndexAddr[nodeRank]>-1){// _nodeAdhereIndexAddr is adhere to another cell
+						allPolar = allPolar + sin(atan2(cell_CenterY - _locYAddr[nodeRank],cell_CenterX - _locXAddr[nodeRank])-cellAngle);
 					}
 				}
 				cellAngle = cellAngle + _timeStep*rateRep*allPolar;

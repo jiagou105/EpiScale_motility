@@ -2945,7 +2945,6 @@ thrust::transform(
                                         + allocPara_m.currentActiveCellCount,
 						cellInfoVecs.growthProgress.begin(),
                         DppGrowRegulator(dt,mitoticCheckPoint));
-
 }
 
 void SceCells::decideIsScheduleToGrow_M() {
@@ -4443,7 +4442,9 @@ void SceCells::handleMembrGrowth_M() {
 	
 	for (int i=0;i<30;i++){
 		double tempProg = cellInfoVecs.growthProgress[i];
-		cout << tempProg << endl;
+		int tempType = cellInfoVecs.cell_Type[i];
+		cout << "progress " <<tempProg;
+		cout << " cell_type " <<tempType<<endl;
 	}
 	
 }
@@ -5609,7 +5610,8 @@ void SceCells::updateCellPolar() {
 							cellInfoVecs.centerCoordX.begin(),
 							cellInfoVecs.centerCoordY.begin(),
 							cellInfoVecs.cellRadius.begin(),
-							cellInfoVecs.cellPolarAngle.begin() 
+							cellInfoVecs.cellPolarAngle.begin(),
+							cellInfoVecs.cell_Type.begin() 
 							)),
 			thrust::make_zip_iterator(
 					thrust::make_tuple(
@@ -5617,7 +5619,8 @@ void SceCells::updateCellPolar() {
 							cellInfoVecs.centerCoordX.begin() + activeCellCount,
 							cellInfoVecs.centerCoordY.begin() + activeCellCount,
 							cellInfoVecs.cellRadius.begin() + activeCellCount,
-							cellInfoVecs.cellPolarAngle.begin() + activeCellCount
+							cellInfoVecs.cellPolarAngle.begin() + activeCellCount,
+							cellInfoVecs.cell_Type.begin() + activeCellCount
 							)),
 			cellInfoVecs.cellPolarAngle.begin(),
 			updateCellFilop(seed, ddt, timeNow, 
