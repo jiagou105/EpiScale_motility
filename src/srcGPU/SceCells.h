@@ -32,7 +32,7 @@ typedef thrust::tuple<uint, uint, double, double, uint, uint> UUDDUU;
 typedef thrust::tuple<uint, uint, uint, uint, double, double, double, double, double> UUUUDDDDD;
 typedef thrust::tuple<uint, uint, double, double, uint, uint, double> UUDDUUD;
 typedef thrust::tuple<uint, uint, double, double, uint, uint, double, double> UUDDUUDD;
-typedef thrust::tuple<uint, uint, double, double, uint, uint, double, double, double, double> UUDDUUDDDD;
+typedef thrust::tuple<int, uint, double, double, uint, uint, double, double, double, double> IUDDUUDDDD;
 
 //typedef pair<device_vector<double>::iterator,device_vector<double>::iterator> MinMaxNode ; 
 // maxMemThres, cellRank, nodeRank , locX, locY, velX, velY
@@ -1169,7 +1169,7 @@ struct updateCellFilop: public thrust::unary_function<UiDDDDi, double> {
 		
 		uint maxFilopPerCell = 5;
 		thrust::default_random_engine rng(_seed);
-		rng.discard(cellRank*maxFilopPerCell*7);
+		rng.discard(cellRank*maxFilopPerCell*11);
 		thrust::uniform_real_distribution<double> u01(0, 1.0);
 		thrust::uniform_real_distribution<double> u0TwoPi(0, 2.0 * PI);
 		double randomAngle;
@@ -1197,6 +1197,7 @@ struct updateCellFilop: public thrust::unary_function<UiDDDDi, double> {
 			}
 		else{// if cell_type == 'follower'
 			if (cell_Type==0){
+			// if (_cellRadiusAddr[cellRank]<3.0){
 			for (uint filopIndex=filopIndxBegin; filopIndex<filopIndxEnd; filopIndex++){
 				if (_cellFilopIsActiveAddr[filopIndex] == true){
 					// if this slot has a filopodia already
@@ -1217,11 +1218,12 @@ struct updateCellFilop: public thrust::unary_function<UiDDDDi, double> {
 					}
 				} else {
 					// else if this slot does not have an active filopodia
-					randomBirth = u01(rng);
-					if (randomBirth<0.00001){ // probably of the filopodia can grow 
+					randomBirth = u01(rng)/10.0;
+					if (randomBirth<0.00001){ // probability of a new filopodia can grow 
 						_cellFilopIsActiveAddr[filopIndex] = true;
-						randomAngle = u0TwoPi(rng);
-						_cellFilopAngleAddr[filopIndex] = randomAngle;
+						randomAngle = u01(rng);
+						// randomAngle = randomAngle*2.0*PI;
+						_cellFilopAngleAddr[filopIndex] = 6.28*randomAngle;
 						_cellFilopXAddr[filopIndex] = 0.0; // zero length 
 						_cellFilopYAddr[filopIndex] = 0.0;
 						_cellFilopBirthTimeAddr[filopIndex] = _timeNow;
@@ -1494,7 +1496,7 @@ struct addSceCellAdhForce: public thrust::unary_function<UUDDUUDDD, CVec2> {
 
 
 // JG042523 
-struct addSceCellAdhForce: public thrust::unary_function<UUDDUUDDDD, CVec2> {
+struct addSceCellAdhForce: public thrust::unary_function<IUDDUUDDDD, CVec2> {
 	uint _maxNodePerCell;
 	uint _maxMemNodePerCell;
 	double* _locXAddr;
@@ -1521,8 +1523,9 @@ struct addSceCellAdhForce: public thrust::unary_function<UUDDUUDDDD, CVec2> {
 					_subAdhLocXAddr(subAdhLocXAddr), _subAdhLocYAddr(subAdhLocYAddr), _subAdhIsBoundAddr(subAdhIsBoundAddr), _maxSubSitePerNode(maxSubSitePerNode), _seed(seed)  {
 	}
 	// comment prevents bad formatting issues of __host__ and __device__ in Nsight
-	__device__ CVec2 operator()(const UUDDUUDDDD &cData) const {
-		uint activeMembrCount = thrust::get<0>(cData);
+	__device__ CVec2 operator()(const IUDDUUDDDD &cData) const {
+//		uint activeMembrCount = thrust::get<0>(cData);
+		int cellType = thrust::get<0>(cData);	
 		uint activeIntnlCount = thrust::get<1>(cData);
 		double Cell_CenterX = thrust::get<2>(cData);
         double Cell_CenterY = thrust::get<3>(cData);
@@ -1572,7 +1575,7 @@ struct addSceCellAdhForce: public thrust::unary_function<UUDDUUDDDD, CVec2> {
 		double randomN3;
 		double ngbrSiteX;
 		double ngbrSiteY;
-
+		if (cellType == 1){kAdh=15.0;} // for leader
 		// if (_timeNow > 55800.0 && _isActiveAddr[index] == true && (nodeRank < _maxMemNodePerCell)) {
 		if (_timeNow > 55800.0 && _isActiveAddr[index] == true) {
 			// starting of the index of the substrate site corresponding to this node is: index*10, 10 is the max subs sites

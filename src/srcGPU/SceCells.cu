@@ -12,6 +12,7 @@ __constant__ double minDivisor;
 __constant__ uint maxAllNodePerCell;
 __constant__ uint maxMembrPerCell;
 __constant__ uint maxIntnlPerCell;
+__constant__ uint maxIntnlPerFollower;
 __constant__ double bendCoeff;
 __constant__ double bendCoeff_Mitotic;//AAMIRI
 
@@ -67,7 +68,7 @@ __device__ uint obtainMembEndNode(uint& cellRank, uint& activeMembrNodeThis) {
 
 __device__
 bool isAllIntnlFilled(uint& currentIntnlCount) {
-	if (currentIntnlCount < maxIntnlPerCell) {
+	if (currentIntnlCount < maxIntnlPerFollower) {
 		return false;
 	} else {
 		return true;
@@ -2785,7 +2786,7 @@ void SceCells::growAtRandom_M(double dt) {
 
 	addPointIfScheduledToGrow_M();
 
-	// addPointDueToActin(); // JG041123
+	addPointDueToActin(); // JG041123
 
 	//decideIsScheduleToShrink_M();// AAMIRI May5
 
@@ -2823,7 +2824,7 @@ void SceCells::distributeCellGrowthProgress_M() {
 	uint maxIntnlNodePerFollower = globalConfigVars.getConfigValue(
             "MaxIntnlNodeCountPerFollower").toInt();
 	totalNodeCountForActiveCells = allocPara_m.currentActiveCellCount
-			* maxIntnlNodePerFollower; //allocPara_m.maxAllNodePerCell;
+			* allocPara_m.maxAllNodePerCell;
 	thrust::counting_iterator<uint> countingBegin(0);
 	thrust::counting_iterator<uint> countingEnd(totalNodeCountForActiveCells);
 	
@@ -4256,8 +4257,8 @@ void SceCells::divDebug() {
 void SceCells::adjustGrowthInfo_M() {
 	uint maxIntnlNodePerFollower = globalConfigVars.getConfigValue(
             "MaxIntnlNodeCountPerFollower").toInt();
-	//uint halfMax = allocPara_m.maxIntnlNodePerCell / 2;
 	uint halfMax = maxIntnlNodePerFollower / 2;
+	// uint halfMax = allocPara_m.maxIntnlNodePerCell / 2;
 	thrust::transform_if(
 			thrust::make_zip_iterator(
 					thrust::make_tuple(
@@ -4341,10 +4342,12 @@ void SceCells::copyToGPUConstMem() {
 			"MaxMembrNodeCountPerCell").toInt();
 	uint maxIntnlNodePerCellCPU = globalConfigVars.getConfigValue(
 			"MaxIntnlNodeCountPerCell").toInt();
+	uint maxIntnlNodePerFollowerCPU = globalConfigVars.getConfigValue(
+			"MaxIntnlNodeCountPerFollower").toInt();
 
 	cudaMemcpyToSymbol(maxAllNodePerCell, &maxAllNodePerCellCPU, sizeof(uint));
 	cudaMemcpyToSymbol(maxMembrPerCell, &maxMembrNodePerCellCPU, sizeof(uint));
-	cudaMemcpyToSymbol(maxIntnlPerCell, &maxIntnlNodePerCellCPU, sizeof(uint));
+	cudaMemcpyToSymbol(maxIntnlPerFollower, &maxIntnlNodePerFollowerCPU, sizeof(uint));
 
 	double sceIntnlBParaCPU_M[5];
 	double sceIntraParaCPU_M[5];
@@ -5627,6 +5630,12 @@ void SceCells::updateCellPolar() {
 			cellFilopXAddr,cellFilopYAddr,cellFilopAngleAddr,cellFilopIsActiveAddr,
 			cellFilopBirthTimeAddr,activeCellCount,cellCenterXAddr,cellCenterYAddr,cellRadiusAddr,
 			cellActiveFilopCountsAddr,maxMemNodePerCell,maxNodePerCell,nodeLocXAddr,nodeLocYAddr,nodeIsActiveAddr,nodeAdhIdxAddr));
+	for (uint i=0;i<activeCellCount*5;i++){
+		double tempAngle = cellInfoVecs.cellFilopAngle[i];
+		if (tempAngle !=0 ){
+        cout << "Filop " << i << " has angle " << tempAngle << endl;
+		}
+	}
 }
 
 
@@ -5674,8 +5683,12 @@ void SceCells::calSubAdhForce() {
 	thrust::transform(
 			thrust::make_zip_iterator(
 					thrust::make_tuple(
+//							thrust::make_permutation_iterator(
+//									cellInfoVecs.activeMembrNodeCounts.begin(),
+//									make_transform_iterator(iBegin,
+//											DivideFunctor(maxAllNodePerCell))),
 							thrust::make_permutation_iterator(
-									cellInfoVecs.activeMembrNodeCounts.begin(),
+									cellInfoVecs.cell_Type.begin(),
 									make_transform_iterator(iBegin,
 											DivideFunctor(maxAllNodePerCell))),
 							thrust::make_permutation_iterator(
@@ -5704,8 +5717,12 @@ void SceCells::calSubAdhForce() {
 							)),
 			thrust::make_zip_iterator(
 					thrust::make_tuple(
+//							thrust::make_permutation_iterator(
+//									cellInfoVecs.activeMembrNodeCounts.begin(),
+//									make_transform_iterator(iBegin,
+//											DivideFunctor(maxAllNodePerCell))),
 							thrust::make_permutation_iterator(
-									cellInfoVecs.activeMembrNodeCounts.begin(),
+									cellInfoVecs.cell_Type.begin(),
 									make_transform_iterator(iBegin,
 											DivideFunctor(maxAllNodePerCell))),
 							thrust::make_permutation_iterator(
