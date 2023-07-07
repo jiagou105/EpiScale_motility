@@ -116,6 +116,14 @@ void calAndAddII_M(double& xPos, double& yPos, double& xPos2, double& yPos2,
 __device__
 double compDist2D(double &xPos, double &yPos, double &xPos2, double &yPos2);
 
+
+__device__
+bool isInsideCell(double xPos, double yPos, uint intnlIndxMemBegin, uint activeMembrNodeCounts, double* nodeXAddr, double* nodeYAddr);
+
+
+__device__
+double Angle2D(double x1, double y1, double x2, double y2);
+
 /**
  * Functor for divide operation.
  * @param dividend divisor for divide operator.
@@ -2021,7 +2029,8 @@ struct SaxpyFunctorDim2_Damp: public thrust::binary_function<CVec2, CVec2, CVec2
 		return thrust::make_tuple(xRes, yRes);
 	}
 };
-//Ali 
+
+
 struct SaxpyFunctorDim2_BC_Damp: public thrust::binary_function<CVec3, CVec2, CVec2> {
         double _dt;
 	// comment prevents bad formatting issues of __host__ and __device__ in Nsight__host__ __device__
@@ -2037,14 +2046,77 @@ struct SaxpyFunctorDim2_BC_Damp: public thrust::binary_function<CVec3, CVec2, CV
 };
 
 
+
+// define a new function and make sure every internal node is inside the corresponding cell after applying forces
+/*
+struct SaxpyFunctorDim2_BC_Damp: public thrust::binary_function<CVec5UUU, CVec2, CVec2> {
+        double _dt;
+		double* _locXAddr;
+    	double* _locYAddr;
+		bool* _isActiveAddr;
+		uint _maxNodePerCell;
+		uint _maxMemNodePerCell;
+		int _timeStep;
+	// comment prevents bad formatting issues of __host__ and __device__ in Nsight__host__ __device__
+	__host__ __device__ SaxpyFunctorDim2_BC_Damp(double dt,double* locXAddr, double* locYAddr, bool* isActiveAddr,
+						uint maxNodePerCell, uint maxMemNodePerCell, int timeStep) :
+                        _dt(dt),_locXAddr(locXAddr), _locYAddr(locYAddr),_isActiveAddr(isActiveAddr),
+						_maxNodePerCell(maxNodePerCell), _maxMemNodePerCell(maxMemNodePerCell), _timeStep(timeStep)
+                        {
+	}
+	__device__ CVec2 operator()(const CVec5UUU &vec1, const CVec2 &vec2) {
+		double xOld = thrust::get<0>(vec2);
+		double yOld = thrust::get<1>(vec2);
+		double centerX = thrust::get<3>(vec1);
+		double centerY = thrust::get<4>(vec1);
+		uint   cellRank = thrust::get<5>(vec1);
+		uint   nodeRank = thrust::get<6>(vec1);
+		uint activeMembrCount = thrust::get<7>(vec1);
+		uint index = cellRank * _maxNodePerCell + nodeRank;
+		uint intnlIndxMemBegin = cellRank * _maxNodePerCell;
+
+		double xRes = thrust::get<1>(vec1) * _dt/thrust::get<0>(vec1) + xOld;
+		double yRes = thrust::get<2>(vec1) * _dt/thrust::get<0>(vec1) + yOld;
+		double rOffset = 0.00001;
+        if (_isActiveAddr[index] == false) {
+            return thrust::make_tuple(xOld, yOld); 
+        }
+
+		if (_timeStep%100==0){
+			if (nodeRank < _maxMemNodePerCell){ // means membrane node
+					return thrust::make_tuple(xRes, yRes);
+			}else{ //means internal node
+				if (isInsideCell(xRes,yRes,intnlIndxMemBegin,activeMembrCount,_locXAddr,_locYAddr)){
+					return thrust::make_tuple(xRes, yRes);
+				}
+				else{
+					double xResRad = centerX - xRes;
+					double yResRad = centerY - yRes;
+					double lenResRad = sqrt(xResRad*xResRad+yResRad*yResRad);
+					double fcenter = 0.01;
+					xRes = centerX+rOffset*(-xResRad)/lenResRad; //xRes + fcenter*xResRad/lenResRad;
+					yRes = centerY+rOffset*(-yResRad)/lenResRad; //yRes + fcenter*yResRad/lenResRad;
+					return thrust::make_tuple(xRes,yRes);
+				}
+			}
+		}else{
+			return thrust::make_tuple(xRes, yRes);
+		}
+	}
+};
+*/
+
+
+
+
 /**
 
 
  * Point condition operater, decide if cell is ready to add a new point.
  * @param _threshold threshold value for difference of current progress and last checkpoint.
  * if difference is bigger than threshold then the cell is ready for adding a new node.
- * @param input1 growth progress \n
- * @param input2 last check point \n
+ * @param input1 growth progress 
+ * @param input2 last check point 
  * @return output1 is the cell going to add one more node?
  * @return output2 updated check point value (change or unchanged)
  */

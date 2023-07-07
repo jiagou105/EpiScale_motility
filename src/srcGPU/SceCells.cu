@@ -124,6 +124,49 @@ double compDist2D(double &xPos, double &yPos, double &xPos2, double &yPos2) {
 			(xPos - xPos2) * (xPos - xPos2) + (yPos - yPos2) * (yPos - yPos2));
 }
 
+__device__
+bool isInsideCell(double xPos, double yPos, uint intnlIndxMemBegin, uint activeMembrNodeCounts, double* nodeXAddr, double* nodeYAddr)
+{
+   double angle=0;
+   double p1x, p1y, p2x, p2y;
+   for (uint i=intnlIndxMemBegin;i<intnlIndxMemBegin+activeMembrNodeCounts;i++) {
+
+      p1x = nodeXAddr[i] - xPos;
+      p1y = nodeYAddr[i] - yPos;
+	  if (i<intnlIndxMemBegin+activeMembrNodeCounts-1)
+	  {
+      	p2x = nodeXAddr[i+1] - xPos;
+      	p2y = nodeYAddr[i+1] - yPos;
+	  } else {
+		p2x = nodeXAddr[0] - xPos;
+      	p2y = nodeYAddr[0] - yPos;
+	  }
+      angle += Angle2D(p1x,p1y,p2x,p2y);
+   }
+
+   if (fabs(angle) < M_PI)
+      return(false);
+   else
+      return(true);
+}
+
+
+__device__
+double Angle2D(double x1, double y1, double x2, double y2)
+{
+   double dtheta,theta1,theta2;
+
+   theta1 = atan2(y1,x1);
+   theta2 = atan2(y2,x2);
+   dtheta = theta2 - theta1;
+   while (dtheta > M_PI)
+      dtheta -= M_PI*2;
+   while (dtheta < -M_PI)
+      dtheta += M_PI*2;
+
+   return(dtheta);
+}
+
 void SceCells::distributeBdryIsActiveInfo() {
 	thrust::fill(nodes->getInfoVecs().nodeIsActive.begin(),
 			nodes->getInfoVecs().nodeIsActive.begin()
@@ -2188,7 +2231,89 @@ void SceCells::moveNodes_M() {
 //Ali		SaxpyFunctorDim2(dt));
 			SaxpyFunctorDim2_Damp(dt,Damp_Coef));   //Ali
 }
+
+
+
 //Ali      // This function is written to assigned different damping coefficients to cells, therefore the boundary cells can have more damping
+
+
+/*
+
+void SceCells::moveNodes_BC_M() {
+	thrust::counting_iterator<uint> iBegin2(0); 
+	uint maxAllNodePerCell = allocPara_m.maxAllNodePerCell;
+    uint maxMemNodePerCell = allocPara_m.maxMembrNodePerCell;
+    double* nodeLocXAddr = thrust::raw_pointer_cast(
+            &(nodes->getInfoVecs().nodeLocX[0]));
+    double* nodeLocYAddr = thrust::raw_pointer_cast(
+            &(nodes->getInfoVecs().nodeLocY[0]));
+    bool* nodeIsActiveAddr = thrust::raw_pointer_cast(
+            &(nodes->getInfoVecs().nodeIsActive[0]));
+	int timeStep = curTime/dt;
+
+	thrust::transform(
+			thrust::make_zip_iterator(
+					thrust::make_tuple(
+							thrust::make_permutation_iterator(
+									cellInfoVecs.Cell_Damp.begin(),
+									make_transform_iterator(iBegin2,
+											DivideFunctor(maxAllNodePerCell))),
+                            nodes->getInfoVecs().nodeVelX.begin(),
+							nodes->getInfoVecs().nodeVelY.begin(),
+							thrust::make_permutation_iterator(
+                                    cellInfoVecs.centerCoordX.begin(),
+                                    make_transform_iterator(iBegin2,
+                                            DivideFunctor(maxAllNodePerCell))),
+                            thrust::make_permutation_iterator(
+                                    cellInfoVecs.centerCoordY.begin(),
+                                    make_transform_iterator(iBegin2,
+                                            DivideFunctor(maxAllNodePerCell))),
+							make_transform_iterator(iBegin2,
+                                    DivideFunctor(maxAllNodePerCell)),
+                            make_transform_iterator(iBegin2,
+                                    ModuloFunctor(maxAllNodePerCell)),
+							thrust::make_permutation_iterator(
+                                    cellInfoVecs.activeMembrNodeCounts.begin(),
+                                    make_transform_iterator(iBegin2,
+                                     DivideFunctor(maxAllNodePerCell)))
+							)),
+			thrust::make_zip_iterator(
+					thrust::make_tuple(
+							thrust::make_permutation_iterator(
+									cellInfoVecs.Cell_Damp.begin(),
+									make_transform_iterator(iBegin2,
+											DivideFunctor(maxAllNodePerCell))),
+                            nodes->getInfoVecs().nodeVelX.begin(),
+							nodes->getInfoVecs().nodeVelY.begin(),
+						    thrust::make_permutation_iterator(
+                                    cellInfoVecs.centerCoordX.begin(),
+                                    make_transform_iterator(iBegin2,
+                                            DivideFunctor(maxAllNodePerCell))),
+                            thrust::make_permutation_iterator(
+                                    cellInfoVecs.centerCoordY.begin(),
+                                    make_transform_iterator(iBegin2,
+                                            DivideFunctor(maxAllNodePerCell))),
+							make_transform_iterator(iBegin2,
+                                    DivideFunctor(maxAllNodePerCell)),
+                            make_transform_iterator(iBegin2,
+                                    ModuloFunctor(maxAllNodePerCell)),
+							thrust::make_permutation_iterator(
+                                    cellInfoVecs.activeMembrNodeCounts.begin(),
+                                    make_transform_iterator(iBegin2,
+                                     DivideFunctor(maxAllNodePerCell)))
+							))
+					+ totalNodeCountForActiveCells + allocPara_m.bdryNodeCount,
+			thrust::make_zip_iterator(
+					thrust::make_tuple(nodes->getInfoVecs().nodeLocX.begin(),
+							nodes->getInfoVecs().nodeLocY.begin())),
+			thrust::make_zip_iterator(
+					thrust::make_tuple(nodes->getInfoVecs().nodeLocX.begin(),
+							nodes->getInfoVecs().nodeLocY.begin())),
+			SaxpyFunctorDim2_BC_Damp(dt,nodeLocXAddr, nodeLocYAddr,nodeIsActiveAddr,maxAllNodePerCell,maxMemNodePerCell,timeStep));  
+}
+*/
+
+
 
 void SceCells::moveNodes_BC_M() {
 	thrust::counting_iterator<uint> iBegin2(0); 
@@ -2220,11 +2345,6 @@ void SceCells::moveNodes_BC_M() {
 							nodes->getInfoVecs().nodeLocY.begin())),
 			SaxpyFunctorDim2_BC_Damp(dt));  
 }
-
-//Ali
-
-
-
 
 
 
