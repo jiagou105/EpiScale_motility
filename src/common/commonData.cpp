@@ -502,6 +502,7 @@ void CellsStatsData::printPolyCountToFile(std::string fileName,
 	}
 	printCountsToFile(fileName, countNormal, countDiv, countBdry);
 }
+
 // this function is to sum up the number of polygons in the tissue.
 void insertCount(uint numNeighbor, std::map<uint, uint>& count) {
 	std::map<uint, uint>::iterator it = count.find(numNeighbor);

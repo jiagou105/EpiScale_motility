@@ -264,6 +264,7 @@ void SimulationDomainGPU::outputVtkColorByCell_polySide(
         cellsPerimeter.clear();
 		cellsDppLevel.clear(); 
 }
+
 std::vector<double> SimulationDomainGPU::processPolySideColor(std:: vector<double> & cellsPerimeter, vector<double> &  cellsDppLevel) {
 	CellsStatsData cellStatsVec = cells.outputPolyCountData();
         for (int i=0; i< int (cellStatsVec.cellsStats.size());  i++) {
