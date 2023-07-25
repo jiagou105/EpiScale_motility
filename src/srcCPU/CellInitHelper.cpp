@@ -920,7 +920,7 @@ vector<CVector> CellInitHelper::tryGenInitCellNodes(uint initNodeCt, CVector& ce
 	cout << "I am in the right one" << endl;
 	cout << "# of internal Nodes" << initNodeCt << endl;
 	//Ali
-	if (radius>3*radiusFollower) {initNodeCt = initNodeCt * 16;} // for leader cell 
+	if (radius>3*radiusFollower) {initNodeCt = initNodeCt * 10;} // for leader cell 
 	while (foundCount < initNodeCt) {
 		bool isInCircle = false;
 //		randX = getRandomNum(-radius, radius);
