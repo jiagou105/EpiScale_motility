@@ -1531,7 +1531,7 @@ void SceCells::runAllCellLevelLogicsDisc(double dt) {
 }
 
 //Ali void SceCells::runAllCellLogicsDisc_M(double dt) {
-void SceCells::runAllCellLogicsDisc_M(double dt, double Damp_Coef, double InitTimeStage) {   //Ali
+void SceCells::runAllCellLogicsDisc_M(double dt, double Damp_Coef, double InitTimeStage, std::vector<SigPtState>& sigPtVec) {   //Ali
         
         
 	std::cout << "     *** 1 ***" << endl;
@@ -1561,6 +1561,7 @@ void SceCells::runAllCellLogicsDisc_M(double dt, double Damp_Coef, double InitTi
 	// computeCellRadius();
     exchSignal(); // use files in srcCPU for chemical concentrations
     BC_Imp_M(); // do nothing for now, changing damping coef
+	test_SigPt(sigPtVec);
 	std::cout << "     *** 3.5 ***" << endl;
 	std::cout.flush();
         	
@@ -5771,6 +5772,83 @@ void SceCells::updateCellPolar() {
         cout << "Filop " << i << " has angle " << tempAngle << endl;
 		}
 	}
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+void SceCells::test_SigPt(std::vector<SigPtState>& sigPtVec); {
+	uint activeCellCount = allocPara_m.currentActiveCellCount;
+	
+	double* cellFilopXAddr = thrust::raw_pointer_cast(
+            &(cellInfoVecs.cellFilopX[0]));
+    double* cellFilopYAddr = thrust::raw_pointer_cast(
+            &(cellInfoVecs.cellFilopY[0]));
+    double* cellFilopAngleAddr = thrust::raw_pointer_cast(
+            &(cellInfoVecs.cellFilopAngle[0]));
+    bool* cellFilopIsActiveAddr = thrust::raw_pointer_cast(
+            &(cellInfoVecs.cellFilopIsActive[0]));
+    double* cellFilopBirthTimeAddr = thrust::raw_pointer_cast(
+            &(cellInfoVecs.cellFilopBirthTime[0]));
+	double* cellCenterXAddr = thrust::raw_pointer_cast(
+            &(cellInfoVecs.centerCoordX[0]));
+	double* cellCenterYAddr = thrust::raw_pointer_cast(
+            &(cellInfoVecs.centerCoordY[0]));
+	double* cellRadiusAddr = thrust::raw_pointer_cast(
+            &(cellInfoVecs.cellRadius[0]));
+ 	int* nodeAdhIdxAddr = thrust::raw_pointer_cast(
+            &(nodes->getInfoVecs().nodeAdhereIndex[0]));
+	double* sigPtAddr = thrust::raw_pointer_cast(
+            &(sigPtVec[0]));
+	double timeNow = curTime;
+
+	double ddt = dt;
+	uint* cellActiveFilopCountsAddr = thrust::raw_pointer_cast(
+        &(cellInfoVecs.activeCellFilopCounts[0]));
+
+	uint maxMemNodePerCell = allocPara_m.maxMembrNodePerCell;
+	uint maxNodePerCell = allocPara_m.maxAllNodePerCell;
+    double* nodeLocXAddr = thrust::raw_pointer_cast(
+            &(nodes->getInfoVecs().nodeLocX[0]));
+    double* nodeLocYAddr = thrust::raw_pointer_cast(
+            &(nodes->getInfoVecs().nodeLocY[0]));
+    bool* nodeIsActiveAddr = thrust::raw_pointer_cast(
+            &(nodes->getInfoVecs().nodeIsActive[0])); // 
+
+	thrust::counting_iterator<uint> iBegin(0);
+	thrust::counting_iterator<uint> iEnd(activeCellCount);
+	thrust::transform(
+			thrust::make_zip_iterator(
+					thrust::make_tuple(iBegin,
+							cellInfoVecs.centerCoordX.begin(),
+							cellInfoVecs.centerCoordY.begin(),
+							cellInfoVecs.cellRadius.begin(),
+							cellInfoVecs.cellPolarAngle.begin(),
+							cellInfoVecs.cell_Type.begin() 
+							)),
+			thrust::make_zip_iterator(
+					thrust::make_tuple(
+							iEnd,
+							cellInfoVecs.centerCoordX.begin() + activeCellCount,
+							cellInfoVecs.centerCoordY.begin() + activeCellCount,
+							cellInfoVecs.cellRadius.begin() + activeCellCount,
+							cellInfoVecs.cellPolarAngle.begin() + activeCellCount,
+							cellInfoVecs.cell_Type.begin() + activeCellCount
+							)),
+			cellInfoVecs.cellPolarAngle.begin(),
+			updateSigPtState(seed, ddt, timeNow, 
+			cellFilopXAddr,cellFilopYAddr,cellFilopAngleAddr,cellFilopIsActiveAddr,
+			cellFilopBirthTimeAddr,activeCellCount,cellCenterXAddr,cellCenterYAddr,cellRadiusAddr,
+			cellActiveFilopCountsAddr,maxMemNodePerCell,maxNodePerCell,nodeLocXAddr,nodeLocYAddr,nodeIsActiveAddr,nodeAdhIdxAddr,sigPtAddr));
 }
 
 

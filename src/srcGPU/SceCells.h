@@ -1292,6 +1292,68 @@ struct updateCellFilop: public thrust::unary_function<UiDDDDi, double> {
 
 
 
+// JG050823
+struct updateSigPtState: public thrust::unary_function<UiDDDDi, double> {
+	uint _seed;
+	double _timeStep;
+	double _timeNow;
+	double* _cellFilopXAddr;
+	double* _cellFilopYAddr;
+	double* _cellFilopAngleAddr;
+	bool* _cellFilopIsActiveAddr;
+	double* _cellFilopBirthTimeAddr;
+	uint _activeCellCount;
+	double* _cellCenterXAddr;
+	double* _cellCenterYAddr;
+	double* _cellRadiusAddr;
+	uint* _cellActiveFilopCountsAddr;
+	uint _maxMemNodePerCell;
+	uint _maxNodePerCell;
+	double* _locXAddr;
+	double* _locYAddr;
+	bool* _isActiveAddr;
+	int* _nodeAdhereIndexAddr;
+	double* _sigPtAddr;
+	// double _grthPrgrCriVal_M;
+	// comment prevents bad formatting issues of __host__ and __device__ in Nsight
+	__host__ __device__ updateSigPtState(uint seed, double timeStep, double timeNow, 
+			double* cellFilopXAddr, double* cellFilopYAddr, double* cellFilopAngleAddr, bool* cellFilopIsActiveAddr, double* cellFilopBirthTimeAddr,
+			uint activeCellCount, double* cellCenterXAddr, double* cellCenterYAddr, double* cellRadiusAddr, uint* cellActiveFilopCountsAddr,
+			uint maxMemNodePerCell, uint maxNodePerCell, double* locXAddr, double* locYAddr, bool* isActiveAddr, int* nodeAdhereIndexAddr, double* sigPtAddr) :
+			_seed(seed), _timeStep(timeStep), _timeNow(timeNow),
+			_cellFilopXAddr(cellFilopXAddr), _cellFilopYAddr(cellFilopYAddr), _cellFilopAngleAddr(cellFilopAngleAddr),
+			_cellFilopIsActiveAddr(cellFilopIsActiveAddr), _cellFilopBirthTimeAddr(cellFilopBirthTimeAddr), _activeCellCount(activeCellCount), 
+			_cellCenterXAddr(cellCenterXAddr), _cellCenterYAddr(cellCenterYAddr), _cellRadiusAddr(cellRadiusAddr), _cellActiveFilopCountsAddr(cellActiveFilopCountsAddr),
+			_maxMemNodePerCell(maxMemNodePerCell),_maxNodePerCell(maxNodePerCell), _locXAddr(locXAddr), _locYAddr(locYAddr), _isActiveAddr(isActiveAddr), 
+			_nodeAdhereIndexAddr(nodeAdhereIndexAddr, _sigPtAddr(sigPtAddr)){
+	}
+	// comment prevents bad formatting issues of __host__ and __device__ in Nsight
+	__device__ double operator()(const UiDDDDi &cData) const {
+		uint cellRank = thrust::get<0>(cData);
+		double cell_CenterX = thrust::get<1>(cData);
+        double cell_CenterY = thrust::get<2>(cData);
+		double cell_Radius = thrust::get<3>(cData);
+		double cellAngle = thrust::get<4>(cData);
+		int cell_Type = thrust::get<5>(cData);
+		
+		
+		uint nodeRank;
+		nodeRank = cellRank*_maxNodePerCell + memNodeIndex; // add calculation to compute the total index
+		for (uint i=0; i<100; i++){
+			xRes = sigPtAddr[i].locx;
+			yRes = sigPtAddr[i].locy;
+		if (isInsideCell(xRes,yRes,intnlIndxMemBegin,activeMembrCount,_locXAddr,_locYAddr)){
+					sigPtAddr[i].sigPtState = cellRank;
+				}
+		}
+	}
+};
+
+
+
+
+
+
 
 // JG051223
 struct calCellRadius: public thrust::unary_function<UiDDU, double> {
@@ -1591,7 +1653,7 @@ struct addSceCellAdhForce: public thrust::unary_function<IUDDUUDDDD, CVec2> {
 		double randomN3;
 		double ngbrSiteX;
 		double ngbrSiteY;
-		if (cellType == 1){kAdh=2.0;} // for leader
+		if (cellType == 1){kAdh=7.0;} // for leader
 		// if (_timeNow > 55800.0 && _isActiveAddr[index] == true && (nodeRank < _maxMemNodePerCell)) {
 		if (_timeNow > 55800.0 && _isActiveAddr[index] == true) {
 			// starting of the index of the substrate site corresponding to this node is: index*10, 10 is the max subs sites

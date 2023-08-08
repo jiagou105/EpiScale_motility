@@ -91,6 +91,15 @@ public:
 	PreT1State();
 };
 
+class SigptState {
+public:
+	uint ptState;
+	double locx;
+	double locy;
+	SigptState();
+};
+
+
 class NetworkInfo {
 	std::vector<NetworkNode> networkNodes;
 	//std::vector<NetworkEdge> networkEdges;
