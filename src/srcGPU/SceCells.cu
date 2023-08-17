@@ -1531,14 +1531,15 @@ void SceCells::runAllCellLevelLogicsDisc(double dt) {
 }
 
 //Ali void SceCells::runAllCellLogicsDisc_M(double dt) {
-void SceCells::runAllCellLogicsDisc_M(double dt, double Damp_Coef, double InitTimeStage, std::vector<SigPtState>& sigPtVec) {   //Ali
+void SceCells::runAllCellLogicsDisc_M(double dt, double Damp_Coef, double InitTimeStage, std::vector<SigptState>& sigPtVec) {   //Ali
         
         
 	std::cout << "     *** 1 ***" << endl;
 	std::cout.flush();
 	this->dt = dt;
-        this->Damp_Coef=Damp_Coef ; //Ali 
-        this->InitTimeStage=InitTimeStage   ;  //A & A 
+    this->Damp_Coef=Damp_Coef ; //Ali 
+    this->InitTimeStage=InitTimeStage; 
+	// this->sigPtVec = sigPtVec;
 	growthAuxData.prolifDecay =1.0   ;  // no decay for right now     exp(-curTime * miscPara.prolifDecayCoeff);
         cout<< "The important curTime used in simulation is here which is"<<curTime <<endl; 
 	growthAuxData.randomGrowthSpeedMin = growthAuxData.prolifDecay
@@ -3742,6 +3743,8 @@ AniRawData SceCells::obtainAniRawDataGivenCellColor(vector<double>& cellColors,
 	thrust::host_vector<double> hostCellCenterY(activeCellCount);
 	thrust::host_vector<double> hostCellCenterZ(activeCellCount);
 
+	thrust::host_vector<double> hostCellPolarAngle(activeCellCount);
+
 	thrust::copy(
 			thrust::make_zip_iterator(
 					thrust::make_tuple(nodes->getInfoVecs().nodeLocX.begin(),
@@ -3834,18 +3837,20 @@ AniRawData SceCells::obtainAniRawDataGivenCellColor(vector<double>& cellColors,
 					thrust::make_tuple(
 							cellInfoVecs.centerCoordX.begin(),
 							cellInfoVecs.centerCoordY.begin(),
-							cellInfoVecs.centerCoordZ.begin()
+							cellInfoVecs.centerCoordZ.begin(),
+							cellInfoVecs.cellPolarAngle.begin()
 							)),
 			thrust::make_zip_iterator(
 					thrust::make_tuple(
 							cellInfoVecs.centerCoordX.begin(),
 							cellInfoVecs.centerCoordY.begin(),
-							cellInfoVecs.centerCoordZ.begin()
+							cellInfoVecs.centerCoordZ.begin(),
+							cellInfoVecs.cellPolarAngle.begin()
 							))
 					+ activeCellCount, 
 			thrust::make_zip_iterator(
 					thrust::make_tuple(
-							hostCellCenterX.begin(), hostCellCenterY.begin(),hostCellCenterZ.begin()
+							hostCellCenterX.begin(), hostCellCenterY.begin(),hostCellCenterZ.begin(),hostCellPolarAngle.begin()
 				)));
 
 	thrust::host_vector<uint> curActiveFilopCounts =
@@ -4020,7 +4025,7 @@ AniRawData SceCells::obtainAniRawDataGivenCellColor(vector<double>& cellColors,
                                         rawAniData.aniNodeF_MI_M_MagN_Int.push_back(tmpF_MI_M_MagN_Int[i]/cellsPerimeter[i]) ; //Ali Added 
 					//aniVal2=dppLevels_Cell[i]; 
 					aniVal2=cellsDppLevel[i]; 
-                                        rawAniData.dppLevel.push_back(aniVal2) ; //Ali Added 
+                    rawAniData.dppLevel.push_back(aniVal2) ; //Ali Added 
 					rawAniData.aniNodePosArr.push_back(tmpPos);
 					rawAniData.aniNodeVal.push_back(aniVal);
 
@@ -4080,7 +4085,7 @@ AniRawData SceCells::obtainAniRawDataGivenCellColor(vector<double>& cellColors,
 							tmpPos = CVector(node2X, node2Y, 0);
 							//aniVal = hostTmpVectorNodeType[index1];
 							aniVal = cellColors[i];
-                                                        rawAniData.aniNodeF_MI_M_MagN_Int.push_back(tmpF_MI_M_MagN_Int[i]/cellsPerimeter[i]) ; //Ali Added
+                            rawAniData.aniNodeF_MI_M_MagN_Int.push_back(tmpF_MI_M_MagN_Int[i]/cellsPerimeter[i]) ; //Ali Added
                                         		//aniVal2=dppLevels_Cell[i]; 
                                         		aniVal2=cellsDppLevel[i]; 
                                                         rawAniData.dppLevel.push_back(aniVal2) ; //Ali Added 
@@ -4105,7 +4110,7 @@ AniRawData SceCells::obtainAniRawDataGivenCellColor(vector<double>& cellColors,
 	}
 
 	// June 2023
-	CVector tempCenterPos, tempFilopPos;
+	CVector tempCenterPos, tempFilopPos,tempCellPolar;
 	double filopX, filopY;
 	uint curtotFilopCounts = 0;
 	uint tempFilopCounts;
@@ -4135,6 +4140,24 @@ AniRawData SceCells::obtainAniRawDataGivenCellColor(vector<double>& cellColors,
 			}
 			curtotFilopCounts = curtotFilopCounts + curActiveFilopCounts[i] + 1;
 		}
+
+	// save cell polarization information 
+	uint curtCellPolarCounts = 0;
+    for (uint i=0; i<activeCellCount; i++){ // i is the index of an active cell 
+			tempCenterPos = CVector(hostCellCenterX[i],hostCellCenterY[i],0); // store cell center 
+			rawAniData.aniCellPolar.push_back(tempCenterPos);
+			tempRadius = cellsPerimeter[i]/(2.0*PI);
+			tempCellPolar = CVector(hostCellCenterX[i]+tempRadius*cos(hostCellPolarAngle[i]),hostCellCenterY[i]+tempRadius*sin(hostCellPolarAngle[i]),0);
+			rawAniData.aniCellPolar.push_back(tempCellPolar);
+			
+			LinkAniCellData linkCellPolarData;
+			linkCellPolarData.node1Index = curtCellPolarCounts; 
+			linkCellPolarData.node2Index = curtCellPolarCounts+1;
+			rawAniData.aniCellPolarLinks.push_back(linkCellPolarData);
+
+			curtCellPolarCounts = curtCellPolarCounts  + 2;
+		}
+
 	cout << "I am in obtainAniRawDataGivenCellColor end"<<endl; 
 	return rawAniData;
 }
@@ -4424,6 +4447,7 @@ VtkAnimationData SceCells::outputVtkData(AniRawData& rawAniData, //apr 05
 		ptAniData.adhSiteCount1= rawAniData.adhSiteCount[i];
 		vtkData.pointsAniData.push_back(ptAniData);
 	}
+	// vtk file one 
 	for (uint i = 0; i < rawAniData.internalLinks.size(); i++) {
 		LinkAniData linkData = rawAniData.internalLinks[i];
 		vtkData.linksAniData.push_back(linkData);
@@ -4432,6 +4456,7 @@ VtkAnimationData SceCells::outputVtkData(AniRawData& rawAniData, //apr 05
 		LinkAniData linkData = rawAniData.memLinks[i];
 		vtkData.linksAniData.push_back(linkData);
 	}
+	// vtk file two 
 	for (uint i = 0; i<rawAniData.aniFilopPos.size(); i++){
 		PointAniCellData ptAniCellData; // to be changed
 		ptAniCellData.filopPos = rawAniData.aniFilopPos[i]; // ???
@@ -4441,6 +4466,17 @@ VtkAnimationData SceCells::outputVtkData(AniRawData& rawAniData, //apr 05
 		LinkAniCellData linkCellData = rawAniData.aniFilopLinks[i];
 		vtkData.linksAniCellData.push_back(linkCellData);
 	}
+	// vtk file three
+	for (uint i = 0; i<rawAniData.aniCellPolar.size(); i++){
+		PointAniCellPolarData ptAniCellPolarData; 
+		ptAniCellPolarData.cellPolarAngle = rawAniData.aniCellPolar[i];
+		vtkData.pointsAniCellPolarData.push_back(ptAniCellPolarData);
+	}
+	for (uint i = 0; i < rawAniData.aniCellPolarLinks.size(); i++) {
+		LinkAniCellData linkCellPolarData = rawAniData.aniCellPolarLinks[i];
+		vtkData.linksAniCellPolarData.push_back(linkCellPolarData);
+	}
+
 	vtkData.isArrowIncluded = false;
 	return vtkData;
 }
@@ -5786,7 +5822,7 @@ void SceCells::updateCellPolar() {
 
 
 
-void SceCells::test_SigPt(std::vector<SigPtState>& sigPtVec); {
+void SceCells::test_SigPt(std::vector<SigptState>& sigPtVec) {
 	uint activeCellCount = allocPara_m.currentActiveCellCount;
 	
 	double* cellFilopXAddr = thrust::raw_pointer_cast(
@@ -5807,8 +5843,8 @@ void SceCells::test_SigPt(std::vector<SigPtState>& sigPtVec); {
             &(cellInfoVecs.cellRadius[0]));
  	int* nodeAdhIdxAddr = thrust::raw_pointer_cast(
             &(nodes->getInfoVecs().nodeAdhereIndex[0]));
-	double* sigPtAddr = thrust::raw_pointer_cast(
-            &(sigPtVec[0]));
+	thrust::device_vector<SigptState> d_sigPtVec(sigPtVec);
+	SigptState* sigPtAddr = thrust::raw_pointer_cast(&d_sigPtVec[0]);
 	double timeNow = curTime;
 
 	double ddt = dt;
@@ -5833,7 +5869,8 @@ void SceCells::test_SigPt(std::vector<SigPtState>& sigPtVec); {
 							cellInfoVecs.centerCoordY.begin(),
 							cellInfoVecs.cellRadius.begin(),
 							cellInfoVecs.cellPolarAngle.begin(),
-							cellInfoVecs.cell_Type.begin() 
+							cellInfoVecs.cell_Type.begin(),
+							cellInfoVecs.activeMembrNodeCounts.begin()
 							)),
 			thrust::make_zip_iterator(
 					thrust::make_tuple(
@@ -5842,13 +5879,14 @@ void SceCells::test_SigPt(std::vector<SigPtState>& sigPtVec); {
 							cellInfoVecs.centerCoordY.begin() + activeCellCount,
 							cellInfoVecs.cellRadius.begin() + activeCellCount,
 							cellInfoVecs.cellPolarAngle.begin() + activeCellCount,
-							cellInfoVecs.cell_Type.begin() + activeCellCount
+							cellInfoVecs.cell_Type.begin() + activeCellCount,
+                            cellInfoVecs.activeMembrNodeCounts.begin() + activeCellCount
 							)),
 			cellInfoVecs.cellPolarAngle.begin(),
-			updateSigPtState(seed, ddt, timeNow, 
-			cellFilopXAddr,cellFilopYAddr,cellFilopAngleAddr,cellFilopIsActiveAddr,
-			cellFilopBirthTimeAddr,activeCellCount,cellCenterXAddr,cellCenterYAddr,cellRadiusAddr,
-			cellActiveFilopCountsAddr,maxMemNodePerCell,maxNodePerCell,nodeLocXAddr,nodeLocYAddr,nodeIsActiveAddr,nodeAdhIdxAddr,sigPtAddr));
+			updateSigPtState(ddt, timeNow, 
+			activeCellCount,cellCenterXAddr,cellCenterYAddr,cellRadiusAddr,
+			maxMemNodePerCell,maxNodePerCell,nodeLocXAddr,nodeLocYAddr,nodeIsActiveAddr,nodeAdhIdxAddr,sigPtAddr));
+	thrust::copy(d_sigPtVec.begin(), d_sigPtVec.end(), sigPtVec.begin());
 }
 
 

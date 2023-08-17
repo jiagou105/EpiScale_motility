@@ -334,6 +334,13 @@ struct NodeAllocPara_M {
 	uint currentActiveCellCount;
 };
 
+struct SigptState {
+	uint ptState;
+	double locx;
+	double locy;
+};
+
+
 /**
  * contains raw information in order to initialize cartilage.
  */
@@ -585,6 +592,17 @@ struct PointAniCellData {
 	CVector filopPos;
 };
 
+struct PointAniCellPolarData {
+	// position of the filopodia
+	CVector cellPolarAngle;
+};
+
+struct SigNodeData {
+	// position of the filopodia
+	CVector sigNode;
+	uint cIndex;
+};
+
 /**
  * Necessary information to animate a link in VTK.
  */
@@ -606,8 +624,13 @@ struct VtkAnimationData {
 	std::vector<LinkAniData> linksAniData;
 	std::vector<PointAniCellData> pointsAniCellData;
 	std::vector<LinkAniCellData> linksAniCellData;
+	std::vector<PointAniCellPolarData> pointsAniCellPolarData;
+	std::vector<LinkAniCellData> linksAniCellPolarData;
+	std::vector<SigNodeData> sigNodeData; 
 	void outputVtkAni(std::string scriptNameBase, int rank);
 	void outputCellVtkAni(std::string scriptNameBase, int rank);
+	void outputCellPolarVtkAni(std::string scriptNameBase, int rank);
+	void outputSigNodeVtkAni(std::string scriptNameBase, int rank);
 };
 
 template<class T>
@@ -660,6 +683,9 @@ struct AniRawData {
 
 	std::vector<CVector> aniFilopPos;
 	std::vector<LinkAniCellData> aniFilopLinks;
+
+	std::vector<CVector> aniCellPolar;
+	std::vector<LinkAniCellData> aniCellPolarLinks;
 };
 
 struct VecVal {

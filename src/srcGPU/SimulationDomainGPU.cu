@@ -91,6 +91,14 @@ void SimulationDomainGPU::initialize_v2_M(SimulationInitData_V2_M& initData, dou
 	//std::cout << "finished init nodes dimension" << std::endl;
 	// The domain task is not stabilization unless specified in the next steps.
 	stabPara.isProcessStab = false;
+	uint sigPtNum = 10;
+	for(uint i=0;i<sigPtNum;i++){
+		SigptState sigPt;
+		sigPt.locx = i*0.1;
+		sigPt.locy = 0;
+		sigPt.ptState = 222;
+		sigPtVec.push_back(sigPt);
+	}
 	std::cout << "Finished initializing simulation domain" << std::endl;
 }
 
@@ -137,7 +145,7 @@ void SimulationDomainGPU::runAllLogic_M(double dt, double Damp_Coef, double Init
 #endif
 	cout << "--- 3 ---" << endl;
 	cout.flush();
-	cells.runAllCellLogicsDisc_M(dt,Damp_Coef,InitTimeStage); // cell level
+	cells.runAllCellLogicsDisc_M(dt,Damp_Coef,InitTimeStage,sigPtVec); // cell level
 	cout << "--- 4 ---" << endl;
 	cout.flush();
 #ifdef DebugModeDomain
@@ -228,9 +236,32 @@ void SimulationDomainGPU::outputVtkGivenCellColor(std::string scriptNameBase,
 	AniRawData rawAni = cells.obtainAniRawDataGivenCellColor(cellColorVal,
 			aniCri,cellsPerimeter,cellsDppLevel); //AliE
 	VtkAnimationData aniData = cells.outputVtkData(rawAni, aniCri);
+	// define another function here for saving global signaling points 
+	additionalSimuDomainOutput(aniData);
 	aniData.outputVtkAni(scriptNameBase, rank);
 	aniData.outputCellVtkAni(scriptNameBase, rank); // JG June 2023
+	aniData.outputCellPolarVtkAni(scriptNameBase, rank);
+	aniData.outputSigNodeVtkAni(scriptNameBase,rank);
 }
+
+
+
+void SimulationDomainGPU::additionalSimuDomainOutput(VtkAnimationData& aniData) {
+	uint sigPtNum = 10;
+	for (uint i = 0; i < sigPtNum; i++) {
+        SigNodeData sigPt;
+		sigPt.sigNode = CVector(sigPtVec[i].locx,sigPtVec[i].locy,0);
+		sigPt.cIndex = sigPtVec[i].ptState;
+        aniData.sigNodeData.push_back(sigPt);
+    }
+}
+
+
+
+
+
+
+
 
 void SimulationDomainGPU::outputVtkColorByCell_T1(std::string scriptNameBase,
 		int rank, AnimationCriteria aniCri) {

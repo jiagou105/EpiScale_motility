@@ -301,6 +301,84 @@ void VtkAnimationData::outputCellVtkAni(std::string scriptNameBase, int rank) { 
 
 
 
+
+
+// save cell polarity
+void VtkAnimationData::outputCellPolarVtkAni(std::string scriptNameBase, int rank) { // Jun 02
+	std::stringstream ss;
+	ss << std::setw(5) << std::setfill('0') << rank;
+	std::string scriptNameRank = ss.str();
+	std::string vtkFileName = scriptNameBase + "_cellpolar" + scriptNameRank + ".vtk";
+	std::cout << "start to create vtk file" << vtkFileName << std::endl;
+	std::ofstream fs;
+	fs.open(vtkFileName.c_str());
+	fs << "# vtk DataFile Version 3.0" << std::endl;
+	fs << "Lines and points representing subcelluar element cells "
+			<< std::endl;
+	fs << "ASCII" << std::endl;
+	fs << std::endl;
+	fs << "DATASET UNSTRUCTURED_GRID" << std::endl;
+	fs << "POINTS " << pointsAniCellPolarData.size() << " float" << std::endl; // (active_num_filop+1)*num_cell points 
+	for (uint i = 0; i < pointsAniCellPolarData.size(); i++) {
+		fs << pointsAniCellPolarData[i].cellPolarAngle.x << " " << pointsAniCellPolarData[i].cellPolarAngle.y << " "
+				<< pointsAniCellPolarData[i].cellPolarAngle.z << std::endl;
+	}
+
+	fs << std::endl;
+	fs << "CELLS " << linksAniCellPolarData.size() << " " << 3 * linksAniCellPolarData.size()
+			<< std::endl;
+	for (uint i = 0; i < linksAniCellPolarData.size(); i++) {
+		fs << 2 << " " << linksAniCellPolarData[i].node1Index << " "
+				<< linksAniCellPolarData[i].node2Index << std::endl;
+	}
+	fs << "CELL_TYPES " << linksAniCellPolarData.size() << endl;
+	for (uint i = 0; i < linksAniCellPolarData.size(); i++) {
+		fs << "3" << endl;
+	}
+	fs.close();
+}
+
+
+
+
+
+
+void VtkAnimationData::outputSigNodeVtkAni(std::string scriptNameBase, int rank) { // Jun 02
+	std::stringstream ss;
+	ss << std::setw(5) << std::setfill('0') << rank;
+	std::string scriptNameRank = ss.str();
+	std::string vtkFileName = scriptNameBase + "_sigNode" + scriptNameRank + ".vtk";
+	std::cout << "start to create vtk file" << vtkFileName << std::endl;
+	std::ofstream fs;
+	fs.open(vtkFileName.c_str());
+	fs << "# vtk DataFile Version 3.0" << std::endl;
+	fs << "Lines and points representing subcelluar element cells "
+			<< std::endl;
+	fs << "ASCII" << std::endl;
+	fs << std::endl;
+	fs << "DATASET UNSTRUCTURED_GRID" << std::endl;
+	fs << "POINTS " << sigNodeData.size() << " float" << std::endl; // (active_num_filop+1)*num_cell points 
+	for (uint i = 0; i < sigNodeData.size(); i++) {
+		fs << sigNodeData[i].sigNode.x << " " << sigNodeData[i].sigNode.y << " "
+				<< sigNodeData[i].sigNode.z << std::endl;
+	}
+
+	fs << std::endl;
+
+	fs << "SCALARS cellrank  int" << endl;
+	fs << "LOOKUP_TABLE default" << endl;
+	for (uint i = 0; i < sigNodeData.size(); i++) {
+		fs << sigNodeData[i].cIndex << endl;
+	}
+	fs << std::endl;
+	fs.close();
+}
+
+
+
+
+
+
 std::vector<double> getArrayXComp(std::vector<CVector>& nodePosVec) {
 	std::vector<double> result;
 	for (uint i = 0; i < nodePosVec.size(); i++) {

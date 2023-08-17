@@ -1293,8 +1293,7 @@ struct updateCellFilop: public thrust::unary_function<UiDDDDi, double> {
 
 
 // JG050823
-struct updateSigPtState: public thrust::unary_function<UiDDDDi, double> {
-	uint _seed;
+struct updateSigPtState: public thrust::unary_function<UiDDDDiU, double> {
 	double _timeStep;
 	double _timeNow;
 	double* _cellFilopXAddr;
@@ -1306,46 +1305,48 @@ struct updateSigPtState: public thrust::unary_function<UiDDDDi, double> {
 	double* _cellCenterXAddr;
 	double* _cellCenterYAddr;
 	double* _cellRadiusAddr;
-	uint* _cellActiveFilopCountsAddr;
 	uint _maxMemNodePerCell;
 	uint _maxNodePerCell;
 	double* _locXAddr;
 	double* _locYAddr;
 	bool* _isActiveAddr;
 	int* _nodeAdhereIndexAddr;
-	double* _sigPtAddr;
+	SigptState* _sigPtAddr;
 	// double _grthPrgrCriVal_M;
 	// comment prevents bad formatting issues of __host__ and __device__ in Nsight
-	__host__ __device__ updateSigPtState(uint seed, double timeStep, double timeNow, 
-			double* cellFilopXAddr, double* cellFilopYAddr, double* cellFilopAngleAddr, bool* cellFilopIsActiveAddr, double* cellFilopBirthTimeAddr,
-			uint activeCellCount, double* cellCenterXAddr, double* cellCenterYAddr, double* cellRadiusAddr, uint* cellActiveFilopCountsAddr,
-			uint maxMemNodePerCell, uint maxNodePerCell, double* locXAddr, double* locYAddr, bool* isActiveAddr, int* nodeAdhereIndexAddr, double* sigPtAddr) :
-			_seed(seed), _timeStep(timeStep), _timeNow(timeNow),
-			_cellFilopXAddr(cellFilopXAddr), _cellFilopYAddr(cellFilopYAddr), _cellFilopAngleAddr(cellFilopAngleAddr),
-			_cellFilopIsActiveAddr(cellFilopIsActiveAddr), _cellFilopBirthTimeAddr(cellFilopBirthTimeAddr), _activeCellCount(activeCellCount), 
-			_cellCenterXAddr(cellCenterXAddr), _cellCenterYAddr(cellCenterYAddr), _cellRadiusAddr(cellRadiusAddr), _cellActiveFilopCountsAddr(cellActiveFilopCountsAddr),
+	__host__ __device__ updateSigPtState(double timeStep, double timeNow, 
+			uint activeCellCount, double* cellCenterXAddr, double* cellCenterYAddr, double* cellRadiusAddr,
+			uint maxMemNodePerCell, uint maxNodePerCell, double* locXAddr, double* locYAddr, bool* isActiveAddr, int* nodeAdhereIndexAddr, SigptState* sigPtAddr) :
+			_timeStep(timeStep), _timeNow(timeNow),_activeCellCount(activeCellCount), 
+			_cellCenterXAddr(cellCenterXAddr), _cellCenterYAddr(cellCenterYAddr), _cellRadiusAddr(cellRadiusAddr), 
 			_maxMemNodePerCell(maxMemNodePerCell),_maxNodePerCell(maxNodePerCell), _locXAddr(locXAddr), _locYAddr(locYAddr), _isActiveAddr(isActiveAddr), 
-			_nodeAdhereIndexAddr(nodeAdhereIndexAddr, _sigPtAddr(sigPtAddr)){
+			_nodeAdhereIndexAddr(nodeAdhereIndexAddr), _sigPtAddr(sigPtAddr){
 	}
 	// comment prevents bad formatting issues of __host__ and __device__ in Nsight
-	__device__ double operator()(const UiDDDDi &cData) const {
+	__device__ double operator()(const UiDDDDiU &cData) const {
 		uint cellRank = thrust::get<0>(cData);
 		double cell_CenterX = thrust::get<1>(cData);
         double cell_CenterY = thrust::get<2>(cData);
 		double cell_Radius = thrust::get<3>(cData);
 		double cellAngle = thrust::get<4>(cData);
 		int cell_Type = thrust::get<5>(cData);
+		uint activeMembrCount = thrust::get<6>(cData);
+		uint intnlIndxMemBegin = cellRank * _maxNodePerCell;
 		
-		
-		uint nodeRank;
-		nodeRank = cellRank*_maxNodePerCell + memNodeIndex; // add calculation to compute the total index
+		// uint nodeRank;
+		double xRes, yRes;
+		// nodeRank = cellRank*_maxNodePerCell + memNodeIndex; 
 		for (uint i=0; i<100; i++){
-			xRes = sigPtAddr[i].locx;
-			yRes = sigPtAddr[i].locy;
-		if (isInsideCell(xRes,yRes,intnlIndxMemBegin,activeMembrCount,_locXAddr,_locYAddr)){
-					sigPtAddr[i].sigPtState = cellRank;
-				}
+			xRes = _sigPtAddr[i].locx;
+			yRes = _sigPtAddr[i].locy;
+			if (isInsideCell(xRes,yRes,intnlIndxMemBegin,activeMembrCount,_locXAddr,_locYAddr)){
+						_sigPtAddr[i].ptState = cellRank;
+					}
+			if (i==0){
+				_sigPtAddr[i].ptState = 10;
+			}
 		}
+		return cellAngle;
 	}
 };
 
@@ -3852,6 +3853,7 @@ class SceCells {
 	ControlPara controlPara;
 	NodeAllocPara_M allocPara_m;
 	MembrPara membrPara;
+	// vector<SigptState> sigPtVec;
 
 // in this class, there are a lot of arrays that store information for each cell
 // this counting iterator is used for all these arrays indicating the begining.
@@ -3918,7 +3920,8 @@ class SceCells {
 	void setGrowthDirXAxis();
 
 	void computeCenterPos();
-        void BC_Imp_M() ; 
+    void BC_Imp_M() ; 
+	void test_SigPt(std::vector<SigptState>& sigPtVec);
 	void divide2DSimplified();
 
 	/**
@@ -4178,7 +4181,7 @@ public:
 	void runAllCellLevelLogicsDisc(double dt);
 
 //Ali	void runAllCellLogicsDisc_M(double dt);
-	void runAllCellLogicsDisc_M(double dt, double Damp_Coef, double InitTimeStage);    //Ali 
+	void runAllCellLogicsDisc_M(double dt, double Damp_Coef, double InitTimeStage, std::vector<SigptState>& sigPtVec);    //Ali 
 
 	void runStretchTest(double dt);
 

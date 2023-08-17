@@ -44,6 +44,7 @@ class SimulationDomainGPU {
 	NetworkInfo netInfo;
 
 	std::vector<std::vector<PreT1State> > preT1Vec;
+	std::vector<SigptState> sigPtVec;
 
 	std::set<int> t1CellSet;
 	std::vector<double> cellColorVec;
@@ -99,6 +100,7 @@ class SimulationDomainGPU {
 
 	void outputVtkGivenCellColor(std::string scriptNameBase, int rank,
 			AnimationCriteria aniCri, std::vector<double>& cellColorVec, std::vector<double> & cellsPerimeter, std::vector<double> & cellsDppLevel);  //AliE
+	void additionalSimuDomainOutput(VtkAnimationData& aniData);
 	std::vector<double> processT1Color();
 	std::vector<double> processPolySideColor(std::vector<double> & cellsPerimeter, std::vector<double> & cellsDppLevel); //AliE
 
