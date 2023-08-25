@@ -258,6 +258,7 @@ SceNodes::SceNodes(uint totalBdryNodeCount, uint maxProfileNodeCount,
 // used to initialize nodes in SimulationDomainGPU
 SceNodes::SceNodes(uint maxTotalCellCount, uint maxAllNodePerCell) {
 	//initControlPara (isStab);
+	curTimeN = 0.0 + 55800.0;
 	int simuTypeConfigValue =
 			globalConfigVars.getConfigValue("SimulationType").toInt();
 	controlPara.simuType = parseTypeFromConfig(simuTypeConfigValue);
@@ -2191,7 +2192,7 @@ void SceNodes::applySceForcesDisc() {
 					nodeLocZAddress, nodeGrowProAddr));
 }
 
-void SceNodes::applySceForcesDisc_M() {
+void SceNodes::applySceForcesDisc_M(std::vector<SigptStateV2>& sigPtVecV2) {
 	uint* valueAddress = thrust::raw_pointer_cast(
 			&auxVecs.bucketValuesIncludingNeighbor[0]);
 	double* nodeLocXAddress = thrust::raw_pointer_cast(&infoVecs.nodeLocX[0]);
@@ -2202,6 +2203,12 @@ void SceNodes::applySceForcesDisc_M() {
 			&infoVecs.membrIntnlIndex[0]);
 	double* nodeGrowProAddr = thrust::raw_pointer_cast(
 			&infoVecs.nodeGrowPro[0]);
+	uint maxNodeInCell = allocPara_M.maxAllNodePerCell;
+	uint leaderRank = allocPara_M.leaderRank;
+
+	thrust::device_vector<SigptStateV2> d_sigPtVec(sigPtVecV2);
+	SigptStateV2* sigPtAddr = thrust::raw_pointer_cast(&d_sigPtVec[0]);
+	double timeNow = curTimeN;
 
 	thrust::transform(
 			thrust::make_zip_iterator(
@@ -2233,7 +2240,28 @@ void SceNodes::applySceForcesDisc_M() {
 							thrust::make_permutation_iterator(infoVecs.nodeVelY.begin(),
 									auxVecs.bucketValues.begin()))),
 			AddForceDisc_M(valueAddress, nodeLocXAddress, nodeLocYAddress,
-					nodeAdhIdxAddress, membrIntnlAddress, nodeGrowProAddr));
+					nodeAdhIdxAddress, membrIntnlAddress, nodeGrowProAddr, maxNodeInCell, leaderRank,sigPtAddr,timeNow));
+			thrust::copy(d_sigPtVec.begin(), d_sigPtVec.end(), sigPtVecV2.begin());
+}
+
+
+
+void SceNodes::updateSigVec(std::vector<SigptStateV2>& sigPtVecV2) {
+	// use a for loop to update the location of signaling points
+	uint sigPtNum = 30;
+	for (uint i=0; i<sigPtNum; i++){
+		if (sigPtVecV2[i].isActive==true){
+			sigPtVecV2[i].locx = infoVecs.nodeLocX[sigPtVecV2[i].memIndex];
+			sigPtVecV2[i].locy = infoVecs.nodeLocY[sigPtVecV2[i].memIndex];
+			if (curTimeN-sigPtVecV2[i].timeInit>sigPtVecV2[i].LIFETIME){
+				sigPtVecV2[i].isActive = false;
+				sigPtVecV2[i].folRank = 111;
+			}     
+		}
+	}
+
+
+
 }
 
 const SceDomainPara& SceNodes::getDomainPara() const {
@@ -2334,7 +2362,8 @@ void SceNodes::sceForcesDisc() {
 	applySceForcesDisc();
 }
 
-void SceNodes::sceForcesDisc_M() {
+void SceNodes::sceForcesDisc_M(double dt, std::vector<SigptStateV2>& sigPtVecV2) {
+	curTimeN = curTimeN + dt;
 #ifdef DebugMode
 	cudaEvent_t start1, start2, start3, stop;
 	float elapsedTime1, elapsedTime2, elapsedTime3;
@@ -2355,7 +2384,8 @@ void SceNodes::sceForcesDisc_M() {
 #endif
 	cout << "     --- 2 ---" << endl;
 	cout.flush();
-	applySceForcesDisc_M();
+	applySceForcesDisc_M(sigPtVecV2);
+	updateSigVec(sigPtVecV2);
 
 
 #ifdef DebugMode

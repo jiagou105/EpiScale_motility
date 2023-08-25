@@ -91,13 +91,27 @@ void SimulationDomainGPU::initialize_v2_M(SimulationInitData_V2_M& initData, dou
 	//std::cout << "finished init nodes dimension" << std::endl;
 	// The domain task is not stabilization unless specified in the next steps.
 	stabPara.isProcessStab = false;
-	uint sigPtNum = 10;
+	/*
+	uint sigPtNum = 30;
 	for(uint i=0;i<sigPtNum;i++){
 		SigptState sigPt;
 		sigPt.locx = i*0.1;
 		sigPt.locy = 0;
 		sigPt.ptState = 222;
 		sigPtVec.push_back(sigPt);
+	}
+	*/
+	uint sigPtNumv2 = 30; //initialization 
+	for(uint i=0;i<sigPtNumv2;i++){
+		SigptStateV2 sigPt;
+		sigPt.memIndex = 10000;
+		sigPt.folRank = 10000;
+		sigPt.timeInit = 0.0;
+		sigPt.isActive = false;
+		sigPt.locx = 0;
+		sigPt.locy = 0;
+		sigPt.LIFETIME = 10;
+		sigPtVecV2.push_back(sigPt);
 	}
 	std::cout << "Finished initializing simulation domain" << std::endl;
 }
@@ -135,7 +149,7 @@ void SimulationDomainGPU::runAllLogic_M(double dt, double Damp_Coef, double Init
 #endif
 	cout << "--- 1 ---" << endl;
 	cout.flush();
-	nodes.sceForcesDisc_M(); // node level
+	nodes.sceForcesDisc_M(dt,sigPtVecV2); // node level
 	cout << "--- 2 ---" << endl;
 	cout.flush();
 #ifdef DebugModeDomain
@@ -145,7 +159,7 @@ void SimulationDomainGPU::runAllLogic_M(double dt, double Damp_Coef, double Init
 #endif
 	cout << "--- 3 ---" << endl;
 	cout.flush();
-	cells.runAllCellLogicsDisc_M(dt,Damp_Coef,InitTimeStage,sigPtVec); // cell level
+	cells.runAllCellLogicsDisc_M(dt,Damp_Coef,InitTimeStage,sigPtVecV2); // cell level
 	cout << "--- 4 ---" << endl;
 	cout.flush();
 #ifdef DebugModeDomain
@@ -237,7 +251,8 @@ void SimulationDomainGPU::outputVtkGivenCellColor(std::string scriptNameBase,
 			aniCri,cellsPerimeter,cellsDppLevel); //AliE
 	VtkAnimationData aniData = cells.outputVtkData(rawAni, aniCri);
 	// define another function here for saving global signaling points 
-	additionalSimuDomainOutput(aniData);
+	// additionalSimuDomainOutput(aniData);
+	additionalSimuDomainOutputV2(aniData);
 	aniData.outputVtkAni(scriptNameBase, rank);
 	aniData.outputCellVtkAni(scriptNameBase, rank); // JG June 2023
 	aniData.outputCellPolarVtkAni(scriptNameBase, rank);
@@ -245,7 +260,7 @@ void SimulationDomainGPU::outputVtkGivenCellColor(std::string scriptNameBase,
 }
 
 
-
+/*
 void SimulationDomainGPU::additionalSimuDomainOutput(VtkAnimationData& aniData) {
 	uint sigPtNum = 10;
 	for (uint i = 0; i < sigPtNum; i++) {
@@ -255,8 +270,18 @@ void SimulationDomainGPU::additionalSimuDomainOutput(VtkAnimationData& aniData) 
         aniData.sigNodeData.push_back(sigPt);
     }
 }
+*/
 
 
+void SimulationDomainGPU::additionalSimuDomainOutputV2(VtkAnimationData& aniData) {
+	uint sigPtNum = 30;
+	for (uint i = 0; i < sigPtNum; i++) {
+        SigNodeData sigPt;
+		sigPt.sigNode = CVector(sigPtVecV2[i].locx,sigPtVecV2[i].locy,0);
+		sigPt.cIndex = sigPtVecV2[i].isActive;
+        aniData.sigNodeData.push_back(sigPt);
+    }
+}
 
 
 
@@ -410,9 +435,9 @@ void SimulationDomainGPU::performAblation(AblationEvent& ablEvent) {
 }
 
 //We may be able to remove this function by repositioning the location of calling output data
-CellsStatsData SimulationDomainGPU::outputPolyCountData() {
+CellsStatsData SimulationDomainGPU::outputPolyCountData(double dt) {
 	// this step is necessary for obtaining correct neighbors because new cells might have been created in previous step.
-	nodes.sceForcesDisc_M();
+	nodes.sceForcesDisc_M(dt,sigPtVecV2);
 	return cells.outputPolyCountData();
 }
 

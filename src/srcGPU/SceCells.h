@@ -30,6 +30,7 @@ typedef thrust::tuple<uint, uint, uint, uint, double, double, double> CellData;
 typedef thrust::tuple<uint, uint, uint, uint, double> UUUUD;
 typedef thrust::tuple<uint, uint, double, double, uint, uint,int> UUDDUUi;
 typedef thrust::tuple<uint, uint, uint, uint, double, double, double, double, double> UUUUDDDDD;
+typedef thrust::tuple<uint, uint, uint, uint, double, double, double, double, double, int> UUUUDDDDDi;
 typedef thrust::tuple<uint, uint, double, double, uint, uint, double> UUDDUUD;
 typedef thrust::tuple<uint, uint, double, double, uint, uint, double, double, int> UUDDUUDDi;
 typedef thrust::tuple<int, uint, double, double, uint, uint, double, double, double, double> IUDDUUDDDD;
@@ -1047,6 +1048,87 @@ struct addSceCellMyosinForce: public thrust::unary_function<UUUUDDDDD, CVec2> {
 
 
 
+
+
+
+
+
+
+// aug 21, 2023
+struct addSceCellSigForce: public thrust::unary_function<UUUUDDDDDi, CVec2> {
+	uint _maxNodePerCell;
+	uint _maxMemNodePerCell;
+	double* _locXAddr;
+	double* _locYAddr;
+	bool* _isActiveAddr;
+	SigptStateV2* _sigPtAddr;
+	double _timeNow;
+	// comment prevents bad formatting issues of __host__ and __device__ in Nsight
+	__host__ __device__ addSceCellSigForce(uint maxNodePerCell,
+			uint maxMemNodePerCell, double* locXAddr, double* locYAddr,
+			bool* isActiveAddr, SigptStateV2* sigPtAddr, double timeNow) :
+			_maxNodePerCell(maxNodePerCell), _maxMemNodePerCell(
+					maxMemNodePerCell), _locXAddr(locXAddr), _locYAddr(
+					locYAddr), _isActiveAddr(isActiveAddr), _sigPtAddr(
+					sigPtAddr),_timeNow(timeNow) {
+	}
+	// comment prevents bad formatting issues of __host__ and __device__ in Nsight
+	__device__ CVec2 operator()(const UUUUDDDDDi &cDatai) const {
+		uint activeMembrCount = thrust::get<0>(cDatai);
+		uint activeIntnlCount = thrust::get<1>(cDatai);
+		uint cellRank = thrust::get<2>(cDatai);
+		uint nodeRank = thrust::get<3>(cDatai);
+		double  myosinLevel= thrust::get<4>(cDatai); // progress
+		double oriVelX = thrust::get<5>(cDatai);
+		double oriVelY = thrust::get<6>(cDatai);
+		double cellCenterXPos = thrust::get<7>(cDatai);
+		double cellCenterYPos = thrust::get<8>(cDatai);
+		int cellType = thrust::get<9>(cDatai);
+		uint index = cellRank * _maxNodePerCell + nodeRank;
+                
+		
+		if (_isActiveAddr[index] == false) {
+			return thrust::make_tuple(oriVelX, oriVelY); //AliE
+		}
+		double nodeX = _locXAddr[index];
+		double nodeY = _locYAddr[index];
+		double sigCharForce = 0.03;
+		double sigCharDist = 5.0;
+		double sigCharAge = 100;
+
+		if (cellType!=1 && nodeRank < _maxMemNodePerCell){
+			uint sigPtNum = 30;
+			for (uint i=0; i<sigPtNum; i++){
+				if (_sigPtAddr[i].isActive==true && _sigPtAddr[i].folRank!=cellRank){
+					double nodeXLeader = _locXAddr[_sigPtAddr[i].memIndex];
+					double nodeYLeader = _locYAddr[_sigPtAddr[i].memIndex];
+					double vecX = nodeXLeader - nodeX;
+					double vecY = nodeYLeader - nodeY;
+					double distSN = sqrt(vecX*vecX + vecY*vecY);
+					
+					if (distSN>0){
+						vecX = vecX/distSN;
+						vecY = vecY/distSN;
+						oriVelX += sigCharForce*exp(-distSN/sigCharDist)*exp(-(_timeNow - _sigPtAddr[i].timeInit)/sigCharAge)*vecX; 
+						oriVelY += sigCharForce*exp(-distSN/sigCharDist)*exp(-(_timeNow - _sigPtAddr[i].timeInit)/sigCharAge)*vecY; 
+					}
+				}
+			}
+		}
+		return thrust::make_tuple(oriVelX, oriVelY); 
+	}
+};
+
+
+
+
+
+
+
+
+
+
+
 // Mar 29, 2023
 // update the myosin level based on diffusion of myosin 
 struct updateCellMyosin: public thrust::unary_function<UUDDUUDDi, double> {
@@ -1088,7 +1170,7 @@ struct updateCellMyosin: public thrust::unary_function<UUDDUUDDi, double> {
 		// uint intnlIndxMemBegin = cellRank * _maxNodePerCell;
 		uint intnlIndxBegin = cellRank * _maxNodePerCell + _maxMemNodePerCell;
 		uint intnlIndxEnd = intnlIndxBegin + activeIntnlCount;
-		uint index_other;
+		// uint index_other;
 		double nodeX = _locXAddr[index];
 		double nodeY = _locYAddr[index];
 		// double nodeXOther, nodeYOther;
@@ -1654,7 +1736,7 @@ struct addSceCellAdhForce: public thrust::unary_function<IUDDUUDDDD, CVec2> {
 		double randomN3;
 		double ngbrSiteX;
 		double ngbrSiteY;
-		if (cellType == 1){kAdh=7.0;} // for leader
+		if (cellType == 1){kAdh=10.0;} // for leader
 		// if (_timeNow > 55800.0 && _isActiveAddr[index] == true && (nodeRank < _maxMemNodePerCell)) {
 		if (_timeNow > 55800.0 && _isActiveAddr[index] == true) {
 			// starting of the index of the substrate site corresponding to this node is: index*10, 10 is the max subs sites
@@ -4058,6 +4140,8 @@ class SceCells {
 
 	void applySceCellMyosin();
 
+	void applySigForce(std::vector<SigptStateV2>& sigPtVecV2);
+
 	void calSubAdhForce();
 
 	void computeCenterPos_M();
@@ -4181,7 +4265,7 @@ public:
 	void runAllCellLevelLogicsDisc(double dt);
 
 //Ali	void runAllCellLogicsDisc_M(double dt);
-	void runAllCellLogicsDisc_M(double dt, double Damp_Coef, double InitTimeStage, std::vector<SigptState>& sigPtVec);    //Ali 
+	void runAllCellLogicsDisc_M(double dt, double Damp_Coef, double InitTimeStage, std::vector<SigptStateV2>& sigPtVecV2);    //Ali 
 
 	void runStretchTest(double dt);
 

@@ -144,7 +144,7 @@ int main(int argc, char* argv[]) {
 			std::cout << "substep 1 " << std::endl;
 			std::cout << "substep 1_confirm " << std::flush;
 
-	 		CellsStatsData polyData = simuDomain.outputPolyCountData();  //Ali comment
+	 		CellsStatsData polyData = simuDomain.outputPolyCountData(mainPara.dt);  //Ali comment
 	              //    CellsStatsData polyData = simuDomain.outputPolyCountData();
                          
                         double curTime=i*mainPara.dt + mainPara.InitTimeStage;  //Ali - Abu

@@ -244,7 +244,9 @@ struct pointToBucketIndex2D: public thrust::unary_function<CVec3BoolInt, Tuint2>
 			unsigned int y = static_cast<unsigned int>((thrust::get<1>(v)
 					- _minY) / _bucketSize);
 			// return the bucket's linear index and node's global index
-			return thrust::make_tuple(y * width + x, thrust::get<4>(v));
+			// y * width gives slots for nodes with similar y values, x values are used to fill in the slots
+			// y*width +x are indexes 
+			return thrust::make_tuple(y * width + x, thrust::get<4>(v)); // one vector, that is why it is called linear index 
 		} else {
 			// return UINT_MAX to indicate the node is inactive and its value should not be used
 			return thrust::make_tuple(UINT_MAX, UINT_MAX);
@@ -586,15 +588,20 @@ struct AddForceDisc_M: public thrust::unary_function<Tuuudd, CVec2> {
 	int* _nodeAdhereIndex;
 	int* _membrIntnlIndex;
 	double* _nodeGroProAddr;
+	uint _maxNodePerOneCell;
+	uint _leaderRank;
+	SigptStateV2* _sigPtAddr;
+	double _timeNow;
 	// comment prevents bad formatting issues of __host__ and __device__ in Nsight
 	__host__ __device__
 	AddForceDisc_M(uint* valueAddress, double* nodeLocXAddress,
 			double* nodeLocYAddress, int* nodeAdhereIndex, int* membrIntnlIndex,
-			double* nodeGrowProAddr) :
+			double* nodeGrowProAddr, uint maxNodePerOneCell, uint leaderRank, SigptStateV2* sigPtAddr, double timeNow) :
 			_extendedValuesAddress(valueAddress), _nodeLocXAddress(
 					nodeLocXAddress), _nodeLocYAddress(nodeLocYAddress), _nodeAdhereIndex(
 					nodeAdhereIndex), _membrIntnlIndex(membrIntnlIndex), _nodeGroProAddr(
-					nodeGrowProAddr) {
+					nodeGrowProAddr), _maxNodePerOneCell(maxNodePerOneCell), _leaderRank(leaderRank), 
+					_sigPtAddr(sigPtAddr), _timeNow(timeNow) {
 	}
 	__device__
 	CVec2 operator()(const Tuuudd &u3d2) const {
@@ -611,6 +618,8 @@ struct AddForceDisc_M: public thrust::unary_function<Tuuudd, CVec2> {
 		uint index;
 		double dist;
         bool  Lennard_Jones =Is_Lennard_Jones() ; 
+		// compute the cell rank of the current node
+		uint cellRank = myValue/_maxNodePerOneCell;
 		_nodeAdhereIndex[myValue] = -1 ; 
 		for (uint i = begin; i < end; i++) {
 			uint nodeRankOther = _extendedValuesAddress[i];
@@ -636,11 +645,28 @@ struct AddForceDisc_M: public thrust::unary_function<Tuuudd, CVec2> {
 		}
 		if (isSuccess) {
 			_nodeAdhereIndex[myValue] = index; // membrane nodes on different cells 
+			uint cellotherRank = index/_maxNodePerOneCell;
+			if (cellRank == _leaderRank){
+				uint sigPtNum = 30;
+			for(uint ind=0; ind<sigPtNum; ind++){
+				if (_sigPtAddr[ind].isActive==false){
+					_sigPtAddr[ind].memIndex = myValue;
+					_sigPtAddr[ind].folRank = cellotherRank;
+					_sigPtAddr[ind].timeInit = _timeNow;
+					_sigPtAddr[ind].locx = xPos; // assume that xPos is the x position of the current node
+					_sigPtAddr[ind].locy = yPos;
+					_sigPtAddr[ind].isActive=true;
+					break;
+				} 
+			}
 		}
-
+		}
 		return thrust::make_tuple(xRes, yRes);
 	}
 };
+
+
+
 
 /**
  * a complicated data structure for adding subcellular element force to cell nodes.
@@ -922,6 +948,7 @@ class SceNodes {
 
 	NodeAllocPara_M allocPara_M;
 	SceMechPara_M mechPara_M;  
+	double curTimeN;
 	/**
 	 * reads domain related parameters.
 	 */
@@ -985,7 +1012,8 @@ class SceNodes {
 	 */
 	void applySceForcesDisc();
 
-	void applySceForcesDisc_M();
+	void applySceForcesDisc_M(std::vector<SigptStateV2>& sigPtVecV2);
+	void updateSigVec(std::vector<SigptStateV2>& sigPtVecV2);
 
 	/**
 	 * This method outputs a vector of possible neighbor pairs.
@@ -1089,7 +1117,7 @@ public:
 	 */
 	void sceForcesDisc();
 
-	void sceForcesDisc_M();
+	void sceForcesDisc_M(double dt, std::vector<SigptStateV2>& sigPtVecV2);
 
 	/**
 	 * add maxNodeOfOneCell
@@ -1164,6 +1192,10 @@ public:
 
 	void setActiveCellCount(uint activeCellCount) {
 		allocPara_M.currentActiveCellCount = activeCellCount;
+	}
+
+	void setLeaderRank(uint leaderRank) {
+		allocPara_M.leaderRank = leaderRank;
 	}
 };
 

@@ -332,12 +332,24 @@ struct NodeAllocPara_M {
 	uint maxTotalNodeCount;
 	// @currentActiveCellCount represents number of cells that are currently active.
 	uint currentActiveCellCount;
+	uint leaderRank; // rank of the leader cell
 };
 
 struct SigptState {
 	uint ptState;
 	double locx;
 	double locy;
+};
+
+
+struct SigptStateV2 {
+	uint memIndex;
+	uint folRank;
+	double timeInit;
+	bool isActive;
+	double locx;
+	double locy;
+	double LIFETIME;
 };
 
 

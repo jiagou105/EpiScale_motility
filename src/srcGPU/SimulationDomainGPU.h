@@ -45,6 +45,7 @@ class SimulationDomainGPU {
 
 	std::vector<std::vector<PreT1State> > preT1Vec;
 	std::vector<SigptState> sigPtVec;
+	std::vector<SigptStateV2> sigPtVecV2;
 
 	std::set<int> t1CellSet;
 	std::vector<double> cellColorVec;
@@ -101,6 +102,7 @@ class SimulationDomainGPU {
 	void outputVtkGivenCellColor(std::string scriptNameBase, int rank,
 			AnimationCriteria aniCri, std::vector<double>& cellColorVec, std::vector<double> & cellsPerimeter, std::vector<double> & cellsDppLevel);  //AliE
 	void additionalSimuDomainOutput(VtkAnimationData& aniData);
+	void additionalSimuDomainOutputV2(VtkAnimationData& aniData);
 	std::vector<double> processT1Color();
 	std::vector<double> processPolySideColor(std::vector<double> & cellsPerimeter, std::vector<double> & cellsDppLevel); //AliE
 
@@ -180,7 +182,7 @@ public:
 
 	void performAblation(AblationEvent &ablEvent);
 
-	CellsStatsData outputPolyCountData();
+	CellsStatsData outputPolyCountData(double dt);
 
 	void processT1Info(int maxStepTraceBack, CellsStatsData &polyData);
 };
