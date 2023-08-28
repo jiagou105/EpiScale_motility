@@ -789,6 +789,9 @@ void SceCells::initCellInfoVecs_M() {
 	cellInfoVecs.cellPolarY.resize(allocPara_m.maxCellCount, 0.0);
 	cellInfoVecs.cellPolarAngle.resize(allocPara_m.maxCellCount, 0.0);
 	cellInfoVecs.cellRadius.resize(allocPara_m.maxCellCount, 0.0); // avg distance between cell center to membrane nodes
+
+	// add the activation level of cells
+	cellInfoVecs.activationLevel.resize(allocPara_m.maxCellCount, 0);
     std::cout << "finished " << std::endl;
 }
 
@@ -1551,6 +1554,7 @@ void SceCells::runAllCellLogicsDisc_M(double dt, double Damp_Coef, double InitTi
 
 	std::cout << "     *** 2 ***" << endl;
 	std::cout.flush();
+	// updateActivationLevel();
 	applySceCellDisc_M();
 	updateCellPolar(); // comment out start for no cell motion
 	calSceCellMyosin();
@@ -5843,6 +5847,45 @@ void SceCells::calSceCellMyosin() {
 
 
 
+void SceCells::updateActivationLevel() {
+	uint activeCellCount = allocPara_m.currentActiveCellCount;
+	uint maxMemNodePerCell = allocPara_m.maxMembrNodePerCell;
+	uint maxNodePerCell = allocPara_m.maxAllNodePerCell;
+    double* nodeLocXAddr = thrust::raw_pointer_cast(
+            &(nodes->getInfoVecs().nodeLocX[0]));
+    double* nodeLocYAddr = thrust::raw_pointer_cast(
+            &(nodes->getInfoVecs().nodeLocY[0]));
+    bool* nodeIsActiveAddr = thrust::raw_pointer_cast(
+            &(nodes->getInfoVecs().nodeIsActive[0])); // 
+ 	int* nodeAdhIdxAddr = thrust::raw_pointer_cast(
+            &(nodes->getInfoVecs().nodeAdhereIndex[0]));
+ 	uint* actLevelAddr = thrust::raw_pointer_cast(
+            &(cellInfoVecs.activationLevel[0]));
+
+	thrust::counting_iterator<uint> iBegin(0);
+	thrust::counting_iterator<uint> iEnd(activeCellCount); // make sure not iterate on inactive cells already 
+	thrust::transform(
+			thrust::make_zip_iterator(
+					thrust::make_tuple(iBegin,
+							cellInfoVecs.activeMembrNodeCounts.begin(),
+							cellInfoVecs.activationLevel.begin(),
+							cellInfoVecs.cell_Type.begin()
+							)),
+			thrust::make_zip_iterator(
+					thrust::make_tuple(
+							iEnd,
+							cellInfoVecs.activeMembrNodeCounts.begin() + activeCellCount,
+							cellInfoVecs.activationLevel.begin() + activeCellCount,
+							cellInfoVecs.cell_Type.begin() + activeCellCount
+							)),
+			cellInfoVecs.activationLevel.begin(),
+			applyActivationLevel(activeCellCount,maxMemNodePerCell,maxNodePerCell,nodeLocXAddr,nodeLocYAddr,nodeIsActiveAddr,nodeAdhIdxAddr,actLevelAddr));
+}
+
+
+
+
+
 
 
 
@@ -5897,32 +5940,36 @@ void SceCells::updateCellPolar() {
 	thrust::transform(
 			thrust::make_zip_iterator(
 					thrust::make_tuple(iBegin,
+							cellInfoVecs.activationLevel.begin(),
+							cellInfoVecs.cell_Type.begin(),
 							cellInfoVecs.centerCoordX.begin(),
 							cellInfoVecs.centerCoordY.begin(),
 							cellInfoVecs.cellRadius.begin(),
-							cellInfoVecs.cellPolarAngle.begin(),
-							cellInfoVecs.cell_Type.begin() 
+							cellInfoVecs.cellPolarAngle.begin()
 							)),
 			thrust::make_zip_iterator(
 					thrust::make_tuple(
 							iEnd,
+							cellInfoVecs.activationLevel.begin() + activeCellCount,
+							cellInfoVecs.cell_Type.begin() + activeCellCount,
 							cellInfoVecs.centerCoordX.begin() + activeCellCount,
 							cellInfoVecs.centerCoordY.begin() + activeCellCount,
 							cellInfoVecs.cellRadius.begin() + activeCellCount,
-							cellInfoVecs.cellPolarAngle.begin() + activeCellCount,
-							cellInfoVecs.cell_Type.begin() + activeCellCount
+							cellInfoVecs.cellPolarAngle.begin() + activeCellCount
 							)),
 			cellInfoVecs.cellPolarAngle.begin(),
 			updateCellFilop(seed, ddt, timeNow, 
 			cellFilopXAddr,cellFilopYAddr,cellFilopAngleAddr,cellFilopIsActiveAddr,
 			cellFilopBirthTimeAddr,activeCellCount,cellCenterXAddr,cellCenterYAddr,cellRadiusAddr,
 			cellActiveFilopCountsAddr,maxMemNodePerCell,maxNodePerCell,nodeLocXAddr,nodeLocYAddr,nodeIsActiveAddr,nodeAdhIdxAddr));
+	/*
 	for (uint i=0;i<activeCellCount*5;i++){
 		double tempAngle = cellInfoVecs.cellFilopAngle[i];
 		if (tempAngle !=0 ){
         cout << "Filop " << i << " has angle " << tempAngle << endl;
 		}
 	}
+	*/
 }
 
 

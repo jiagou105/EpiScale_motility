@@ -1218,13 +1218,61 @@ struct updateCellMyosin: public thrust::unary_function<UUDDUUDDi, double> {
 
 
 
+struct applyActivationLevel: public thrust::unary_function<UUUI, double> {
+	uint _activeCellCount;
+	uint _maxMemNodePerCell;
+	uint _maxNodePerCell;
+	double* _locXAddr;
+	double* _locYAddr;
+	bool* _isActiveAddr;
+	int* _nodeAdhereIndexAddr;
+	uint* _actLevelAddr;
+	// double _grthPrgrCriVal_M;
+	// comment prevents bad formatting issues of __host__ and __device__ in Nsight
+	__host__ __device__ applyActivationLevel(
+			uint activeCellCount, uint maxMemNodePerCell, uint maxNodePerCell, double* locXAddr, double* locYAddr, 
+			bool* isActiveAddr, int* nodeAdhereIndexAddr, uint* actLevelAddr) :
+			_activeCellCount(activeCellCount), _maxMemNodePerCell(maxMemNodePerCell),_maxNodePerCell(maxNodePerCell), _locXAddr(locXAddr), _locYAddr(locYAddr), 
+			_isActiveAddr(isActiveAddr), _nodeAdhereIndexAddr(nodeAdhereIndexAddr), _actLevelAddr(actLevelAddr){
+	}
+	// comment prevents bad formatting issues of __host__ and __device__ in Nsight
+	__device__ double operator()(const UUUI &cData) const {
+		uint cellRank = thrust::get<0>(cData);
+		uint curActMembrNodeCount = thrust::get<1>(cData);
+		uint curActLevel = thrust::get<2>(cData);
+		int cell_Type = thrust::get<3>(cData);
+
+
+		uint intnlIndxMemBegin = cellRank * _maxNodePerCell;
+		uint otherNodeRank, otherCellRank;
+		if (cell_Type==1){
+			curActLevel = 1;
+			return curActLevel;
+		}
+		if (curActLevel==0){ // no attachment with other cells before
+			for (uint tempNodeRank=intnlIndxMemBegin; tempNodeRank<intnlIndxMemBegin+curActMembrNodeCount;tempNodeRank++){
+				otherNodeRank = _nodeAdhereIndexAddr[tempNodeRank];
+				otherCellRank = otherNodeRank/_maxNodePerCell;
+				if (_actLevelAddr[otherCellRank]>0){curActLevel = curActLevel+1;}
+			}
+		} // else {}: for future version, add an else condition such that we can update the activation level if a cell is isolated 
+		return curActLevel;
+	}
+};
+
+
+
+
+
+
+
 
 
 
 
 
 // JG050823
-struct updateCellFilop: public thrust::unary_function<UiDDDDi, double> {
+struct updateCellFilop: public thrust::unary_function<UUIDDDD, double> {
 	uint _seed;
 	double _timeStep;
 	double _timeNow;
@@ -1257,13 +1305,15 @@ struct updateCellFilop: public thrust::unary_function<UiDDDDi, double> {
 			_maxMemNodePerCell(maxMemNodePerCell),_maxNodePerCell(maxNodePerCell), _locXAddr(locXAddr), _locYAddr(locYAddr), _isActiveAddr(isActiveAddr), _nodeAdhereIndexAddr(nodeAdhereIndexAddr){
 	}
 	// comment prevents bad formatting issues of __host__ and __device__ in Nsight
-	__device__ double operator()(const UiDDDDi &cData) const {
+	__device__ double operator()(const UUIDDDD &cData) const {
 		uint cellRank = thrust::get<0>(cData);
-		double cell_CenterX = thrust::get<1>(cData);
-        double cell_CenterY = thrust::get<2>(cData);
-		double cell_Radius = thrust::get<3>(cData);
-		double cellAngle = thrust::get<4>(cData);
-		int cell_Type = thrust::get<5>(cData);
+		uint curActLevel = thrust::get<1>(cData);
+		int cell_Type = thrust::get<2>(cData);
+		double cell_CenterX = thrust::get<3>(cData);
+        double cell_CenterY = thrust::get<4>(cData);
+		double cell_Radius = thrust::get<5>(cData);
+		double cellAngle = thrust::get<6>(cData);
+
 		
 		uint maxFilopPerCell = 5;
 		thrust::default_random_engine rng(_seed);
@@ -1289,7 +1339,9 @@ struct updateCellFilop: public thrust::unary_function<UiDDDDi, double> {
 		double randNoiseAngle = u01(rng)*3.14159;
 		// double PI = acos(-1.0);
 		uint nodeRank;
-		
+		double probNewFilop = 0.00001;
+		if (curActLevel>0){probNewFilop *= 2;}
+
 		if (_timeNow < 55800.0) {
 			return cellAngle;
 			}
@@ -1317,7 +1369,7 @@ struct updateCellFilop: public thrust::unary_function<UiDDDDi, double> {
 				} else {
 					// else if this slot does not have an active filopodia
 					randomBirth = u01(rng)/10.0;
-					if (randomBirth<0.00001){ // probability of a new filopodia can grow 
+					if (randomBirth<probNewFilop){ // probability of a new filopodia can grow 
 						_cellFilopIsActiveAddr[filopIndex] = true;
 						randomAngle = u01(rng);
 						// randomAngle = randomAngle*2.0*PI;
@@ -3770,6 +3822,8 @@ struct CellInfoVecs {
 	thrust::device_vector<double> cellPolarY;
 	thrust::device_vector<double> cellPolarAngle;
 	thrust::device_vector<double> cellRadius;
+
+	thrust::device_vector<uint> activationLevel;
 };
 
 struct CellNodeInfoVecs {
@@ -4131,6 +4185,8 @@ class SceCells {
 	void distributeIsActiveInfo();
 
 	void applyMemForce_M();
+
+	void updateActivationLevel();
 
 	void applySceCellDisc_M();
 

@@ -47,7 +47,7 @@ typedef thrust::tuple<double, uint> DUi;
 typedef thrust::tuple<double, uint, double, double> DUiDD;
 typedef thrust::tuple<uint, double, double,double> UiDDD;
 typedef thrust::tuple<uint, double, double,double, double> UiDDDD;
-typedef thrust::tuple<uint, double, double,double, double, int> UiDDDDi;
+typedef thrust::tuple<uint, uint, int, double, double,double, double> UUIDDDD;
 typedef thrust::tuple<uint, double, double,double, double, int, uint> UiDDDDiU;
 typedef thrust::tuple<double, uint, double, double,double> DUiDDD;  //Ali 
 typedef thrust::tuple<bool, double> BoolD;
@@ -77,6 +77,7 @@ typedef thrust::tuple<uint, uint> Tuint2;
 typedef thrust::tuple<uint, uint, uint> Tuint3;
 typedef thrust::tuple<uint, uint, uint, double, double, double> Tuuuddd;
 typedef thrust::tuple<uint, uint, uint, double, double> Tuuudd;
+typedef thrust::tuple<uint, uint, uint, int> UUUI;
 
 // special datatype required for Thrust minmax element function.
 typedef thrust::pair<thrust::device_vector<int>::iterator,
