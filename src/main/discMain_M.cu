@@ -78,6 +78,10 @@ void updateDivThres(double& curDivThred, uint& i, double& curTime,  //Ali
 	curDivThred = divThreshold ; // not active for now
 }
 
+
+
+
+
 int main(int argc, char* argv[]) {
 	// initialize random seed.
 	srand(time(NULL));
@@ -138,7 +142,7 @@ int main(int argc, char* argv[]) {
        std:: string FileName2= "StressStrain.CSV" ; 
 	uint aniFrame = 0;
 	// main simulation steps.
-       bool FirstData=false ; 
+       bool FirstData=true ; 
 	for (uint i = 0; i <= (uint) (mainPara.totalTimeSteps); i++) {
 		if (i % mainPara.aniAuxVar == 0) {
 			std::cout << "substep 1 " << std::endl;

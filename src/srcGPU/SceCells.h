@@ -125,6 +125,18 @@ bool isInsideCell(double xPos, double yPos, uint intnlIndxMemBegin, uint activeM
 __device__
 double Angle2D(double x1, double y1, double x2, double y2);
 
+__device__
+void handleAdhesionForceCell_M(int& adhereIndex, double& xPos, double& yPos,
+		double& curAdherePosX, double& curAdherePosY, double& xRes,
+		double& yRes, double& alpha, uint& curActLevel);
+
+__device__
+double getMitoticAdhCoefCell(double& growProg, double& growProgNeigh);
+
+__device__
+double computeDistCell2D(double &xPos, double &yPos, double &xPos2, double &yPos2);
+
+
 /**
  * Functor for divide operation.
  * @param dividend divisor for divide operator.
@@ -841,6 +853,57 @@ struct AddMembrBend: public thrust::unary_function<BendData, CVec2> {
 	}
 };
 
+
+
+
+
+
+struct ApplyAdhCell: public thrust::unary_function<BUUIDD, CVec2> {
+    double* _nodeLocXArrAddr;
+    double* _nodeLocYArrAddr;
+    double* _nodeGrowProAddr;
+// comment prevents bad formatting issues of __host__ and __device__ in Nsight
+    __host__ __device__
+    ApplyAdhCell(double* nodeLocXArrAddr, double* nodeLocYArrAddr, double* nodeGrowProAddr) :
+            _nodeLocXArrAddr(nodeLocXArrAddr), _nodeLocYArrAddr(nodeLocYArrAddr), _nodeGrowProAddr(nodeGrowProAddr) {
+    }
+    __device__
+    CVec2 operator()(const BUUIDD& adhInput) const {
+        bool isActive = thrust::get<0>(adhInput);
+        uint nodeIndx = thrust::get<1>(adhInput);
+		uint curActLevel = thrust::get<2>(adhInput);
+		int adhIndx = thrust::get<3>(adhInput);
+        double oriVelX = thrust::get<4>(adhInput);
+        double oriVelY = thrust::get<5>(adhInput);
+        double growProg = _nodeGrowProAddr[nodeIndx];
+        double growProgNeigh = _nodeGrowProAddr[adhIndx];
+        //bool adhSkipped = false;  
+        double alpha = getMitoticAdhCoefCell(growProg, growProgNeigh);//to adjust the mitotic values of stiffness
+
+
+        if (adhIndx == -1 || !isActive) {
+            return thrust::make_tuple(oriVelX, oriVelY);
+        } else {
+            double locX = _nodeLocXArrAddr[nodeIndx];
+            double locY = _nodeLocYArrAddr[nodeIndx];
+            double adhLocX = _nodeLocXArrAddr[adhIndx];
+            double adhLocY = _nodeLocYArrAddr[adhIndx];
+            handleAdhesionForceCell_M(adhIndx, locX, locY, adhLocX, adhLocY,
+                    oriVelX, oriVelY, alpha,curActLevel);
+            return thrust::make_tuple(oriVelX, oriVelY);
+        }
+    }
+};
+
+
+
+
+
+
+
+
+
+
 //Ali modidfied for cell pressure calculation
 struct AddSceCellForce: public thrust::unary_function<CellData, CVec4> {
 	uint _maxNodePerCell;
@@ -1249,7 +1312,7 @@ struct applyActivationLevel: public thrust::unary_function<UUUI, double> {
 			curActLevel = 1;
 			return curActLevel;
 		}
-		if (curActLevel==0){ // no attachment with other cells before
+		if (curActLevel==0){ // no adhesion with other active cells before
 			for (uint tempNodeRank=intnlIndxMemBegin; tempNodeRank<intnlIndxMemBegin+curActMembrNodeCount;tempNodeRank++){
 				otherNodeRank = _nodeAdhereIndexAddr[tempNodeRank];
 				otherCellRank = otherNodeRank/_maxNodePerCell;
@@ -1340,7 +1403,7 @@ struct updateCellFilop: public thrust::unary_function<UUIDDDD, double> {
 		// double PI = acos(-1.0);
 		uint nodeRank;
 		double probNewFilop = 0.00001;
-		if (curActLevel>0){probNewFilop *= 2;}
+		if (curActLevel>0){probNewFilop = 0.00001;}
 
 		if (_timeNow < 55800.0) {
 			return cellAngle;
@@ -4187,6 +4250,10 @@ class SceCells {
 	void applyMemForce_M();
 
 	void updateActivationLevel();
+
+	void applyMembrAdhCell_M();
+
+	void copyExtForcesCell_M();
 
 	void applySceCellDisc_M();
 

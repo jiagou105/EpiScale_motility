@@ -22,6 +22,11 @@ __constant__ double sceII_M[5];
 __constant__ double sceIIDiv_M[5];
 __constant__ double grthPrgrCriEnd_M;
 __constant__ double F_Ext_Incline_M2 ;  //Ali
+__constant__ double maxAdhBondLen_M;
+__constant__ double minAdhBondLen_M;
+__constant__ double bondStiff_M;
+__constant__ double bondStiff_Mitotic;
+__constant__ double growthPrgrCriVal_M;
 
 //Ali &  Abu June 30th
 __device__
@@ -166,6 +171,59 @@ double Angle2D(double x1, double y1, double x2, double y2)
 
    return(dtheta);
 }
+
+
+
+__device__
+void handleAdhesionForceCell_M(int& adhereIndex, double& xPos, double& yPos,
+		double& curAdherePosX, double& curAdherePosY, double& xRes,
+		double& yRes, double& alpha, uint& curActLevel) {
+	double curLen = computeDistCell2D(xPos, yPos, curAdherePosX, curAdherePosY);
+	if (curLen > maxAdhBondLen_M) {
+		adhereIndex = -1;
+		return;
+	} else {
+		if (curLen > minAdhBondLen_M) {
+			double forceValue = (curLen - minAdhBondLen_M) * (bondStiff_M * alpha + bondStiff_Mitotic * (1.0-alpha) );
+			// if (curActLevel>0){forceValue = forceValue*1;}
+			xRes = xRes + forceValue * (curAdherePosX - xPos) / curLen;
+			yRes = yRes + forceValue * (curAdherePosY - yPos) / curLen;
+		}
+	}
+}
+
+
+
+
+__device__
+double getMitoticAdhCoefCell(double& growProg, double& growProgNeigh){
+    double alpha = 1.0;
+
+
+    if (growProg > growthPrgrCriVal_M && growProgNeigh > growthPrgrCriVal_M){
+            alpha = 1.0 - ( 0.5*(growProg+growProgNeigh)-growthPrgrCriVal_M )/(1.0 - growthPrgrCriVal_M);
+        //  adhSkipped = true;
+        }
+    else if (growProg > growthPrgrCriVal_M){
+            alpha = 1.0 - (growProg-growthPrgrCriVal_M)/(1.0 - growthPrgrCriVal_M);
+        //  adhSkipped = true;
+        }
+    else if (growProgNeigh > growthPrgrCriVal_M){
+            alpha = 1.0 - (growProgNeigh-growthPrgrCriVal_M)/(1.0 - growthPrgrCriVal_M);
+        //  adhSkipped = true;
+        }
+
+
+    return alpha;
+}
+
+
+__device__
+double computeDistCell2D(double &xPos, double &yPos, double &xPos2, double &yPos2) {
+	return sqrt(
+			(xPos - xPos2) * (xPos - xPos2) + (yPos - yPos2) * (yPos - yPos2));
+}
+
 
 void SceCells::distributeBdryIsActiveInfo() {
 	thrust::fill(nodes->getInfoVecs().nodeIsActive.begin(),
@@ -1554,12 +1612,15 @@ void SceCells::runAllCellLogicsDisc_M(double dt, double Damp_Coef, double InitTi
 
 	std::cout << "     *** 2 ***" << endl;
 	std::cout.flush();
+
+	// applyMembrAdhCell_M(); // moved from node 
+	// copyExtForcesCell_M(); // moved from node
 	// updateActivationLevel();
 	applySceCellDisc_M();
 	updateCellPolar(); // comment out start for no cell motion
 	calSceCellMyosin();
 	// applySceCellMyosin();
-	applySigForce(sigPtVecV2);
+	// applySigForce(sigPtVecV2);
 	calSubAdhForce(); // comment out end 
 	std::cout << "     *** 3 ***" << endl;
 	std::cout.flush();
@@ -4508,7 +4569,24 @@ void SceCells::copyToGPUConstMem() {
 	cudaMemcpyToSymbol(bendCoeff_Mitotic, &membrPara.membrBendCoeff_Mitotic, sizeof(double));//AAMIRI
 
 	cudaMemcpyToSymbol(F_Ext_Incline_M2, &membrPara.F_Ext_Incline, sizeof(double)); //Ali
-      
+	double maxAdhBondLenCPU_M = globalConfigVars.getConfigValue("MaxAdhBondLen").toDouble();
+    cudaMemcpyToSymbol(maxAdhBondLen_M, &maxAdhBondLenCPU_M,
+            sizeof(double));
+
+
+    double minAdhBondLen =
+            globalConfigVars.getConfigValue("MinAdhBondLen").toDouble();
+    double bondStiff = globalConfigVars.getConfigValue("BondStiff").toDouble();
+    double bondStiff_Mitotic = globalConfigVars.getConfigValue("BondStiff_Mitotic").toDouble();
+    double growthPrgrCriVal = globalConfigVars.getConfigValue(
+            "GrowthPrgrCriVal").toDouble();
+
+    cudaMemcpyToSymbol(minAdhBondLen_M, &minAdhBondLen,
+            sizeof(double));
+    cudaMemcpyToSymbol(bondStiff_M, &bondStiff, sizeof(double));
+    cudaMemcpyToSymbol(bondStiff_Mitotic, &bondStiff_Mitotic, sizeof(double));
+    cudaMemcpyToSymbol(growthPrgrCriVal_M, &growthPrgrCriVal, sizeof(double));
+
 	uint maxAllNodePerCellCPU = globalConfigVars.getConfigValue(
 			"MaxAllNodeCountPerCell").toInt();
 	uint maxMembrNodePerCellCPU = globalConfigVars.getConfigValue(
@@ -5470,6 +5548,59 @@ __device__ double calBendMulti_Mitotic(double& angle, uint activeMembrCt, double
 		return (angle - equAngle)*(bendCoeff + (bendCoeff_Mitotic - bendCoeff) * (progress - mitoticCri)/(1.0 - mitoticCri));
 	}
 }
+
+
+
+
+void SceCells::applyMembrAdhCell_M() {
+    thrust::counting_iterator<uint> iBegin(0);
+    totalNodeCountForActiveCells = allocPara_m.currentActiveCellCount
+			* allocPara_m.maxAllNodePerCell;
+	uint maxAllNodePerCell = allocPara_m.maxAllNodePerCell;
+    double* nodeLocXAddress = thrust::raw_pointer_cast(
+			&(nodes->getInfoVecs().nodeLocX[0]));
+    double* nodeLocYAddress = thrust::raw_pointer_cast(
+			&(nodes->getInfoVecs().nodeLocY[0]));
+    double* nodeGrowProAddr = thrust::raw_pointer_cast(
+            &(nodes->getInfoVecs().nodeGrowPro[0]));
+
+    thrust::transform(
+            thrust::make_zip_iterator(
+                    thrust::make_tuple(nodes->getInfoVecs().nodeIsActive.begin(),iBegin,
+                            thrust::make_permutation_iterator(
+                                    cellInfoVecs.activationLevel.begin(),
+                                    make_transform_iterator(iBegin,
+                                            DivideFunctor(maxAllNodePerCell))),
+                            nodes->getInfoVecs().nodeAdhereIndex.begin(), 
+                            nodes->getInfoVecs().nodeVelX.begin(),
+                            nodes->getInfoVecs().nodeVelY.begin())),
+            thrust::make_zip_iterator(
+                    thrust::make_tuple(nodes->getInfoVecs().nodeIsActive.begin(),iBegin,
+                            thrust::make_permutation_iterator(
+                                    cellInfoVecs.activationLevel.begin(),
+                                    make_transform_iterator(iBegin,
+                                            DivideFunctor(maxAllNodePerCell))),
+                            nodes->getInfoVecs().nodeAdhereIndex.begin(), 
+                            nodes->getInfoVecs().nodeVelX.begin(),
+                            nodes->getInfoVecs().nodeVelY.begin())) + totalNodeCountForActiveCells,
+            thrust::make_zip_iterator(
+                    thrust::make_tuple(nodes->getInfoVecs().nodeVelX.begin(),
+                            nodes->getInfoVecs().nodeVelY.begin())),
+            ApplyAdhCell(nodeLocXAddress, nodeLocYAddress, nodeGrowProAddr));
+}
+
+
+void SceCells::copyExtForcesCell_M(){
+
+    thrust::copy(nodes->getInfoVecs().nodeVelX.begin(), nodes->getInfoVecs().nodeVelX.end(),
+            nodes->getInfoVecs().nodeExtForceX.begin());
+
+    thrust::copy(nodes->getInfoVecs().nodeVelY.begin(), nodes->getInfoVecs().nodeVelY.end(),
+            nodes->getInfoVecs().nodeExtForceY.begin());
+
+}
+
+
 
 void SceCells::applySceCellDisc_M() {
 	totalNodeCountForActiveCells = allocPara_m.currentActiveCellCount

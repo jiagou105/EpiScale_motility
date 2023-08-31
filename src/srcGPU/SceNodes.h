@@ -56,6 +56,7 @@ typedef thrust::tuple<bool, int> BoolInt;
 typedef thrust::tuple<uint, bool> UiB;
 typedef thrust::tuple<bool, uint, double> BoolUID;
 typedef thrust::tuple<bool, int, int, double, double> BoolIUiDD;
+typedef thrust::tuple<bool, uint, uint, int, double, double> BUUIDD;
 typedef thrust::tuple<bool, uint, double, double, uint, double> BoolUIDDUID;
 typedef thrust::tuple<bool, uint, double, double, uint, uint, bool, double> BoolUIDDUIUIBoolD;//AAMIRI
 typedef thrust::tuple<uint, uint, bool, double> UiUiBD;//AAMIRI
@@ -508,13 +509,17 @@ void handleSceForceNodesDisc_M(uint& nodeRank1, uint& nodeRank2, double& xPos,
 		double* _nodeLocXAddress, double* _nodeLocYAddress,
 		double* _nodeGrowProAddr);
 
+
 __device__
 void handleAdhesionForce_M(int& adhereIndex, double& xPos, double& yPos,
 		double& curAdherePosX, double& curAdherePosY, double& xRes,
 		double& yRes, double& alpha);
 
+
+
 __device__
 double getMitoticAdhCoef(double& growProg, double& growProgNeigh);
+
 
 __device__
 void attemptToAdhere(bool& isSuccess, uint& index, double& dist,
@@ -716,6 +721,7 @@ struct AddSceForceBasic: public thrust::unary_function<Tuuuddd, CVec3> {
 	}
 };
 
+
 struct ApplyAdh: public thrust::unary_function<BoolIUiDD, CVec2> {
 	double* _nodeLocXArrAddr;
 	double* _nodeLocYArrAddr;
@@ -751,6 +757,9 @@ struct ApplyAdh: public thrust::unary_function<BoolIUiDD, CVec2> {
 		}
 	}
 };
+
+
+
 
 /**
  * calculate force in epithilum.

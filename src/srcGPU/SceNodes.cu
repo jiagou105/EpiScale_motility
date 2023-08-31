@@ -1813,6 +1813,7 @@ void attemptToAdhere(bool& isSuccess, uint& index, double& dist,
 	}
 }
 
+
 __device__
 void handleAdhesionForce_M(int& adhereIndex, double& xPos, double& yPos,
 		double& curAdherePosX, double& curAdherePosY, double& xRes,
@@ -1832,7 +1833,9 @@ void handleAdhesionForce_M(int& adhereIndex, double& xPos, double& yPos,
 }
 
 
+
 //Ali June 16
+
 __device__
 double getMitoticAdhCoef(double& growProg, double& growProgNeigh){
 	double alpha = 1.0;
@@ -1854,6 +1857,7 @@ double getMitoticAdhCoef(double& growProg, double& growProgNeigh){
 
 	return alpha;
 }
+
 
 __device__
 void calculateForceBetweenLinkNodes(double &xLoc, double &yLoc, double &zLoc,
@@ -2385,7 +2389,7 @@ void SceNodes::sceForcesDisc_M(double dt, std::vector<SigptStateV2>& sigPtVecV2)
 	cout << "     --- 2 ---" << endl;
 	cout.flush();
 	applySceForcesDisc_M(sigPtVecV2);
-	updateSigVec(sigPtVecV2);
+	// updateSigVec(sigPtVecV2);
 
 
 #ifdef DebugMode
@@ -2412,6 +2416,7 @@ void SceNodes::sceForcesDisc_M(double dt, std::vector<SigptStateV2>& sigPtVecV2)
 	<< elapsedTime2 << " " << elapsedTime3 << std::endl;
 #endif
 }
+
 
 double SceNodes::getMaxEffectiveRange() {
 	int simuTypeConfigValue =
@@ -2627,6 +2632,7 @@ void SceNodes::removeNodes(int cellRank, vector<uint> &removeSeq) {
 
 void SceNodes::processMembrAdh_M() {
 	keepAdhIndxCopyInHost_M();
+	// updateActivationLevel();
 	applyMembrAdh_M();
 	removeInvalidPairs_M();
 }
@@ -2656,6 +2662,7 @@ void SceNodes::removeInvalidPairs_M() {
 			AdjustAdh(nodeAdhIdxAddress));
 }
 
+
 void SceNodes::applyMembrAdh_M() {
 	thrust::counting_iterator<uint> iBegin(0);
 	uint maxTotalNode = allocPara_M.currentActiveCellCount
@@ -2681,6 +2688,7 @@ void SceNodes::applyMembrAdh_M() {
 							infoVecs.nodeVelY.begin())),
 			ApplyAdh(nodeLocXAddress, nodeLocYAddress, nodeGrowProAddr));
 }
+
 
 //AAMIRI
 void SceNodes::copyExtForces_M(){
