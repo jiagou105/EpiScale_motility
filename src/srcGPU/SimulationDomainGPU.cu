@@ -52,7 +52,7 @@ void SimulationDomainGPU::initializeNodes_M(std::vector<SceNodeType> &nodeTypes,
 	 * copy data from main system memory to GPU memory
 	 */
 	NodeAllocPara_M para = nodes.getAllocParaM();
-	para.currentActiveCellCount = initMembrNodeCountSize;
+	para.currentActiveCellCount = initMembrNodeCountSize; /// ??? why?
 	assert(
 			initNodesVec.size() / para.maxAllNodePerCell
 					== initMembrNodeCountSize);
@@ -256,6 +256,7 @@ void SimulationDomainGPU::outputVtkGivenCellColor(std::string scriptNameBase,
 	aniData.outputVtkAni(scriptNameBase, rank);
 	aniData.outputCellVtkAni(scriptNameBase, rank); // JG June 2023
 	aniData.outputCellPolarVtkAni(scriptNameBase, rank);
+	// aniData.outputCCAdhesionVtkAni(scriptNameBase, rank);
 	aniData.outputSigNodeVtkAni(scriptNameBase,rank);
 }
 

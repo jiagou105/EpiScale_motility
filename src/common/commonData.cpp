@@ -211,20 +211,26 @@ void VtkAnimationData::outputVtkAni(std::string scriptNameBase, int rank) { //ap
 	}
 	fs << std::endl;
 
-	fs << "SCALARS dppLevel  float" << endl;
+	fs << "SCALARS dppLevel float" << endl;
 	fs << "LOOKUP_TABLE default" << endl;
 	for (uint i = 0; i < pointsAniData.size(); i++) {
 		fs << pointsAniData[i].dppLevel1 << endl;
 	}
 	fs << std::endl;
 
-	fs << "SCALARS myoLevel  float" << endl;
+	fs << "SCALARS myoLevel float" << endl;
 	fs << "LOOKUP_TABLE default" << endl;
 	for (uint i = 0; i < pointsAniData.size(); i++) {
 		fs << pointsAniData[i].myoLevel1 << endl;
 	}
 	fs << std::endl;
 
+	fs << "SCALARS actLevel float" << endl;
+	fs << "LOOKUP_TABLE default" << endl;
+	for (uint i = 0; i < pointsAniData.size(); i++) {
+		fs << pointsAniData[i].actLevel1 << endl;
+	}
+	fs << std::endl;
 
 	fs << "SCALARS adhSiteCount int" << endl;
 	fs << "LOOKUP_TABLE default" << endl;
@@ -339,6 +345,43 @@ void VtkAnimationData::outputCellPolarVtkAni(std::string scriptNameBase, int ran
 }
 
 
+
+
+
+
+void VtkAnimationData::outputCCAdhesionVtkAni(std::string scriptNameBase, int rank) { 
+	std::stringstream ss;
+	ss << std::setw(5) << std::setfill('0') << rank;
+	std::string scriptNameRank = ss.str();
+	std::string vtkFileName = scriptNameBase + "_ccadhesion" + scriptNameRank + ".vtk";
+	std::cout << "start to create vtk file" << vtkFileName << std::endl;
+	std::ofstream fs;
+	fs.open(vtkFileName.c_str());
+	fs << "# vtk DataFile Version 3.0" << std::endl;
+	fs << "Lines and points representing subcelluar element cells "
+			<< std::endl;
+	fs << "ASCII" << std::endl;
+	fs << std::endl;
+	fs << "DATASET UNSTRUCTURED_GRID" << std::endl;
+	fs << "POINTS " << pointsAniCCData.size() << " float" << std::endl; // (active_num_filop+1)*num_cell points 
+	for (uint i = 0; i < pointsAniCCData.size(); i++) {
+		fs << pointsAniCCData[i].ccAdhesion.x << " " << pointsAniCCData[i].ccAdhesion.y << " "
+				<< pointsAniCCData[i].ccAdhesion.z << std::endl;
+	}
+
+	fs << std::endl;
+	fs << "CELLS " << linksAniCCData.size() << " " << 3 * linksAniCCData.size()
+			<< std::endl;
+	for (uint i = 0; i < linksAniCCData.size(); i++) {
+		fs << 2 << " " << linksAniCCData[i].node1Index << " "
+				<< linksAniCCData[i].node2Index << std::endl;
+	}
+	fs << "CELL_TYPES " << linksAniCCData.size() << endl;
+	for (uint i = 0; i < linksAniCCData.size(); i++) {
+		fs << "3" << endl;
+	}
+	fs.close();
+}
 
 
 

@@ -1355,17 +1355,19 @@ struct updateCellFilop: public thrust::unary_function<UUIDDDD, double> {
 	double* _locYAddr;
 	bool* _isActiveAddr;
 	int* _nodeAdhereIndexAddr;
+	uint* _nodeActLevelAddr;
 	// double _grthPrgrCriVal_M;
 	// comment prevents bad formatting issues of __host__ and __device__ in Nsight
 	__host__ __device__ updateCellFilop(uint seed, double timeStep, double timeNow, 
 			double* cellFilopXAddr, double* cellFilopYAddr, double* cellFilopAngleAddr, bool* cellFilopIsActiveAddr, double* cellFilopBirthTimeAddr,
 			uint activeCellCount, double* cellCenterXAddr, double* cellCenterYAddr, double* cellRadiusAddr, uint* cellActiveFilopCountsAddr,
-			uint maxMemNodePerCell, uint maxNodePerCell, double* locXAddr, double* locYAddr, bool* isActiveAddr, int* nodeAdhereIndexAddr) :
+			uint maxMemNodePerCell, uint maxNodePerCell, double* locXAddr, double* locYAddr, bool* isActiveAddr, int* nodeAdhereIndexAddr, uint* nodeActLevelAddr) :
 			_seed(seed), _timeStep(timeStep), _timeNow(timeNow),
 			_cellFilopXAddr(cellFilopXAddr), _cellFilopYAddr(cellFilopYAddr), _cellFilopAngleAddr(cellFilopAngleAddr),
 			_cellFilopIsActiveAddr(cellFilopIsActiveAddr), _cellFilopBirthTimeAddr(cellFilopBirthTimeAddr), _activeCellCount(activeCellCount), 
 			_cellCenterXAddr(cellCenterXAddr), _cellCenterYAddr(cellCenterYAddr), _cellRadiusAddr(cellRadiusAddr), _cellActiveFilopCountsAddr(cellActiveFilopCountsAddr),
-			_maxMemNodePerCell(maxMemNodePerCell),_maxNodePerCell(maxNodePerCell), _locXAddr(locXAddr), _locYAddr(locYAddr), _isActiveAddr(isActiveAddr), _nodeAdhereIndexAddr(nodeAdhereIndexAddr){
+			_maxMemNodePerCell(maxMemNodePerCell),_maxNodePerCell(maxNodePerCell), _locXAddr(locXAddr), _locYAddr(locYAddr), _isActiveAddr(isActiveAddr), 
+			_nodeAdhereIndexAddr(nodeAdhereIndexAddr), _nodeActLevelAddr(nodeActLevelAddr) {
 	}
 	// comment prevents bad formatting issues of __host__ and __device__ in Nsight
 	__device__ double operator()(const UUIDDDD &cData) const {
@@ -1395,6 +1397,7 @@ struct updateCellFilop: public thrust::unary_function<UUIDDDD, double> {
 		// uint intnlIndxMemBegin = cellRank * _maxNodePerCell;
 		uint filopIndxBegin = cellRank * maxFilopPerCell;
 		uint filopIndxEnd = filopIndxBegin + maxFilopPerCell;
+		uint intnlIndxMemBegin = cellRank * _maxNodePerCell;
 
 		double filopTipX;
 		double filopTipY;
@@ -1403,7 +1406,8 @@ struct updateCellFilop: public thrust::unary_function<UUIDDDD, double> {
 		// double PI = acos(-1.0);
 		uint nodeRank;
 		double probNewFilop = 0.00001;
-		if (curActLevel>0){probNewFilop = 0.00001;}
+		// if (curActLevel>0){probNewFilop = 0.00001;}
+		if (_nodeActLevelAddr[intnlIndxMemBegin]>0){probNewFilop = 0.00002;}
 
 		if (_timeNow < 55800.0) {
 			return cellAngle;

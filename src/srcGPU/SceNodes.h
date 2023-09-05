@@ -513,7 +513,7 @@ void handleSceForceNodesDisc_M(uint& nodeRank1, uint& nodeRank2, double& xPos,
 __device__
 void handleAdhesionForce_M(int& adhereIndex, double& xPos, double& yPos,
 		double& curAdherePosX, double& curAdherePosY, double& xRes,
-		double& yRes, double& alpha);
+		double& yRes, double& alpha, uint& curActLevel);
 
 
 
@@ -598,16 +598,17 @@ struct AddForceDisc_M: public thrust::unary_function<Tuuudd, CVec2> {
 	uint _leaderRank;
 	SigptStateV2* _sigPtAddr;
 	double _timeNow;
+	uint* _curActLevelAddr;
 	// comment prevents bad formatting issues of __host__ and __device__ in Nsight
 	__host__ __device__
 	AddForceDisc_M(uint* valueAddress, double* nodeLocXAddress,
 			double* nodeLocYAddress, int* nodeAdhereIndex, int* membrIntnlIndex,
-			double* nodeGrowProAddr, uint maxNodePerOneCell, uint leaderRank, SigptStateV2* sigPtAddr, double timeNow) :
+			double* nodeGrowProAddr, uint maxNodePerOneCell, uint leaderRank, SigptStateV2* sigPtAddr, double timeNow, uint* curActLevelAddr) :
 			_extendedValuesAddress(valueAddress), _nodeLocXAddress(
 					nodeLocXAddress), _nodeLocYAddress(nodeLocYAddress), _nodeAdhereIndex(
 					nodeAdhereIndex), _membrIntnlIndex(membrIntnlIndex), _nodeGroProAddr(
 					nodeGrowProAddr), _maxNodePerOneCell(maxNodePerOneCell), _leaderRank(leaderRank), 
-					_sigPtAddr(sigPtAddr), _timeNow(timeNow) {
+					_sigPtAddr(sigPtAddr), _timeNow(timeNow), _curActLevelAddr(curActLevelAddr) {
 	}
 	__device__
 	CVec2 operator()(const Tuuudd &u3d2) const {
@@ -615,7 +616,7 @@ struct AddForceDisc_M: public thrust::unary_function<Tuuudd, CVec2> {
 		double yRes = 0.0;
 
 		uint begin = thrust::get<0>(u3d2);
-		uint end = thrust::get<1>(u3d2);
+		uint end = thrust::get<1>(u3d2); // meaning of this???
 		uint myValue = thrust::get<2>(u3d2);
 		double xPos = thrust::get<3>(u3d2);
 		double yPos = thrust::get<4>(u3d2);
@@ -626,6 +627,9 @@ struct AddForceDisc_M: public thrust::unary_function<Tuuudd, CVec2> {
         bool  Lennard_Jones =Is_Lennard_Jones() ; 
 		// compute the cell rank of the current node
 		uint cellRank = myValue/_maxNodePerOneCell;
+		if (cellRank == _leaderRank){
+				_curActLevelAddr[myValue] = 1;
+			}
 		_nodeAdhereIndex[myValue] = -1 ; 
 		for (uint i = begin; i < end; i++) {
 			uint nodeRankOther = _extendedValuesAddress[i];
@@ -651,6 +655,19 @@ struct AddForceDisc_M: public thrust::unary_function<Tuuudd, CVec2> {
 		}
 		if (isSuccess) {
 			_nodeAdhereIndex[myValue] = index; // membrane nodes on different cells 
+
+			// uint cellotherRank = index/_maxNodePerOneCell;
+			/*
+			if (_curActLevelAddr[myValue] > 0 || _curActLevelAddr[index] > 0 ){
+				_curActLevelAddr[myValue] = 1;
+				_curActLevelAddr[index] = 1;
+			}
+			*/
+			// if (_curActLevelAddr[myValue] > 0 ){
+			// 	_curActLevelAddr[index] = 1;
+			// }
+
+			/*
 			uint cellotherRank = index/_maxNodePerOneCell;
 			if (cellRank == _leaderRank){
 				uint sigPtNum = 30;
@@ -666,10 +683,62 @@ struct AddForceDisc_M: public thrust::unary_function<Tuuudd, CVec2> {
 				} 
 			}
 		}
+		*/
 		}
 		return thrust::make_tuple(xRes, yRes);
 	}
 };
+
+
+
+
+
+
+struct updateNodeCCadh: public thrust::unary_function<Int2, int> {
+	uint* _extendedValuesAddress;
+	double* _nodeLocXAddress;
+	double* _nodeLocYAddress;
+	int* _nodeAdhereIndex;
+	int* _membrIntnlIndex;
+	double* _nodeGroProAddr;
+	uint _maxNodePerOneCell;
+	uint _leaderRank;
+	double _timeNow;
+	uint* _curActLevelAddr;
+	// comment prevents bad formatting issues of __host__ and __device__ in Nsight
+	__host__ __device__
+	updateNodeCCadh(uint* valueAddress, double* nodeLocXAddress,
+			double* nodeLocYAddress, int* nodeAdhereIndex, int* membrIntnlIndex,
+			double* nodeGrowProAddr, uint maxNodePerOneCell, uint leaderRank, double timeNow, uint* curActLevelAddr) :
+			_extendedValuesAddress(valueAddress), _nodeLocXAddress(
+					nodeLocXAddress), _nodeLocYAddress(nodeLocYAddress), _nodeAdhereIndex(
+					nodeAdhereIndex), _membrIntnlIndex(membrIntnlIndex), _nodeGroProAddr(
+					nodeGrowProAddr), _maxNodePerOneCell(maxNodePerOneCell), _leaderRank(leaderRank), 
+					_timeNow(timeNow), _curActLevelAddr(curActLevelAddr) {
+	}
+	__device__
+	int operator()(const Int2 &u3d2) const {
+		int curNodeRank = thrust::get<0>(u3d2);
+		int otherNodeRank = thrust::get<1>(u3d2);
+
+
+		uint cellRank = curNodeRank/_maxNodePerOneCell;
+		// if (cellRank == _leaderRank){
+		//		_curActLevelAddr[curNodeRank] = 1;
+		//	}
+		if (otherNodeRank>-1){
+			if (_curActLevelAddr[curNodeRank] > 0 || _curActLevelAddr[otherNodeRank] > 0){
+				_curActLevelAddr[curNodeRank] = 1;
+				_curActLevelAddr[otherNodeRank] = 1;
+			} // else{
+		 //	_curActLevelAddr[otherNodeRank] = 0;
+		 // }
+		}
+		return otherNodeRank;
+	}
+};
+
+
 
 
 
@@ -722,7 +791,7 @@ struct AddSceForceBasic: public thrust::unary_function<Tuuuddd, CVec3> {
 };
 
 
-struct ApplyAdh: public thrust::unary_function<BoolIUiDD, CVec2> {
+struct ApplyAdh: public thrust::unary_function<BUUIDD, CVec2> {
 	double* _nodeLocXArrAddr;
 	double* _nodeLocYArrAddr;
 	double* _nodeGrowProAddr;
@@ -732,12 +801,13 @@ struct ApplyAdh: public thrust::unary_function<BoolIUiDD, CVec2> {
 			_nodeLocXArrAddr(nodeLocXArrAddr), _nodeLocYArrAddr(nodeLocYArrAddr), _nodeGrowProAddr(nodeGrowProAddr) {
 	}
 	__device__
-	CVec2 operator()(const BoolIUiDD& adhInput) const {
+	CVec2 operator()(const BUUIDD& adhInput) const {
 		bool isActive = thrust::get<0>(adhInput);
-		int adhIndx = thrust::get<1>(adhInput);
-		uint nodeIndx = thrust::get<2>(adhInput);
-		double oriVelX = thrust::get<3>(adhInput);
-		double oriVelY = thrust::get<4>(adhInput);
+		uint nodeIndx = thrust::get<1>(adhInput);
+		uint curActLevel = thrust::get<2>(adhInput); // the activation level of the current node 
+		int adhIndx = thrust::get<3>(adhInput);
+		double oriVelX = thrust::get<4>(adhInput);
+		double oriVelY = thrust::get<5>(adhInput);
 		double growProg = _nodeGrowProAddr[nodeIndx];
 		double growProgNeigh = _nodeGrowProAddr[adhIndx];
 		//bool adhSkipped = false;	
@@ -752,7 +822,7 @@ struct ApplyAdh: public thrust::unary_function<BoolIUiDD, CVec2> {
 			double adhLocX = _nodeLocXArrAddr[adhIndx];
 			double adhLocY = _nodeLocYArrAddr[adhIndx];
 			handleAdhesionForce_M(adhIndx, locX, locY, adhLocX, adhLocY,
-					oriVelX, oriVelY, alpha);
+					oriVelX, oriVelY, alpha, curActLevel);
 			return thrust::make_tuple(oriVelX, oriVelY);
 		}
 	}
@@ -913,6 +983,7 @@ public:
 	thrust::device_vector<double> subAdhLocY;
 	thrust::device_vector<bool> subAdhIsBound;
 
+	thrust::device_vector<uint> nodeActLevel; // activation level, recorded in the node level 
 };
 
 /**
@@ -1023,6 +1094,7 @@ class SceNodes {
 	void applySceForcesDisc();
 
 	void applySceForcesDisc_M(std::vector<SigptStateV2>& sigPtVecV2);
+	void adjustNodeCCAdh();
 	void updateSigVec(std::vector<SigptStateV2>& sigPtVecV2);
 
 	/**

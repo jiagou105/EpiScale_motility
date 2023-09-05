@@ -176,6 +176,7 @@ void SceNodes::readMechPara() {
 	}
 }
 
+// old code, not used 
 SceNodes::SceNodes(uint totalBdryNodeCount, uint maxProfileNodeCount,
 		uint maxCartNodeCount, uint maxTotalECMCount, uint maxNodeInECM,
 		uint maxTotalCellCount, uint maxNodeInCell, bool isStab) {
@@ -329,7 +330,7 @@ SceNodes::SceNodes(uint maxTotalCellCount, uint maxAllNodePerCell) {
 }
 
 void SceNodes::copyParaToGPUConstMem() {
-
+	/*
 	readMechPara();
 
 	cudaMemcpyToSymbol(sceInterPara, mechPara.sceInterParaCPU,
@@ -354,6 +355,7 @@ void SceNodes::copyParaToGPUConstMem() {
 	cudaMemcpyToSymbol(sceInterDiffPara, mechPara.sceInterDiffParaCPU,
 			5 * sizeof(double));
 	cudaMemcpyToSymbol(sceECMPara, mechPara.sceECMParaCPU, 5 * sizeof(double));
+	*/
 }
 
 void SceNodes::copyParaToGPUConstMem_M() {
@@ -1817,7 +1819,7 @@ void attemptToAdhere(bool& isSuccess, uint& index, double& dist,
 __device__
 void handleAdhesionForce_M(int& adhereIndex, double& xPos, double& yPos,
 		double& curAdherePosX, double& curAdherePosY, double& xRes,
-		double& yRes, double& alpha) {
+		double& yRes, double& alpha, uint& curActLevel) {
 	double curLen = computeDist2D(xPos, yPos, curAdherePosX, curAdherePosY);
 	if (curLen > maxAdhBondLen_M) {
 		adhereIndex = -1;
@@ -1825,6 +1827,7 @@ void handleAdhesionForce_M(int& adhereIndex, double& xPos, double& yPos,
 	} else {
 		if (curLen > minAdhBondLen_M) {
 			double forceValue = (curLen - minAdhBondLen_M) * (bondStiff_M * alpha + bondStiff_Mitotic * (1.0-alpha) );
+			if (curActLevel>0){forceValue = forceValue*0.5;}
 			xRes = xRes + forceValue * (curAdherePosX - xPos) / curLen;
 			yRes = yRes + forceValue * (curAdherePosY - yPos) / curLen;
 		}
@@ -2207,23 +2210,25 @@ void SceNodes::applySceForcesDisc_M(std::vector<SigptStateV2>& sigPtVecV2) {
 			&infoVecs.membrIntnlIndex[0]);
 	double* nodeGrowProAddr = thrust::raw_pointer_cast(
 			&infoVecs.nodeGrowPro[0]);
-	uint maxNodeInCell = allocPara_M.maxAllNodePerCell;
+	uint maxAllNodePerCell = allocPara_M.maxAllNodePerCell;
 	uint leaderRank = allocPara_M.leaderRank;
 
 	thrust::device_vector<SigptStateV2> d_sigPtVec(sigPtVecV2);
 	SigptStateV2* sigPtAddr = thrust::raw_pointer_cast(&d_sigPtVec[0]);
 	double timeNow = curTimeN;
+	uint* nodeActLevelAddr = thrust::raw_pointer_cast(
+			&infoVecs.nodeActLevel[0]);
 
 	thrust::transform(
 			thrust::make_zip_iterator(
 					thrust::make_tuple(
-							thrust::make_permutation_iterator(auxVecs.keyBegin.begin(),
+							thrust::make_permutation_iterator(auxVecs.keyBegin.begin(), // this operation is due to the fact that bucketkeys have repeated elements
 									auxVecs.bucketKeys.begin()),
 							thrust::make_permutation_iterator(auxVecs.keyEnd.begin(),
 									auxVecs.bucketKeys.begin()),
 							auxVecs.bucketValues.begin(),
 							thrust::make_permutation_iterator(infoVecs.nodeLocX.begin(),
-									auxVecs.bucketValues.begin()),
+									auxVecs.bucketValues.begin()), // remember the bucketvalues are sorted by keys
 							thrust::make_permutation_iterator(infoVecs.nodeLocY.begin(),
 									auxVecs.bucketValues.begin()))),
 			thrust::make_zip_iterator(
@@ -2244,11 +2249,66 @@ void SceNodes::applySceForcesDisc_M(std::vector<SigptStateV2>& sigPtVecV2) {
 							thrust::make_permutation_iterator(infoVecs.nodeVelY.begin(),
 									auxVecs.bucketValues.begin()))),
 			AddForceDisc_M(valueAddress, nodeLocXAddress, nodeLocYAddress,
-					nodeAdhIdxAddress, membrIntnlAddress, nodeGrowProAddr, maxNodeInCell, leaderRank,sigPtAddr,timeNow));
-			thrust::copy(d_sigPtVec.begin(), d_sigPtVec.end(), sigPtVecV2.begin());
+					nodeAdhIdxAddress, membrIntnlAddress, nodeGrowProAddr, maxAllNodePerCell, leaderRank,sigPtAddr,timeNow,nodeActLevelAddr));
+// 			thrust::copy(d_sigPtVec.begin(), d_sigPtVec.end(), sigPtVecV2.begin());
 }
 
+void SceNodes::adjustNodeCCAdh() {
+	
+	
+	uint* valueAddress = thrust::raw_pointer_cast(
+			&auxVecs.bucketValuesIncludingNeighbor[0]);
+	double* nodeLocXAddress = thrust::raw_pointer_cast(&infoVecs.nodeLocX[0]);
+	double* nodeLocYAddress = thrust::raw_pointer_cast(&infoVecs.nodeLocY[0]);
+	int* nodeAdhIdxAddress = thrust::raw_pointer_cast(
+			&infoVecs.nodeAdhereIndex[0]);
+	int* membrIntnlAddress = thrust::raw_pointer_cast(
+			&infoVecs.membrIntnlIndex[0]);
+	double* nodeGrowProAddr = thrust::raw_pointer_cast(
+			&infoVecs.nodeGrowPro[0]);
+	uint maxAllNodePerCell = allocPara_M.maxAllNodePerCell;
+	uint leaderRank = allocPara_M.leaderRank;
 
+
+	double timeNow = curTimeN;
+	uint* nodeActLevelAddr = thrust::raw_pointer_cast(
+			&infoVecs.nodeActLevel[0]);
+
+	uint totalActiveNodes = allocPara_M.bdryNodeCount
+			+ allocPara_M.currentActiveCellCount
+					* allocPara_M.maxAllNodePerCell;
+	thrust::counting_iterator<int> iBegin(0);
+	thrust::transform(
+			thrust::make_zip_iterator(
+					thrust::make_tuple(iBegin,
+						infoVecs.nodeAdhereIndex.begin())),
+			thrust::make_zip_iterator(
+					thrust::make_tuple(iBegin,
+						infoVecs.nodeAdhereIndex.begin()
+					))+totalActiveNodes,
+			infoVecs.nodeAdhereIndex.begin(),
+			updateNodeCCadh(valueAddress, nodeLocXAddress, nodeLocYAddress,
+					nodeAdhIdxAddress, membrIntnlAddress, nodeGrowProAddr, maxAllNodePerCell, leaderRank,timeNow,nodeActLevelAddr));
+	
+
+	
+	// uint maxAllNodePerCell = allocPara_M.maxAllNodePerCell;
+	if (timeNow>90.0){
+		for (uint tempcellRank=0; tempcellRank<allocPara_M.currentActiveCellCount; tempcellRank++){ //
+			uint beginInd = tempcellRank*maxAllNodePerCell;
+			uint endInd = (tempcellRank+1)*maxAllNodePerCell;
+			if (tempcellRank != allocPara_M.leaderRank){
+				for (uint tempLocalNodeInd=0; tempLocalNodeInd<maxAllNodePerCell; tempLocalNodeInd++){
+					uint nodeInd = tempcellRank*maxAllNodePerCell+tempLocalNodeInd;
+					if (infoVecs.nodeActLevel[nodeInd]>0 && infoVecs.nodeIsActive[nodeInd] == true){
+						thrust::fill(infoVecs.nodeActLevel.begin()+beginInd,infoVecs.nodeActLevel.begin()+endInd,(uint)2);// double check the index
+						break;
+					}
+				}
+			}
+		}
+	}
+}
 
 void SceNodes::updateSigVec(std::vector<SigptStateV2>& sigPtVecV2) {
 	// use a for loop to update the location of signaling points
@@ -2389,6 +2449,7 @@ void SceNodes::sceForcesDisc_M(double dt, std::vector<SigptStateV2>& sigPtVecV2)
 	cout << "     --- 2 ---" << endl;
 	cout.flush();
 	applySceForcesDisc_M(sigPtVecV2);
+	adjustNodeCCAdh(); // make sure all nodes in a cell have the correct activation level 
 	// updateSigVec(sigPtVecV2);
 
 
@@ -2523,6 +2584,8 @@ void SceNodes::allocSpaceForNodes(uint maxTotalNodeCount) {
 		infoVecs.subAdhLocY.resize(maxTotalNodeCount * 10,0); // the * 10 is for ten possible binding sites, to be changed or pass as a parameter
 		infoVecs.subAdhIsBound.resize(maxTotalNodeCount * 10,0);
 
+		infoVecs.nodeActLevel.resize(maxTotalNodeCount,0);
+
 		auxVecs.bucketKeys.resize(maxTotalNodeCount);
 		auxVecs.bucketValues.resize(maxTotalNodeCount);
 		auxVecs.bucketKeysExpanded.resize(maxTotalNodeCount * 9);
@@ -2632,7 +2695,6 @@ void SceNodes::removeNodes(int cellRank, vector<uint> &removeSeq) {
 
 void SceNodes::processMembrAdh_M() {
 	keepAdhIndxCopyInHost_M();
-	// updateActivationLevel();
 	applyMembrAdh_M();
 	removeInvalidPairs_M();
 }
@@ -2674,13 +2736,15 @@ void SceNodes::applyMembrAdh_M() {
 
 	thrust::transform(
 			thrust::make_zip_iterator(
-					thrust::make_tuple(infoVecs.nodeIsActive.begin(),
-							infoVecs.nodeAdhereIndex.begin(), iBegin,
+					thrust::make_tuple(infoVecs.nodeIsActive.begin(),iBegin,
+							infoVecs.nodeActLevel.begin(),
+							infoVecs.nodeAdhereIndex.begin(), 
 							infoVecs.nodeVelX.begin(),
 							infoVecs.nodeVelY.begin())),
 			thrust::make_zip_iterator(
-					thrust::make_tuple(infoVecs.nodeIsActive.begin(),
-							infoVecs.nodeAdhereIndex.begin(), iBegin,
+					thrust::make_tuple(infoVecs.nodeIsActive.begin(),iBegin,
+							infoVecs.nodeActLevel.begin(),
+							infoVecs.nodeAdhereIndex.begin(),
 							infoVecs.nodeVelX.begin(),
 							infoVecs.nodeVelY.begin())) + maxTotalNode,
 			thrust::make_zip_iterator(

@@ -173,7 +173,7 @@ double Angle2D(double x1, double y1, double x2, double y2)
 }
 
 
-
+/*
 __device__
 void handleAdhesionForceCell_M(int& adhereIndex, double& xPos, double& yPos,
 		double& curAdherePosX, double& curAdherePosY, double& xRes,
@@ -191,7 +191,7 @@ void handleAdhesionForceCell_M(int& adhereIndex, double& xPos, double& yPos,
 		}
 	}
 }
-
+*/
 
 
 
@@ -3801,6 +3801,7 @@ AniRawData SceCells::obtainAniRawDataGivenCellColor(vector<double>& cellColors,
 	thrust::host_vector<double> hostTmpVectorExtForceTangent(maxActiveNode);//AAMIRI
 	thrust::host_vector<double> hostTmpVectorExtForceNormal(maxActiveNode);//AAMIRI
 	thrust::host_vector<double> hostMyosinLevel(maxActiveNode);//apr 05
+	thrust::host_vector<double> hostActLevel(maxActiveNode);
 	thrust::host_vector<double> hostSubAdhIsBound(maxActiveNode*10);//apr 05
 	thrust::host_vector<double> hostFilopX(maxFilopCount);//= cellInfoVecs.cellFilopX; // 5 filopodia, 1 center location for each cell to be added later
 	thrust::host_vector<double> hostFilopY(maxFilopCount);// = cellInfoVecs.cellFilopY; // inactive cells are also included
@@ -3851,18 +3852,21 @@ AniRawData SceCells::obtainAniRawDataGivenCellColor(vector<double>& cellColors,
 					thrust::make_tuple(
 							nodes->getInfoVecs().nodeF_MI_M_T.begin(), //Ali
 							nodes->getInfoVecs().nodeF_MI_M_N.begin(), //Ali
-							nodes->getInfoVecs().myosinLevel.begin()
+							nodes->getInfoVecs().myosinLevel.begin(),
+							nodes->getInfoVecs().nodeActLevel.begin()
 							)),
 			thrust::make_zip_iterator(
 					thrust::make_tuple(
 							nodes->getInfoVecs().nodeF_MI_M_T.begin(),//AliE
 							nodes->getInfoVecs().nodeF_MI_M_N.begin(), //AliE
-							nodes->getInfoVecs().myosinLevel.begin()
+							nodes->getInfoVecs().myosinLevel.begin(),
+							nodes->getInfoVecs().nodeActLevel.begin()
 							))
 					+ maxActiveNode,
 			thrust::make_zip_iterator(
 					thrust::make_tuple(
-							hostTmpVectorF_MI_M_T.begin(), hostTmpVectorF_MI_M_N.begin(), hostMyosinLevel.begin()
+							hostTmpVectorF_MI_M_T.begin(), hostTmpVectorF_MI_M_N.begin(), hostMyosinLevel.begin(),
+							hostActLevel.begin()
 							)));
 
 	thrust::copy(
@@ -3945,6 +3949,7 @@ AniRawData SceCells::obtainAniRawDataGivenCellColor(vector<double>& cellColors,
 	double aniVal;
 	double aniVal2;
 	double tempMyosinLevel;
+	uint tempActLevel;
 
 	
 
@@ -3975,6 +3980,9 @@ AniRawData SceCells::obtainAniRawDataGivenCellColor(vector<double>& cellColors,
 
 				tempMyosinLevel = hostMyosinLevel[index1];
 				rawAniData.myoLevel.push_back(tempMyosinLevel);
+
+				tempActLevel = hostActLevel[index1];
+				rawAniData.actLevel.push_back(tempActLevel);
 
 				tempAdhSiteCount = 0;
 				for (uint k = 0; k<10; k++){
@@ -4010,6 +4018,8 @@ AniRawData SceCells::obtainAniRawDataGivenCellColor(vector<double>& cellColors,
 				tempMyosinLevel = hostMyosinLevel[index1];
 				rawAniData.myoLevel.push_back(tempMyosinLevel);
 
+				tempActLevel = hostActLevel[index1];
+				rawAniData.actLevel.push_back(tempActLevel);
 
 				tempAdhSiteCount = 0;
 				for (uint k = 0; k<10; k++){
@@ -4177,6 +4187,7 @@ AniRawData SceCells::obtainAniRawDataGivenCellColor(vector<double>& cellColors,
 	}
 
 	// June 2023
+	// save filopodia information 
 	CVector tempCenterPos, tempFilopPos,tempCellPolar;
 	double filopX, filopY;
 	uint curtotFilopCounts = 0;
@@ -4224,6 +4235,33 @@ AniRawData SceCells::obtainAniRawDataGivenCellColor(vector<double>& cellColors,
 
 			curtCellPolarCounts = curtCellPolarCounts  + 2;
 		}
+
+	// save cell-cell (nodes on different cell membranes) adhesion information 
+	CVector tempCCnode1, tempCCnode2;
+	uint curCCAhesionCounts = 0;
+	for (uint i = 0; i < activeCellCount; i++) {
+		for (uint j = 0; j < curActiveMemNodeCounts[i]; j++) {
+			index1 = beginIndx + i * maxNodePerCell + j;
+			if ( hostIsActiveVec[index1]==true) {
+				index2 = hostBondVec[index1];
+				if (index2 > index1 && index2 != -1)
+				
+				tempCCnode1 = CVector(CVector(hostTmpVectorLocX[index1],
+                            hostTmpVectorLocY[index1], 0));
+				tempCCnode2 = CVector(hostTmpVectorLocX[index2],
+                            hostTmpVectorLocY[index2], 0);
+				rawAniData.aniCC.push_back(tempCCnode1);
+				rawAniData.aniCC.push_back(tempCCnode2);
+
+				LinkAniCellData linkCCData;
+				linkCCData.node1Index = curCCAhesionCounts;
+				linkCCData.node2Index = curCCAhesionCounts+1;
+				rawAniData.aniCCLinks.push_back(linkCCData);
+
+				curCCAhesionCounts = curCCAhesionCounts + 2;
+			}
+		}
+	}
 
 	cout << "I am in obtainAniRawDataGivenCellColor end"<<endl; 
 	return rawAniData;
@@ -4513,7 +4551,8 @@ VtkAnimationData SceCells::outputVtkData(AniRawData& rawAniData, //apr 05
 		ptAniData.colorScale2 = rawAniData.aniNodeCurvature[i];//AAMIRI
 		ptAniData.rankScale = rawAniData.aniNodeRank[i];//AAMIRI
 		ptAniData.extForce = rawAniData.aniNodeExtForceArr[i];//AAMIRI
-		ptAniData.myoLevel1= rawAniData.myoLevel[i]; 
+		ptAniData.myoLevel1= rawAniData.myoLevel[i];
+		ptAniData.actLevel1= rawAniData.actLevel[i];  
 		ptAniData.adhSiteCount1= rawAniData.adhSiteCount[i];
 		vtkData.pointsAniData.push_back(ptAniData);
 	}
@@ -4536,7 +4575,8 @@ VtkAnimationData SceCells::outputVtkData(AniRawData& rawAniData, //apr 05
 		LinkAniCellData linkCellData = rawAniData.aniFilopLinks[i];
 		vtkData.linksAniCellData.push_back(linkCellData);
 	}
-	// vtk file three
+
+	// vtk file three, shows cell polarity 
 	for (uint i = 0; i<rawAniData.aniCellPolar.size(); i++){
 		PointAniCellPolarData ptAniCellPolarData; 
 		ptAniCellPolarData.cellPolarAngle = rawAniData.aniCellPolar[i];
@@ -4545,6 +4585,17 @@ VtkAnimationData SceCells::outputVtkData(AniRawData& rawAniData, //apr 05
 	for (uint i = 0; i < rawAniData.aniCellPolarLinks.size(); i++) {
 		LinkAniCellData linkCellPolarData = rawAniData.aniCellPolarLinks[i];
 		vtkData.linksAniCellPolarData.push_back(linkCellPolarData);
+	}
+
+	// vtk file four, to show cell-cell adhesion bonds
+	for (uint i = 0; i<rawAniData.aniCC.size(); i++){
+		PointAniCCData ptAniCCData; 
+		ptAniCCData.ccAdhesion = rawAniData.aniCC[i];
+		vtkData.pointsAniCCData.push_back(ptAniCCData);
+	}
+	for (uint i = 0; i < rawAniData.aniCCLinks.size(); i++) {
+		LinkAniCellData linkCCData = rawAniData.aniCCLinks[i];
+		vtkData.linksAniCCData.push_back(linkCCData);
 	}
 
 	vtkData.isArrowIncluded = false;
@@ -6051,6 +6102,8 @@ void SceCells::updateCellPolar() {
             &(cellInfoVecs.cellRadius[0]));
  	int* nodeAdhIdxAddr = thrust::raw_pointer_cast(
             &(nodes->getInfoVecs().nodeAdhereIndex[0]));
+ 	uint* nodeActLevelAddr = thrust::raw_pointer_cast(
+            &(nodes->getInfoVecs().nodeActLevel[0]));
 	double timeNow = curTime;
 	// double initTimePeriod = InitTimeStage;
 	double ddt = dt;
@@ -6092,7 +6145,8 @@ void SceCells::updateCellPolar() {
 			updateCellFilop(seed, ddt, timeNow, 
 			cellFilopXAddr,cellFilopYAddr,cellFilopAngleAddr,cellFilopIsActiveAddr,
 			cellFilopBirthTimeAddr,activeCellCount,cellCenterXAddr,cellCenterYAddr,cellRadiusAddr,
-			cellActiveFilopCountsAddr,maxMemNodePerCell,maxNodePerCell,nodeLocXAddr,nodeLocYAddr,nodeIsActiveAddr,nodeAdhIdxAddr));
+			cellActiveFilopCountsAddr,maxMemNodePerCell,maxNodePerCell,nodeLocXAddr,nodeLocYAddr,
+			nodeIsActiveAddr,nodeAdhIdxAddr,nodeActLevelAddr));
 	/*
 	for (uint i=0;i<activeCellCount*5;i++){
 		double tempAngle = cellInfoVecs.cellFilopAngle[i];

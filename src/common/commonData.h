@@ -595,7 +595,8 @@ struct PointAniData {
 	double colorScale;
 	double colorScale2;//AAMIRI
 	int rankScale;//AAMIRI
-	double myoLevel1; // apr 05 
+	double myoLevel1; // apr 05
+	uint actLevel1; 
 	int adhSiteCount1;
 };
 
@@ -605,8 +606,13 @@ struct PointAniCellData {
 };
 
 struct PointAniCellPolarData {
-	// position of the filopodia
+	// cell polarity 
 	CVector cellPolarAngle;
+};
+
+struct PointAniCCData {
+	// cell cell adhesion data
+	CVector ccAdhesion;
 };
 
 struct SigNodeData {
@@ -638,10 +644,13 @@ struct VtkAnimationData {
 	std::vector<LinkAniCellData> linksAniCellData;
 	std::vector<PointAniCellPolarData> pointsAniCellPolarData;
 	std::vector<LinkAniCellData> linksAniCellPolarData;
+	std::vector<PointAniCCData> pointsAniCCData;
+	std::vector<LinkAniCellData> linksAniCCData;
 	std::vector<SigNodeData> sigNodeData; 
 	void outputVtkAni(std::string scriptNameBase, int rank);
 	void outputCellVtkAni(std::string scriptNameBase, int rank);
 	void outputCellPolarVtkAni(std::string scriptNameBase, int rank);
+	void outputCCAdhesionVtkAni(std::string scriptNameBase, int rank);
 	void outputSigNodeVtkAni(std::string scriptNameBase, int rank);
 };
 
@@ -691,6 +700,7 @@ struct AniRawData {
 	std::vector<BondInfo> bondsArr;
 	std::vector<double> dppLevel; //Ali
 	std::vector<double> myoLevel;
+	std::vector<uint> actLevel;
 	std::vector<int> adhSiteCount;
 
 	std::vector<CVector> aniFilopPos;
@@ -698,6 +708,9 @@ struct AniRawData {
 
 	std::vector<CVector> aniCellPolar;
 	std::vector<LinkAniCellData> aniCellPolarLinks;
+
+	std::vector<CVector> aniCC;
+	std::vector<LinkAniCellData> aniCCLinks;
 };
 
 struct VecVal {
