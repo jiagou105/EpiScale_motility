@@ -237,8 +237,8 @@ SceNodes::SceNodes(uint totalBdryNodeCount, uint maxProfileNodeCount,
 				hostTmpVector3[i] = 0;
 			} else {
 				uint tmp = i - allocPara_M.bdryNodeCount;
-				uint cellRank = tmp / allocPara_M.bdryNodeCount;
-				uint nodeRank = tmp % allocPara_M.bdryNodeCount;
+				uint cellRank = tmp / allocPara_M.bdryNodeCount; // not correct, wrong divisor 
+				uint nodeRank = tmp % allocPara_M.bdryNodeCount; // not correct, 
 				if (nodeRank < allocPara_M.maxMembrNodePerCell) {
 					hostTmpVector[i] = CellMembr;
 				} else {
@@ -1827,7 +1827,7 @@ void handleAdhesionForce_M(int& adhereIndex, double& xPos, double& yPos,
 	} else {
 		if (curLen > minAdhBondLen_M) {
 			double forceValue = (curLen - minAdhBondLen_M) * (bondStiff_M * alpha + bondStiff_Mitotic * (1.0-alpha) );
-			if (curActLevel>0){forceValue = forceValue*0.5;}
+			if (curActLevel>0){forceValue = forceValue*0.3;}
 			xRes = xRes + forceValue * (curAdherePosX - xPos) / curLen;
 			yRes = yRes + forceValue * (curAdherePosY - yPos) / curLen;
 		}
@@ -2268,7 +2268,8 @@ void SceNodes::adjustNodeCCAdh() {
 			&infoVecs.nodeGrowPro[0]);
 	uint maxAllNodePerCell = allocPara_M.maxAllNodePerCell;
 	uint leaderRank = allocPara_M.leaderRank;
-
+	bool* nodeIsActiveAddr = thrust::raw_pointer_cast(
+			&infoVecs.nodeIsActive[0]); 
 
 	double timeNow = curTimeN;
 	uint* nodeActLevelAddr = thrust::raw_pointer_cast(
@@ -2288,23 +2289,28 @@ void SceNodes::adjustNodeCCAdh() {
 					))+totalActiveNodes,
 			infoVecs.nodeAdhereIndex.begin(),
 			updateNodeCCadh(valueAddress, nodeLocXAddress, nodeLocYAddress,
-					nodeAdhIdxAddress, membrIntnlAddress, nodeGrowProAddr, maxAllNodePerCell, leaderRank,timeNow,nodeActLevelAddr));
+					nodeAdhIdxAddress, membrIntnlAddress, nodeGrowProAddr, maxAllNodePerCell, leaderRank,timeNow,nodeActLevelAddr,nodeIsActiveAddr));
 	
 
 	
 	// uint maxAllNodePerCell = allocPara_M.maxAllNodePerCell;
-	if (timeNow>90.0){
+	if (timeNow>55800.0){
 		for (uint tempcellRank=0; tempcellRank<allocPara_M.currentActiveCellCount; tempcellRank++){ //
-			uint beginInd = tempcellRank*maxAllNodePerCell;
-			uint endInd = (tempcellRank+1)*maxAllNodePerCell;
+			uint beginInd = allocPara_M.bdryNodeCount + tempcellRank*maxAllNodePerCell;
+			uint endInd = allocPara_M.bdryNodeCount + (tempcellRank+1)*maxAllNodePerCell;
 			if (tempcellRank != allocPara_M.leaderRank){
-				for (uint tempLocalNodeInd=0; tempLocalNodeInd<maxAllNodePerCell; tempLocalNodeInd++){
-					uint nodeInd = tempcellRank*maxAllNodePerCell+tempLocalNodeInd;
-					if (infoVecs.nodeActLevel[nodeInd]>0 && infoVecs.nodeIsActive[nodeInd] == true){
-						thrust::fill(infoVecs.nodeActLevel.begin()+beginInd,infoVecs.nodeActLevel.begin()+endInd,(uint)2);// double check the index
-						break;
+				if (timeNow>55800.0+90.0){
+					for (uint tempLocalNodeInd=0; tempLocalNodeInd<maxAllNodePerCell; tempLocalNodeInd++){
+						uint nodeInd = tempcellRank*maxAllNodePerCell+tempLocalNodeInd;
+						if (infoVecs.nodeActLevel[nodeInd]>0 && infoVecs.nodeIsActive[nodeInd] == true){
+							thrust::fill(infoVecs.nodeActLevel.begin()+beginInd,infoVecs.nodeActLevel.begin()+endInd,(uint)2);// double check the index
+							break;
+						}
 					}
 				}
+			} else {
+				// uint activeTotal = 
+				thrust::fill(infoVecs.nodeActLevel.begin()+beginInd,infoVecs.nodeActLevel.begin()+beginInd+allocPara_M.maxMembrNodePerCell,(uint)1);
 			}
 		}
 	}
@@ -2636,6 +2642,7 @@ void SceNodes::initNodeAllocPara_M(uint totalBdryNodeCount,
 			* allocPara_M.maxCellCount;
 }
 
+// not used???
 void SceNodes::removeNodes(int cellRank, vector<uint> &removeSeq) {
 	uint cellBeginIndex = allocPara.startPosCells
 			+ cellRank * allocPara.maxNodeOfOneCell;
@@ -2698,6 +2705,7 @@ void SceNodes::processMembrAdh_M() {
 	applyMembrAdh_M();
 	removeInvalidPairs_M();
 }
+
 
 void SceNodes::keepAdhIndxCopyInHost_M() {
 	uint maxTotalNode = allocPara_M.currentActiveCellCount

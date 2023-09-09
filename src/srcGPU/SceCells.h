@@ -125,10 +125,12 @@ bool isInsideCell(double xPos, double yPos, uint intnlIndxMemBegin, uint activeM
 __device__
 double Angle2D(double x1, double y1, double x2, double y2);
 
+/*
 __device__
 void handleAdhesionForceCell_M(int& adhereIndex, double& xPos, double& yPos,
 		double& curAdherePosX, double& curAdherePosY, double& xRes,
 		double& yRes, double& alpha, uint& curActLevel);
+*/
 
 __device__
 double getMitoticAdhCoefCell(double& growProg, double& growProgNeigh);
@@ -857,7 +859,7 @@ struct AddMembrBend: public thrust::unary_function<BendData, CVec2> {
 
 
 
-
+/*
 struct ApplyAdhCell: public thrust::unary_function<BUUIDD, CVec2> {
     double* _nodeLocXArrAddr;
     double* _nodeLocYArrAddr;
@@ -894,6 +896,7 @@ struct ApplyAdhCell: public thrust::unary_function<BUUIDD, CVec2> {
         }
     }
 };
+*/
 
 
 
@@ -1855,7 +1858,7 @@ struct addSceCellAdhForce: public thrust::unary_function<IUDDUUDDDD, CVec2> {
 		double randomN3;
 		double ngbrSiteX;
 		double ngbrSiteY;
-		if (cellType == 1){kAdh=10.0;} // for leader
+		if (cellType == 1){kAdh=12.0;} // for leader
 		// if (_timeNow > 55800.0 && _isActiveAddr[index] == true && (nodeRank < _maxMemNodePerCell)) {
 		if (_timeNow > 55800.0 && _isActiveAddr[index] == true) {
 			// starting of the index of the substrate site corresponding to this node is: index*10, 10 is the max subs sites
@@ -4255,9 +4258,9 @@ class SceCells {
 
 	void updateActivationLevel();
 
-	void applyMembrAdhCell_M();
+	// void applyMembrAdhCell_M();
 
-	void copyExtForcesCell_M();
+// 	void copyExtForcesCell_M();
 
 	void applySceCellDisc_M();
 

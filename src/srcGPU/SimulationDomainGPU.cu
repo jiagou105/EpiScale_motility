@@ -256,7 +256,7 @@ void SimulationDomainGPU::outputVtkGivenCellColor(std::string scriptNameBase,
 	aniData.outputVtkAni(scriptNameBase, rank);
 	aniData.outputCellVtkAni(scriptNameBase, rank); // JG June 2023
 	aniData.outputCellPolarVtkAni(scriptNameBase, rank);
-	// aniData.outputCCAdhesionVtkAni(scriptNameBase, rank);
+	aniData.outputCCAdhesionVtkAni(scriptNameBase, rank);
 	aniData.outputSigNodeVtkAni(scriptNameBase,rank);
 }
 

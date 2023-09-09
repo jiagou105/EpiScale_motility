@@ -4244,21 +4244,22 @@ AniRawData SceCells::obtainAniRawDataGivenCellColor(vector<double>& cellColors,
 			index1 = beginIndx + i * maxNodePerCell + j;
 			if ( hostIsActiveVec[index1]==true) {
 				index2 = hostBondVec[index1];
-				if (index2 > index1 && index2 != -1)
+				if (index2 > index1 && index2 != -1){
 				
-				tempCCnode1 = CVector(CVector(hostTmpVectorLocX[index1],
-                            hostTmpVectorLocY[index1], 0));
-				tempCCnode2 = CVector(hostTmpVectorLocX[index2],
-                            hostTmpVectorLocY[index2], 0);
-				rawAniData.aniCC.push_back(tempCCnode1);
-				rawAniData.aniCC.push_back(tempCCnode2);
+					tempCCnode1 = CVector(CVector(hostTmpVectorLocX[index1],
+								hostTmpVectorLocY[index1], 0));
+					tempCCnode2 = CVector(hostTmpVectorLocX[index2],
+								hostTmpVectorLocY[index2], 0);
+					rawAniData.aniCC.push_back(tempCCnode1);
+					rawAniData.aniCC.push_back(tempCCnode2);
 
-				LinkAniCellData linkCCData;
-				linkCCData.node1Index = curCCAhesionCounts;
-				linkCCData.node2Index = curCCAhesionCounts+1;
-				rawAniData.aniCCLinks.push_back(linkCCData);
+					LinkAniCellData linkCCData;
+					linkCCData.node1Index = curCCAhesionCounts;
+					linkCCData.node2Index = curCCAhesionCounts+1;
+					rawAniData.aniCCLinks.push_back(linkCCData);
 
-				curCCAhesionCounts = curCCAhesionCounts + 2;
+					curCCAhesionCounts = curCCAhesionCounts + 2;
+				}
 			}
 		}
 	}
@@ -5602,7 +5603,7 @@ __device__ double calBendMulti_Mitotic(double& angle, uint activeMembrCt, double
 
 
 
-
+/*
 void SceCells::applyMembrAdhCell_M() {
     thrust::counting_iterator<uint> iBegin(0);
     totalNodeCountForActiveCells = allocPara_m.currentActiveCellCount
@@ -5639,8 +5640,10 @@ void SceCells::applyMembrAdhCell_M() {
                             nodes->getInfoVecs().nodeVelY.begin())),
             ApplyAdhCell(nodeLocXAddress, nodeLocYAddress, nodeGrowProAddr));
 }
+*/
 
 
+/*
 void SceCells::copyExtForcesCell_M(){
 
     thrust::copy(nodes->getInfoVecs().nodeVelX.begin(), nodes->getInfoVecs().nodeVelX.end(),
@@ -5650,7 +5653,7 @@ void SceCells::copyExtForcesCell_M(){
             nodes->getInfoVecs().nodeExtForceY.begin());
 
 }
-
+*/
 
 
 void SceCells::applySceCellDisc_M() {

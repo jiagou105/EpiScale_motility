@@ -627,9 +627,9 @@ struct AddForceDisc_M: public thrust::unary_function<Tuuudd, CVec2> {
         bool  Lennard_Jones =Is_Lennard_Jones() ; 
 		// compute the cell rank of the current node
 		uint cellRank = myValue/_maxNodePerOneCell;
-		if (cellRank == _leaderRank){
-				_curActLevelAddr[myValue] = 1;
-			}
+		// if (cellRank == _leaderRank){
+		//		_curActLevelAddr[myValue] = 1;
+		//	}
 		_nodeAdhereIndex[myValue] = -1 ; 
 		for (uint i = begin; i < end; i++) {
 			uint nodeRankOther = _extendedValuesAddress[i];
@@ -705,16 +705,17 @@ struct updateNodeCCadh: public thrust::unary_function<Int2, int> {
 	uint _leaderRank;
 	double _timeNow;
 	uint* _curActLevelAddr;
+	bool* _nodeIsActiveAddr;
 	// comment prevents bad formatting issues of __host__ and __device__ in Nsight
 	__host__ __device__
 	updateNodeCCadh(uint* valueAddress, double* nodeLocXAddress,
 			double* nodeLocYAddress, int* nodeAdhereIndex, int* membrIntnlIndex,
-			double* nodeGrowProAddr, uint maxNodePerOneCell, uint leaderRank, double timeNow, uint* curActLevelAddr) :
+			double* nodeGrowProAddr, uint maxNodePerOneCell, uint leaderRank, double timeNow, uint* curActLevelAddr, bool* nodeIsActiveAddr) :
 			_extendedValuesAddress(valueAddress), _nodeLocXAddress(
 					nodeLocXAddress), _nodeLocYAddress(nodeLocYAddress), _nodeAdhereIndex(
 					nodeAdhereIndex), _membrIntnlIndex(membrIntnlIndex), _nodeGroProAddr(
 					nodeGrowProAddr), _maxNodePerOneCell(maxNodePerOneCell), _leaderRank(leaderRank), 
-					_timeNow(timeNow), _curActLevelAddr(curActLevelAddr) {
+					_timeNow(timeNow), _curActLevelAddr(curActLevelAddr), _nodeIsActiveAddr(nodeIsActiveAddr) {
 	}
 	__device__
 	int operator()(const Int2 &u3d2) const {
@@ -726,10 +727,10 @@ struct updateNodeCCadh: public thrust::unary_function<Int2, int> {
 		// if (cellRank == _leaderRank){
 		//		_curActLevelAddr[curNodeRank] = 1;
 		//	}
-		if (otherNodeRank>-1){
+		if (otherNodeRank>-1 && _timeNow>55800+90 && _nodeIsActiveAddr[curNodeRank] && _nodeIsActiveAddr[otherNodeRank]){
 			if (_curActLevelAddr[curNodeRank] > 0 || _curActLevelAddr[otherNodeRank] > 0){
-				_curActLevelAddr[curNodeRank] = 1;
-				_curActLevelAddr[otherNodeRank] = 1;
+				_curActLevelAddr[curNodeRank] = 4;
+				_curActLevelAddr[otherNodeRank] = 4;
 			} // else{
 		 //	_curActLevelAddr[otherNodeRank] = 0;
 		 // }
