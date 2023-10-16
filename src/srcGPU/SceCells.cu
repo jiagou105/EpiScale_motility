@@ -6272,6 +6272,8 @@ void SceCells::calSubAdhForce() {
 		&(nodes->getInfoVecs().subAdhLocY[0])); 
 	bool* subAdhIsBoundAddr = thrust::raw_pointer_cast(
 		&(nodes->getInfoVecs().subAdhIsBound[0])); 
+	uint* nodeActLevelAddr = thrust::raw_pointer_cast(
+            &(nodes->getInfoVecs().nodeActLevel[0]));
 
 	double timeStep = dt;
 	double timeNow = curTime;
@@ -6360,7 +6362,7 @@ void SceCells::calSubAdhForce() {
 								)), 
 			addSceCellAdhForce(maxAllNodePerCell, maxMemNodePerCell, nodeLocXAddr,
 					nodeLocYAddr, nodeIsActiveAddr, myosinLevelAddr, timeStep, timeNow, 
-					subAdhLocXAddr, subAdhLocYAddr, subAdhIsBoundAddr, maxSubSitePerNode, seed));
+					subAdhLocXAddr, subAdhLocYAddr, subAdhIsBoundAddr, maxSubSitePerNode, seed,nodeActLevelAddr));
 }
 
 

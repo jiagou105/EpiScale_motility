@@ -1819,7 +1819,7 @@ void attemptToAdhere(bool& isSuccess, uint& index, double& dist,
 __device__
 void handleAdhesionForce_M(int& adhereIndex, double& xPos, double& yPos,
 		double& curAdherePosX, double& curAdherePosY, double& xRes,
-		double& yRes, double& alpha, uint& curActLevel) {
+		double& yRes, double& alpha, uint& curActLevel, bool& attLeader) {
 	double curLen = computeDist2D(xPos, yPos, curAdherePosX, curAdherePosY);
 	if (curLen > maxAdhBondLen_M) {
 		adhereIndex = -1;
@@ -1827,7 +1827,7 @@ void handleAdhesionForce_M(int& adhereIndex, double& xPos, double& yPos,
 	} else {
 		if (curLen > minAdhBondLen_M) {
 			double forceValue = (curLen - minAdhBondLen_M) * (bondStiff_M * alpha + bondStiff_Mitotic * (1.0-alpha) );
-			if (curActLevel>0){forceValue = forceValue*0.3;}
+			if (curActLevel>0 && !attLeader){forceValue = forceValue;}
 			xRes = xRes + forceValue * (curAdherePosX - xPos) / curLen;
 			yRes = yRes + forceValue * (curAdherePosY - yPos) / curLen;
 		}
@@ -2741,7 +2741,9 @@ void SceNodes::applyMembrAdh_M() {
 	double* nodeLocYAddress = thrust::raw_pointer_cast(&infoVecs.nodeLocY[0]);
 	double* nodeGrowProAddr = thrust::raw_pointer_cast(
 			&infoVecs.nodeGrowPro[0]);
-
+	uint leaderRank = allocPara_M.leaderRank;
+	uint maxNodePerCell = allocPara_M.maxAllNodePerCell;
+	
 	thrust::transform(
 			thrust::make_zip_iterator(
 					thrust::make_tuple(infoVecs.nodeIsActive.begin(),iBegin,
@@ -2758,7 +2760,7 @@ void SceNodes::applyMembrAdh_M() {
 			thrust::make_zip_iterator(
 					thrust::make_tuple(infoVecs.nodeVelX.begin(),
 							infoVecs.nodeVelY.begin())),
-			ApplyAdh(nodeLocXAddress, nodeLocYAddress, nodeGrowProAddr));
+			ApplyAdh(nodeLocXAddress, nodeLocYAddress, nodeGrowProAddr,leaderRank,maxNodePerCell));
 }
 
 

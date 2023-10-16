@@ -1793,17 +1793,20 @@ struct addSceCellAdhForce: public thrust::unary_function<IUDDUUDDDD, CVec2> {
 	bool* _subAdhIsBoundAddr;
 	uint _maxSubSitePerNode; 
 	uint _seed;
+	uint* _nodeActLevelAddr;
 	// double _grthPrgrCriVal_M;
 	// comment prevents bad formatting issues of __host__ and __device__ in Nsight
 	__host__ __device__ addSceCellAdhForce(uint maxNodePerCell,
 			uint maxMemNodePerCell, double* locXAddr, double* locYAddr,
 			bool* isActiveAddr, double* myosinLevelAddr, double timeStep, double timeNow,
-			double* subAdhLocXAddr, double* subAdhLocYAddr, bool* subAdhIsBoundAddr, uint maxSubSitePerNode, uint seed) :
+			double* subAdhLocXAddr, double* subAdhLocYAddr, bool* subAdhIsBoundAddr, uint maxSubSitePerNode, 
+			uint seed, uint* nodeActLevelAddr) :
 			_maxNodePerCell(maxNodePerCell), _maxMemNodePerCell(
 					maxMemNodePerCell), _locXAddr(locXAddr), _locYAddr(
 					locYAddr), _isActiveAddr(isActiveAddr), _myosinLevelAddr(myosinLevelAddr), 
 					_timeStep(timeStep), _timeNow(timeNow), 
-					_subAdhLocXAddr(subAdhLocXAddr), _subAdhLocYAddr(subAdhLocYAddr), _subAdhIsBoundAddr(subAdhIsBoundAddr), _maxSubSitePerNode(maxSubSitePerNode), _seed(seed)  {
+					_subAdhLocXAddr(subAdhLocXAddr), _subAdhLocYAddr(subAdhLocYAddr), _subAdhIsBoundAddr(subAdhIsBoundAddr), 
+					_maxSubSitePerNode(maxSubSitePerNode), _seed(seed), _nodeActLevelAddr(nodeActLevelAddr)  {
 	}
 	// comment prevents bad formatting issues of __host__ and __device__ in Nsight
 	__device__ CVec2 operator()(const IUDDUUDDDD &cData) const {
@@ -1849,7 +1852,7 @@ struct addSceCellAdhForce: public thrust::unary_function<IUDDUUDDDD, CVec2> {
 		double distNodeSite;
 		double adhForceX = 0.0;
 		double adhForceY = 0.0;
-		double kAdh = 30.0;
+		double kAdh = 25.0;
 		double siteBindThreshold;
 		double charMyosin = 3.0; // check: to be added as a parameter
 		
@@ -1858,7 +1861,8 @@ struct addSceCellAdhForce: public thrust::unary_function<IUDDUUDDDD, CVec2> {
 		double randomN3;
 		double ngbrSiteX;
 		double ngbrSiteY;
-		if (cellType == 1){kAdh=12.0;} // for leader
+		if (cellType != 1 && _nodeActLevelAddr[index]>0){kAdh = 35;}
+		if (cellType == 1){kAdh=15.0;} // for leader
 		// if (_timeNow > 55800.0 && _isActiveAddr[index] == true && (nodeRank < _maxMemNodePerCell)) {
 		if (_timeNow > 55800.0 && _isActiveAddr[index] == true) {
 			// starting of the index of the substrate site corresponding to this node is: index*10, 10 is the max subs sites
@@ -3381,7 +3385,7 @@ struct CompuIsDivide_M: thrust::unary_function<DUi, bool> {
 	bool operator()(const DUi &vec) {
 		double growthProgress = thrust::get<0>(vec);
 		uint nodeCount = thrust::get<1>(vec);
-		if (growthProgress >= 1.0 && nodeCount == _maxIntnlNodePerFollower) { // should add another condition that cell_Type == 0, means follower
+		if (growthProgress >= 1.0 && nodeCount >= _maxIntnlNodePerFollower) { // should add another condition that cell_Type == 0, means follower
 			return true;
 		} else {
 			return false;
@@ -4358,7 +4362,7 @@ class SceCells {
 	bool tmpDebug;
 
 	bool decideIfGoingToDivide_M();
-        bool decideIfAnyCellEnteringMitotic();//A&A 
+    bool decideIfAnyCellEnteringMitotic();//A&A 
 //	bool decideIfGoingToRemove_M();//AAMIRI
 
 	void assembleVecForTwoCells(uint i);

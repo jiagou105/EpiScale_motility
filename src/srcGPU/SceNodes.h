@@ -513,7 +513,7 @@ void handleSceForceNodesDisc_M(uint& nodeRank1, uint& nodeRank2, double& xPos,
 __device__
 void handleAdhesionForce_M(int& adhereIndex, double& xPos, double& yPos,
 		double& curAdherePosX, double& curAdherePosY, double& xRes,
-		double& yRes, double& alpha, uint& curActLevel);
+		double& yRes, double& alpha, uint& curActLevel, bool& attLeader);
 
 
 
@@ -796,10 +796,14 @@ struct ApplyAdh: public thrust::unary_function<BUUIDD, CVec2> {
 	double* _nodeLocXArrAddr;
 	double* _nodeLocYArrAddr;
 	double* _nodeGrowProAddr;
+	uint _leaderRank;
+	uint _maxNodePerCell;
+
 // comment prevents bad formatting issues of __host__ and __device__ in Nsight
 	__host__ __device__
-	ApplyAdh(double* nodeLocXArrAddr, double* nodeLocYArrAddr, double* nodeGrowProAddr) :
-			_nodeLocXArrAddr(nodeLocXArrAddr), _nodeLocYArrAddr(nodeLocYArrAddr), _nodeGrowProAddr(nodeGrowProAddr) {
+	ApplyAdh(double* nodeLocXArrAddr, double* nodeLocYArrAddr, double* nodeGrowProAddr, uint leaderRank, uint maxNodePerCell) :
+			_nodeLocXArrAddr(nodeLocXArrAddr), _nodeLocYArrAddr(nodeLocYArrAddr), _nodeGrowProAddr(nodeGrowProAddr), 
+			_leaderRank(leaderRank), _maxNodePerCell(maxNodePerCell) {
 	}
 	__device__
 	CVec2 operator()(const BUUIDD& adhInput) const {
@@ -813,7 +817,10 @@ struct ApplyAdh: public thrust::unary_function<BUUIDD, CVec2> {
 		double growProgNeigh = _nodeGrowProAddr[adhIndx];
 		//bool adhSkipped = false;	
 		double alpha = getMitoticAdhCoef(growProg, growProgNeigh);//to adjust the mitotic values of stiffness
-
+		bool attLeader = 0;
+		int curCellIndex = nodeIndx/_maxNodePerCell;
+		int adhCellIndex = adhIndx/_maxNodePerCell;
+		if (curCellIndex == _leaderRank || adhCellIndex == _leaderRank){attLeader = 1;}
 
 		if (adhIndx == -1 || !isActive) {
 			return thrust::make_tuple(oriVelX, oriVelY);
@@ -823,7 +830,7 @@ struct ApplyAdh: public thrust::unary_function<BUUIDD, CVec2> {
 			double adhLocX = _nodeLocXArrAddr[adhIndx];
 			double adhLocY = _nodeLocYArrAddr[adhIndx];
 			handleAdhesionForce_M(adhIndx, locX, locY, adhLocX, adhLocY,
-					oriVelX, oriVelY, alpha, curActLevel);
+					oriVelX, oriVelY, alpha, curActLevel, attLeader);
 			return thrust::make_tuple(oriVelX, oriVelY);
 		}
 	}
