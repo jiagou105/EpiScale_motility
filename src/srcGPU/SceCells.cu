@@ -4746,13 +4746,14 @@ void SceCells::handleMembrGrowth_M() {
 	addMembrNodes_M();
 	//membrDebug();
 	
+	/*
 	for (int i=0;i<30;i++){
 		double tempProg = cellInfoVecs.growthProgress[i];
 		int tempType = cellInfoVecs.cell_Type[i];
 		cout << "progress " <<tempProg;
 		cout << " cell_type " <<tempType<<endl;
 	}
-	
+	*/
 }
 
 
