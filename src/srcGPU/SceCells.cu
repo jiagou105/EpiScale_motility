@@ -1590,6 +1590,7 @@ void SceCells::runAllCellLevelLogicsDisc(double dt) {
 
 	allComponentsMove();
 	//std::cerr << "after all components move." << std::endl;
+
 }
 
 //Ali void SceCells::runAllCellLogicsDisc_M(double dt) {
