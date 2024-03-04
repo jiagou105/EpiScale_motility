@@ -252,12 +252,12 @@ void SimulationDomainGPU::outputVtkGivenCellColor(std::string scriptNameBase,
 	VtkAnimationData aniData = cells.outputVtkData(rawAni, aniCri);
 	// define another function here for saving global signaling points 
 	// additionalSimuDomainOutput(aniData);
-	additionalSimuDomainOutputV2(aniData);
+	// additionalSimuDomainOutputV2(aniData);
 	aniData.outputVtkAni(scriptNameBase, rank);
-	aniData.outputCellVtkAni(scriptNameBase, rank); // JG June 2023
-	aniData.outputCellPolarVtkAni(scriptNameBase, rank);
-	aniData.outputCCAdhesionVtkAni(scriptNameBase, rank);
-	aniData.outputSigNodeVtkAni(scriptNameBase,rank);
+	// aniData.outputCellVtkAni(scriptNameBase, rank); // JG June 2023
+	// aniData.outputCellPolarVtkAni(scriptNameBase, rank);
+	// aniData.outputCCAdhesionVtkAni(scriptNameBase, rank);
+	// aniData.outputSigNodeVtkAni(scriptNameBase,rank);
 }
 
 

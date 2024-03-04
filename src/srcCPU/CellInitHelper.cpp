@@ -868,7 +868,7 @@ vector<CVector> CellInitHelper::generateInitMembrNodes(CVector& center,
 		globalConfigVars.getConfigValue("MembrRadiusOffset").toDouble();
 	uint initMembrNodeCount = globalConfigVars.getConfigValue(
 		"InitMembrNodeCount").toInt();
-	if (radius > radiusRadiusM*3){initMembrNodeCount = initMembrNodeCount * 4;}
+	if (radius > radiusRadiusM*3){initMembrNodeCount = initMembrNodeCount * 4; radiusOffset = radiusOffset*2;} // means a leader cell
 	vector<CVector> initMembrNodes;
 	double unitAngle = 2 * acos(-1.0) / (double)(initMembrNodeCount);
 	for (uint i = 0; i < initMembrNodeCount; i++) {
@@ -1041,7 +1041,7 @@ void SimulationGlobalParameter::initFromConfig() {
 	totalFrameCount =
 		globalConfigVars.getConfigValue("TotalNumOfOutputFrames").toInt();
 
-	aniAuxVar = totalTimeSteps / totalFrameCount;
+	aniAuxVar = 50; //totalTimeSteps / totalFrameCount;
 
 	aniCri.pairDisplayDist = globalConfigVars.getConfigValue(
 		"IntraLinkDisplayRange").toDouble();
