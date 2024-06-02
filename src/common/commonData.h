@@ -595,7 +595,7 @@ struct PointAniData {
 	double colorScale;
 	double colorScale2;//AAMIRI
 	int rankScale;//AAMIRI
-	double myoLevel1; // apr 05
+	double myoLevel1; 
 	uint actLevel1; 
 	int adhSiteCount1;
 };

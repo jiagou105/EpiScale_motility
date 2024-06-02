@@ -868,7 +868,7 @@ vector<CVector> CellInitHelper::generateInitMembrNodes(CVector& center,
 		globalConfigVars.getConfigValue("MembrRadiusOffset").toDouble();
 	uint initMembrNodeCount = globalConfigVars.getConfigValue(
 		"InitMembrNodeCount").toInt();
-	if (radius > radiusRadiusM*3){initMembrNodeCount = initMembrNodeCount * 4; radiusOffset = radiusOffset*2;} // means a leader cell
+	if (radius>2*radiusRadiusM){initMembrNodeCount = initMembrNodeCount * 4; radiusOffset = radiusOffset*1.5;} // means a leader cell
 	vector<CVector> initMembrNodes;
 	double unitAngle = 2 * acos(-1.0) / (double)(initMembrNodeCount);
 	for (uint i = 0; i < initMembrNodeCount; i++) {
@@ -880,7 +880,8 @@ vector<CVector> CellInitHelper::generateInitMembrNodes(CVector& center,
 	return initMembrNodes;
 }
 
-// this function is not used???
+// this function is not used??? Yes
+
 vector<CVector> CellInitHelper::tryGenInitCellNodes() {
 	double radius =
 		globalConfigVars.getConfigValue("InitCellRadius").toDouble();
@@ -908,6 +909,7 @@ vector<CVector> CellInitHelper::tryGenInitCellNodes() {
 	return poss;
 }
 
+
 vector<CVector> CellInitHelper::tryGenInitCellNodes(uint initNodeCt, CVector& center, double radius) {
 	// double radius =
 	//	globalConfigVars.getConfigValue("InitCellRadius").toDouble();
@@ -920,13 +922,13 @@ vector<CVector> CellInitHelper::tryGenInitCellNodes(uint initNodeCt, CVector& ce
 	cout << "I am in the right one" << endl;
 	cout << "# of internal Nodes" << initNodeCt << endl;
 	//Ali
-	if (radius>3*radiusFollower) {initNodeCt = initNodeCt * 10;} // for leader cell 
+	if (radius>2*radiusFollower) {initNodeCt = initNodeCt * 15;} // for leader cell 
 	while (foundCount < initNodeCt) {
 		bool isInCircle = false;
 //		randX = getRandomNum(-radius, radius);
 //		randY = getRandomNum(-radius, radius);
 //		isInCircle = (sqrt(randX * randX + randY * randY) < radius);
-		randRad = radius * getRandomNum(0.0, 1.0);
+		randRad = radius * getRandomNum(0.0, 0.75);
 		randAngle = getRandomNum(0.0, 1.0) * 2.0 * PI;
 		randX = 0.0 + randRad * cos(randAngle); // centered at (0, 0)
 		randY = 0.0 + randRad * sin(randAngle);
@@ -1041,7 +1043,7 @@ void SimulationGlobalParameter::initFromConfig() {
 	totalFrameCount =
 		globalConfigVars.getConfigValue("TotalNumOfOutputFrames").toInt();
 
-	aniAuxVar = 50; //totalTimeSteps / totalFrameCount;
+	aniAuxVar = totalTimeSteps / totalFrameCount;
 
 	aniCri.pairDisplayDist = globalConfigVars.getConfigValue(
 		"IntraLinkDisplayRange").toDouble();

@@ -236,9 +236,9 @@ void SimulationDomainGPU::outputVtkFilesWithCri_M(std::string scriptNameBase,
 	int rank, AnimationCriteria aniCri) {
 	nodes.prepareSceForceComputation();
 	//std::cout << "started generate raw data" << std::endl;
-	AniRawData rawAni = cells.obtainAniRawData(aniCri);
+	AniRawData rawAniData = cells.obtainAniRawData(aniCri);
 	//std::cout << "finished generate raw data" << std::endl;
-	VtkAnimationData aniData = cells.outputVtkData(rawAni, aniCri);
+	VtkAnimationData aniData = cells.outputVtkData(rawAniData, aniCri);
 	//std::cout << "finished generate vtk data" << std::endl;
 	aniData.outputVtkAni(scriptNameBase, rank);
 	//std::cout << "finished generate vtk file" << std::endl;
@@ -247,14 +247,14 @@ void SimulationDomainGPU::outputVtkFilesWithCri_M(std::string scriptNameBase,
 void SimulationDomainGPU::outputVtkGivenCellColor(std::string scriptNameBase,
 	int rank, AnimationCriteria aniCri, std::vector<double>& cellColorVal,std::vector<double>& cellsPerimeter, std::vector<double> & cellsDppLevel) {
 	nodes.prepareSceForceComputation();
-	AniRawData rawAni = cells.obtainAniRawDataGivenCellColor(cellColorVal,
+	AniRawData rawAniData = cells.obtainAniRawDataGivenCellColor(cellColorVal,
 			aniCri,cellsPerimeter,cellsDppLevel); //AliE
-	VtkAnimationData aniData = cells.outputVtkData(rawAni, aniCri);
+	VtkAnimationData aniData = cells.outputVtkData(rawAniData, aniCri);
 	// define another function here for saving global signaling points 
 	// additionalSimuDomainOutput(aniData);
 	// additionalSimuDomainOutputV2(aniData);
 	aniData.outputVtkAni(scriptNameBase, rank);
-	// aniData.outputCellVtkAni(scriptNameBase, rank); // JG June 2023
+	aniData.outputCellVtkAni(scriptNameBase, rank); 
 	// aniData.outputCellPolarVtkAni(scriptNameBase, rank);
 	// aniData.outputCCAdhesionVtkAni(scriptNameBase, rank);
 	// aniData.outputSigNodeVtkAni(scriptNameBase,rank);

@@ -218,7 +218,7 @@ void VtkAnimationData::outputVtkAni(std::string scriptNameBase, int rank) { //ap
 	}
 	fs << std::endl;
 
-	fs << "SCALARS myoLevel float" << endl;
+	fs << "SCALARS myosinLevel float" << endl;
 	fs << "LOOKUP_TABLE default" << endl;
 	for (uint i = 0; i < pointsAniData.size(); i++) {
 		fs << pointsAniData[i].myoLevel1 << endl;
@@ -270,7 +270,7 @@ void VtkAnimationData::outputVtkAni(std::string scriptNameBase, int rank) { //ap
 }
 
 
-// JG Jun 02, 2023 
+
 void VtkAnimationData::outputCellVtkAni(std::string scriptNameBase, int rank) { // Jun 02
 	std::stringstream ss;
 	ss << std::setw(5) << std::setfill('0') << rank;
@@ -348,7 +348,7 @@ void VtkAnimationData::outputCellPolarVtkAni(std::string scriptNameBase, int ran
 
 
 
-
+// 
 void VtkAnimationData::outputCCAdhesionVtkAni(std::string scriptNameBase, int rank) { 
 	std::stringstream ss;
 	ss << std::setw(5) << std::setfill('0') << rank;
@@ -735,5 +735,4 @@ void CellsStatsData::printStressStrain_Ini(std::string FileName1) {
   ofs1 << "Time"<<","<<"Stress"<<","<<"Strain_M"<<","<< "Strain_Center"<<std::endl ; 
 }
 
-//Ali     
 

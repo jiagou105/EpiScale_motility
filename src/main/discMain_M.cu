@@ -110,24 +110,18 @@ int main(int argc, char* argv[]) {
 	simuDomain.initialize_v2_M(initData,mainPara.InitTimeStage); //
 
         cout<< "I am in main file after initInput_v2_M creation"<<endl; 
-	std::string polyStatFileNameBase = globalConfigVars.getConfigValue(
-			"PolygonStatFileName").toString();
-	std::string uniqueSymbol =
-			globalConfigVars.getConfigValue("UniqueSymbol").toString();
+	std::string polyStatFileNameBase = globalConfigVars.getConfigValue("PolygonStatFileName").toString();
+	std::string uniqueSymbol = globalConfigVars.getConfigValue("UniqueSymbol").toString();
 	std::string polyStatFileName = polyStatFileNameBase + uniqueSymbol + ".txt";
 
 	std::remove(polyStatFileName.c_str());
 
-	std::string detailStatFileNameBase = globalConfigVars.getConfigValue(
-			"DetailStatFileNameBase").toString() + uniqueSymbol;
-	double divThreshold =
-			globalConfigVars.getConfigValue("DivThreshold").toDouble();
-	double decayCoeff =
-			globalConfigVars.getConfigValue("ProlifDecayCoeff").toDouble();
+	std::string detailStatFileNameBase = globalConfigVars.getConfigValue("DetailStatFileNameBase").toString() + uniqueSymbol;
+	double divThreshold = globalConfigVars.getConfigValue("DivThreshold").toDouble();
+	double decayCoeff = globalConfigVars.getConfigValue("ProlifDecayCoeff").toDouble();
 	double curDivThred;
 
-	int maxStepTraceBack =
-			globalConfigVars.getConfigValue("MaxStepTraceBack").toInt();
+	int maxStepTraceBack = globalConfigVars.getConfigValue("MaxStepTraceBack").toInt();
 
 	// preparation.
         //Ali
@@ -144,7 +138,7 @@ int main(int argc, char* argv[]) {
 	// main simulation steps.
        bool FirstData=true ; 
 	for (uint i = 0; i <= (uint) (mainPara.totalTimeSteps); i++) {
-		if (i % mainPara.aniAuxVar == 0) {
+		if (i % mainPara.aniAuxVar == 0) { // every aniAuxVar steps, save file???
 			std::cout << "substep 1 " << std::endl;
 			std::cout << "substep 1_confirm " << std::flush;
 
@@ -174,8 +168,7 @@ int main(int argc, char* argv[]) {
  
 			std::cout << "substep 2 " << std::endl;
 			//////// update division threshold //////
-			updateDivThres(curDivThred, i, curTime, decayCoeff,              //Ali
-					divThreshold);
+			updateDivThres(curDivThred, i, curTime, decayCoeff, divThreshold);
 
 			std::cout << "substep 3 " << std::endl;
 			// prints brief polygon counting statistics to file
@@ -195,8 +188,7 @@ int main(int argc, char* argv[]) {
 			//simuDomain.outputVtkColorByCell_T1(mainPara.animationNameBase,
 			//		aniFrame, mainPara.aniCri);
  			if (i !=0){
-			simuDomain.outputVtkColorByCell_polySide(mainPara.animationNameBase,
-					aniFrame, mainPara.aniCri);
+			simuDomain.outputVtkColorByCell_polySide(mainPara.animationNameBase, aniFrame, mainPara.aniCri);
 			// std::cout << "in ani step " << aniFrame << std::endl;
 			std::cout << "substep 6 " << std::endl;
 			}

@@ -45,7 +45,7 @@ void Signal::Initialize (uint maxAllNodePerCell, uint maxMembrNodePerCell, uint 
 	startChemical = std::chrono::high_resolution_clock::now();
 	stopChemical = startChemical ;
 	durationChemical = std::chrono::duration_cast<std::chrono::seconds>(stopChemical - startChemical);
-        durationMechanical = std::chrono::duration_cast<std::chrono::seconds>(startChemical - stopChemical ) ;
+    durationMechanical = std::chrono::duration_cast<std::chrono::seconds>(startChemical - stopChemical ) ;
 
 	minResol=0.1 ;// max distance of the first imported coordinate of DPP from the tissue center to accept it for that cell    
 	resol=501 ; // the number of imported DPP values
@@ -55,6 +55,7 @@ void Signal::Initialize (uint maxAllNodePerCell, uint maxMembrNodePerCell, uint 
         extern GlobalConfigVars globalConfigVars;
         folderName=globalConfigVars.getConfigValue("SignalFolderName").toString();
 }
+
 void Signal::updateSignal(double minX, double maxX, double minY, double maxY, double curTime, int maxTotalNumActiveNodes, int numActiveCells )  {
 	this->maxX=maxX;
 	this->maxY=maxY;

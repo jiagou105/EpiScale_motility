@@ -1827,11 +1827,10 @@ void handleAdhesionForce_M(int& adhereIndex, double& xPos, double& yPos,
 	} else {
 		if (curLen > minAdhBondLen_M) {
 			double forceValue = (curLen - minAdhBondLen_M) * (bondStiff_M * alpha + bondStiff_Mitotic * (1.0-alpha) );
-			if (curActLevel>0 && !attLeader){forceValue = forceValue;}
+			if (!attLeader){forceValue = 1*forceValue;}
 			xRes = xRes + forceValue * (curAdherePosX - xPos) / curLen;
 			yRes = yRes + forceValue * (curAdherePosY - yPos) / curLen;
 		}
-
 	}
 }
 
@@ -1946,6 +1945,7 @@ void handleSceForceNodesDisc_M(uint& nodeRank1, uint& nodeRank2, double& xPos,
 		}
 	}
 }
+
 
 void SceNodes::extendBuckets2D() {
 	static const uint extensionFactor2D = 9;
