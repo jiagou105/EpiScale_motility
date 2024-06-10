@@ -227,8 +227,8 @@ double computeDistCell2D(double &xPos, double &yPos, double &xPos2, double &yPos
 
 
 __device__
-bool isValidFilopDirection(uint intnlIndxMemBegin, uint _maxMemNodePerCell, bool* _isActiveAddr, double* _locXAddr, double* _locYAddr,
-	double cell_CenterX, double cell_CenterY, double randomAngleRd, int* _nodeAdhereIndexAddr){
+bool isValidFilopDirection(uint& intnlIndxMemBegin, uint _maxMemNodePerCell, bool* _isActiveAddr, double* _locXAddr, double* _locYAddr,
+	double& cell_CenterX, double& cell_CenterY, double& randomAngleRd, int* _nodeAdhereIndexAddr, uint& activeMembrCount, uint _maxNodePerCell, double* _myosinLevelAddr){
 	uint membrNodeIndex;
 	double membrCenterAngle = 0;
 	double membrNodeX;
@@ -244,13 +244,13 @@ bool isValidFilopDirection(uint intnlIndxMemBegin, uint _maxMemNodePerCell, bool
 	double largestCos2 = 0.01;
 	double dotP;
 	double dotPL;
-	int tempLeftIndex;
-	int tempRightIndex;
-	int cellIndex1;
-	int cellIndex2;
-	int tempindex1 = 0;
-	int tempindex2 = 0;
-	for (membrNodeIndex=intnlIndxMemBegin; membrNodeIndex<intnlIndxMemBegin + _maxMemNodePerCell; membrNodeIndex++){ // 
+	uint tempLeftIndex;
+	uint tempRightIndex;
+	int cellIndex1, cellIndex11;
+	int cellIndex2, cellIndex21;
+	uint tempindex1 = 0;
+	uint tempindex2 = 0;
+	for (membrNodeIndex=intnlIndxMemBegin; membrNodeIndex<intnlIndxMemBegin + activeMembrCount; membrNodeIndex++){
 		if (_isActiveAddr[membrNodeIndex]){
 			membrNodeX = _locXAddr[membrNodeIndex];
 			membrNodeY = _locYAddr[membrNodeIndex];
@@ -267,13 +267,14 @@ bool isValidFilopDirection(uint intnlIndxMemBegin, uint _maxMemNodePerCell, bool
 				//	smallAngle2 = cosMCandRdA;
 				//	tempindex2 = membrNodeIndex;
 				}
-		} else { endMemActiveIndex = membrNodeIndex-1; break;} // endActiveIndex is the index of last active membrane node
+		} // else { endMemActiveIndex = membrNodeIndex-1; break;} // endActiveIndex is the index of last active membrane node
 	}
-	if (membrNodeIndex == intnlIndxMemBegin + _maxMemNodePerCell-1) {
-		endMemActiveIndex=membrNodeIndex;
-		}
+	// if (membrNodeIndex == intnlIndxMemBegin + _maxMemNodePerCell-1) {
+	//	endMemActiveIndex=membrNodeIndex;
+	//	}
+	endMemActiveIndex = intnlIndxMemBegin + activeMembrCount - 1;
 	if (tempindex1 == intnlIndxMemBegin) { 
-		tempLeftIndex = endMemActiveIndex;
+		tempLeftIndex = endMemActiveIndex; // left and right is defined by assuming indexes are ordered clockwisely ??
 	} else {
 		tempLeftIndex = tempindex1-1;
 	}
@@ -284,17 +285,28 @@ bool isValidFilopDirection(uint intnlIndxMemBegin, uint _maxMemNodePerCell, bool
 	}
 	membrNodeX = _locXAddr[tempindex1];
 	membrNodeY = _locYAddr[tempindex1];
-	membrLeftNodeX = _locXAddr[tempLeftIndex];
-	membrLeftNodeY = _locYAddr[tempLeftIndex];
-	dotP = (membrNodeX-cell_CenterX)*(-sin(randomAngleRd)) + (membrNodeY-cell_CenterY)*cos(randomAngleRd);
-	dotPL = (membrLeftNodeX-cell_CenterX)*(-sin(randomAngleRd)) + (membrLeftNodeY-cell_CenterY)*cos(randomAngleRd);
-	if (dotPL*dotP>0){tempindex2 = tempRightIndex;}
-	else {tempindex2 = tempLeftIndex;}
-	cellIndex1 = _nodeAdhereIndexAddr[tempindex1];
-	cellIndex2 = _nodeAdhereIndexAddr[tempindex2];
-	if ((cellIndex1 != cellIndex2) || (cellIndex1<=-1)){
+	tempindex2 = tempindex1;
+	// membrLeftNodeX = _locXAddr[tempLeftIndex];
+	// membrLeftNodeY = _locYAddr[tempLeftIndex];
+	// dotP = (membrNodeX-cell_CenterX)*(-sin(randomAngleRd)) + (membrNodeY-cell_CenterY)*cos(randomAngleRd);
+	// dotPL = (membrLeftNodeX-cell_CenterX)*(-sin(randomAngleRd)) + (membrLeftNodeY-cell_CenterY)*cos(randomAngleRd);
+	// if (dotPL*dotP>0){tempindex2 = tempRightIndex;}
+	// else {tempindex2 = tempLeftIndex;} // idealy, tempindex1 and tempindex2 are two nodes on two sides of the filopodia
+	_myosinLevelAddr[tempindex1] = _myosinLevelAddr[tempindex1] + 5.0;
+	if (_nodeAdhereIndexAddr[tempindex1]==-1 || _nodeAdhereIndexAddr[tempindex2]==-1){
 		return true;
-	} else {return false;}
+	} else {
+		cellIndex11 = _nodeAdhereIndexAddr[tempindex1];
+		// cellIndex1 = cellIndex11 /_maxNodePerCell; 
+		cellIndex21 = _nodeAdhereIndexAddr[tempindex2];
+		// cellIndex2 = cellIndex21 /_maxNodePerCell; 
+		// if (cellIndex1 != cellIndex2){
+		if (abs(cellIndex11-cellIndex21)!=1){
+			return false;
+		} else {
+			return false;
+		}
+	}
 }
 
 
@@ -3879,6 +3891,8 @@ AniRawData SceCells::obtainAniRawDataGivenCellColor(vector<double>& cellColors,
 	thrust::host_vector<double> hostFilopX(maxFilopCount);//= cellInfoVecs.cellFilopX; // 5 filopodia, 1 center location for each cell to be added later
 	thrust::host_vector<double> hostFilopY(maxFilopCount);// = cellInfoVecs.cellFilopY; // inactive cells are also included
 	thrust::host_vector<bool> hostFilopIsActive(maxFilopCount);
+	thrust::host_vector<double> hostFilopAngle(maxFilopCount);
+	thrust::host_vector<int> hostAdhNodeIndex(maxActiveNode);
 
 	thrust::host_vector<double> hostCellCenterX(activeCellCount);
 	thrust::host_vector<double> hostCellCenterY(activeCellCount);
@@ -3926,20 +3940,22 @@ AniRawData SceCells::obtainAniRawDataGivenCellColor(vector<double>& cellColors,
 							nodes->getInfoVecs().nodeF_MI_M_T.begin(), //Ali
 							nodes->getInfoVecs().nodeF_MI_M_N.begin(), //Ali
 							nodes->getInfoVecs().myosinLevel.begin(),
-							nodes->getInfoVecs().nodeActLevel.begin()
+							nodes->getInfoVecs().nodeActLevel.begin(),
+							nodes->getInfoVecs().nodeAdhereIndex.begin()
 							)),
 			thrust::make_zip_iterator(
 					thrust::make_tuple(
 							nodes->getInfoVecs().nodeF_MI_M_T.begin(),//AliE
 							nodes->getInfoVecs().nodeF_MI_M_N.begin(), //AliE
 							nodes->getInfoVecs().myosinLevel.begin(),
-							nodes->getInfoVecs().nodeActLevel.begin()
+							nodes->getInfoVecs().nodeActLevel.begin(),
+							nodes->getInfoVecs().nodeAdhereIndex.begin()
 							))
 					+ maxActiveNode,
 			thrust::make_zip_iterator(
 					thrust::make_tuple(
 							hostTmpVectorF_MI_M_T.begin(), hostTmpVectorF_MI_M_N.begin(), hostMyosinLevel.begin(),
-							hostActLevel.begin()
+							hostActLevel.begin(),hostAdhNodeIndex.begin()
 							)));
 
 	thrust::copy(
@@ -3951,7 +3967,7 @@ AniRawData SceCells::obtainAniRawDataGivenCellColor(vector<double>& cellColors,
 					thrust::make_tuple(
 							nodes->getInfoVecs().subAdhIsBound.begin()
 							))
-					+ maxActiveNode * 10, // to be changed to an input parameter later, JG042123
+					+ maxActiveNode * 10, // to be changed to an input parameter later
 			thrust::make_zip_iterator(
 					thrust::make_tuple(
 							hostSubAdhIsBound.begin()
@@ -3962,18 +3978,20 @@ AniRawData SceCells::obtainAniRawDataGivenCellColor(vector<double>& cellColors,
 					thrust::make_tuple(
 							cellInfoVecs.cellFilopX.begin(),
 							cellInfoVecs.cellFilopY.begin(),
-							cellInfoVecs.cellFilopIsActive.begin()
+							cellInfoVecs.cellFilopIsActive.begin(),
+							cellInfoVecs.cellFilopAngle.begin()
 							)),
 			thrust::make_zip_iterator(
 					thrust::make_tuple(
 							cellInfoVecs.cellFilopX.begin(),
 							cellInfoVecs.cellFilopY.begin(),
-							cellInfoVecs.cellFilopIsActive.begin()
+							cellInfoVecs.cellFilopIsActive.begin(),
+							cellInfoVecs.cellFilopAngle.begin()
 							))
 					+ maxFilopCount, 
 			thrust::make_zip_iterator(
 					thrust::make_tuple(
-							hostFilopX.begin(), hostFilopY.begin(),hostFilopIsActive.begin()
+							hostFilopX.begin(), hostFilopY.begin(),hostFilopIsActive.begin(),hostFilopAngle.begin()
 				)));
 
 	thrust::copy(
@@ -4023,6 +4041,7 @@ AniRawData SceCells::obtainAniRawDataGivenCellColor(vector<double>& cellColors,
 	double aniVal2;
 	double tempMyosinLevel;
 	uint tempActLevel;
+	int tempAdhNodeIndex;
 
 	
 
@@ -4062,7 +4081,11 @@ AniRawData SceCells::obtainAniRawDataGivenCellColor(vector<double>& cellColors,
 					tempAdhSiteCount += hostSubAdhIsBound[index1*10 + k]; //???
 				}
 
+				if (hostAdhNodeIndex[index1] == -1) {tempAdhNodeIndex = -1;}
+				else {tempAdhNodeIndex = hostAdhNodeIndex[index1];};
+
 				rawAniData.adhSiteCount.push_back(tempAdhSiteCount);
+				rawAniData.adhNodeIndex.push_back(tempAdhNodeIndex);
 				rawAniData.aniNodeRank.push_back(i);
 
 				}
@@ -4275,8 +4298,8 @@ AniRawData SceCells::obtainAniRawDataGivenCellColor(vector<double>& cellColors,
 				index1 = i * maxFilopPerCell + j; 
 				if (hostFilopIsActive[index1]== true){
 						tempLen = sqrt(hostFilopX[index1]*hostFilopX[index1] + hostFilopY[index1]* hostFilopY[index1]);
-						filopX = hostCellCenterX[i] + hostFilopX[index1] + tempRadius * hostFilopX[index1]/tempLen;
-						filopY = hostCellCenterY[i] + hostFilopY[index1] + tempRadius * hostFilopY[index1]/tempLen;
+						filopX = hostCellCenterX[i] + (tempLen + tempRadius) * cos(hostFilopAngle[index1]); //hostFilopX[index1]/tempLen;
+						filopY = hostCellCenterY[i] + (tempLen + tempRadius) * sin(hostFilopAngle[index1]); //hostFilopY[index1]/tempLen;
 						tempFilopPos = CVector(filopX, filopY, 0);
 						rawAniData.aniFilopPos.push_back(tempFilopPos);
 						tempFilopCounts = tempFilopCounts + 1;
@@ -4627,6 +4650,7 @@ VtkAnimationData SceCells::outputVtkData(AniRawData& rawAniData, //apr 05
 		ptAniData.myoLevel1= rawAniData.myoLevel[i];
 		ptAniData.actLevel1= rawAniData.actLevel[i];  
 		ptAniData.adhSiteCount1= rawAniData.adhSiteCount[i];
+		ptAniData.adhNodeIndex1= rawAniData.adhNodeIndex[i];
 		vtkData.pointsAniData.push_back(ptAniData);
 	}
 	// vtk file one 
@@ -6205,6 +6229,8 @@ void SceCells::updateCellPolar() {
             &(nodes->getInfoVecs().nodeLocY[0]));
     bool* nodeIsActiveAddr = thrust::raw_pointer_cast(
             &(nodes->getInfoVecs().nodeIsActive[0])); // 
+	double* myosinLevelAddr = thrust::raw_pointer_cast(
+		&(nodes->getInfoVecs().myosinLevel[0]));
 
 	thrust::counting_iterator<uint> iBegin(0);
 	thrust::counting_iterator<uint> iEnd(activeCellCount); // make sure not iterate on inactive cells already 
@@ -6212,6 +6238,7 @@ void SceCells::updateCellPolar() {
 			thrust::make_zip_iterator(
 					thrust::make_tuple(iBegin,
 							cellInfoVecs.activationLevel.begin(),
+							cellInfoVecs.activeMembrNodeCounts.begin(),
 							cellInfoVecs.cell_Type.begin(),
 							cellInfoVecs.centerCoordX.begin(),
 							cellInfoVecs.centerCoordY.begin(),
@@ -6222,6 +6249,7 @@ void SceCells::updateCellPolar() {
 					thrust::make_tuple(
 							iEnd,
 							cellInfoVecs.activationLevel.begin() + activeCellCount,
+							cellInfoVecs.activeMembrNodeCounts.begin() + activeCellCount,
 							cellInfoVecs.cell_Type.begin() + activeCellCount,
 							cellInfoVecs.centerCoordX.begin() + activeCellCount,
 							cellInfoVecs.centerCoordY.begin() + activeCellCount,
@@ -6233,7 +6261,7 @@ void SceCells::updateCellPolar() {
 			cellFilopXAddr,cellFilopYAddr,cellFilopAngleAddr,cellFilopIsActiveAddr,
 			cellFilopBirthTimeAddr,activeCellCount,cellCenterXAddr,cellCenterYAddr,cellRadiusAddr,
 			cellActiveFilopCountsAddr,maxMemNodePerCell,maxNodePerCell,nodeLocXAddr,nodeLocYAddr,
-			nodeIsActiveAddr,nodeAdhIdxAddr,nodeActLevelAddr));
+			nodeIsActiveAddr,nodeAdhIdxAddr,nodeActLevelAddr,myosinLevelAddr));
 	/*
 	for (uint i=0;i<activeCellCount*5;i++){
 		double tempAngle = cellInfoVecs.cellFilopAngle[i];

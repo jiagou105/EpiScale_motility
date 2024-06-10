@@ -264,7 +264,7 @@ SceNodes::SceNodes(uint maxTotalCellCount, uint maxAllNodePerCell) {
 			globalConfigVars.getConfigValue("SimulationType").toInt();
 	controlPara.simuType = parseTypeFromConfig(simuTypeConfigValue);
 	readDomainPara();
-	uint maxTotalNodeCount = maxTotalCellCount * maxAllNodePerCell;
+	uint maxTotalNodeCount = maxTotalCellCount * maxAllNodePerCell; // maxTotalCellCount is not necessarily the current cell number
 
 	uint maxMembrNodeCountPerCell = globalConfigVars.getConfigValue(
 			"MaxMembrNodeCountPerCell").toInt();
@@ -2569,7 +2569,7 @@ void SceNodes::allocSpaceForNodes(uint maxTotalNodeCount) {
 
 	}
 	if (controlPara.simuType == Disc_M) {
-		infoVecs.nodeAdhereIndex.resize(maxTotalNodeCount);
+		infoVecs.nodeAdhereIndex.resize(maxTotalNodeCount,-1);
 		infoVecs.nodeAdhIndxHostCopy.resize(maxTotalNodeCount);
 		infoVecs.membrIntnlIndex.resize(maxTotalNodeCount);
 		infoVecs.nodeGrowPro.resize(maxTotalNodeCount);

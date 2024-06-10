@@ -47,7 +47,7 @@ typedef thrust::tuple<double, uint> DUi;
 typedef thrust::tuple<double, uint, double, double> DUiDD;
 typedef thrust::tuple<uint, double, double,double> UiDDD;
 typedef thrust::tuple<uint, double, double,double, double> UiDDDD;
-typedef thrust::tuple<uint, uint, int, double, double,double, double> UUIDDDD;
+typedef thrust::tuple<uint, uint, uint, int, double, double,double, double> UUUIDDDD;
 typedef thrust::tuple<uint, double, double,double, double, int, uint> UiDDDDiU;
 typedef thrust::tuple<double, uint, double, double,double> DUiDDD;  //Ali 
 typedef thrust::tuple<bool, double> BoolD;
@@ -630,7 +630,7 @@ struct AddForceDisc_M: public thrust::unary_function<Tuuudd, CVec2> {
 		// if (cellRank == _leaderRank){
 		//		_curActLevelAddr[myValue] = 1;
 		//	}
-		_nodeAdhereIndex[myValue] = -1 ; 
+		_nodeAdhereIndex[myValue] = -1 ; // seems not necessary as all values were initialized to -1
 		for (uint i = begin; i < end; i++) {
 			uint nodeRankOther = _extendedValuesAddress[i];
 			if (nodeRankOther == myValue) {
@@ -1035,7 +1035,7 @@ class SceNodes {
 	ControlPara controlPara;
 	
 
-	NodeAllocPara_M allocPara_M;
+	NodeAllocPara_M allocPara_M; // defined in Node class 
 	SceMechPara_M mechPara_M;  
 	double curTimeN;
 	/**

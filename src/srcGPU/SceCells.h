@@ -139,8 +139,8 @@ __device__
 double computeDistCell2D(double &xPos, double &yPos, double &xPos2, double &yPos2);
 
 __device__
-bool isValidFilopDirection(uint intnlIndxMemBegin, uint _maxMemNodePerCell, bool* _isActiveAddr, double* _locXAddr, double* _locYAddr,
-	double cell_CenterX, double cell_CenterY, double randomAngleRd, int* _nodeAdhereIndexAddr);
+bool isValidFilopDirection(uint& intnlIndxMemBegin, uint _maxMemNodePerCell, bool* _isActiveAddr, double* _locXAddr, double* _locYAddr,
+	double& cell_CenterX, double& cell_CenterY, double& randomAngleRd, int* _nodeAdhereIndexAddr, uint& activeMembrCount, uint _maxNodePerCell, double* _myosinLevelAddr);
 
 /**
  * Functor for divide operation.
@@ -1268,7 +1268,7 @@ struct updateCellMyosin: public thrust::unary_function<UUDDUUDDDi, double> {
 		// means membrane node
 		//Because we want to compute the force on the membrane nodes we modify this function 
 		if (nodeRank < _maxMemNodePerCell) {
-			nodeMyosin = 0.0;
+			// nodeMyosin = 0.0;
 			return nodeMyosin;
 		} else {
 			// means internal node
@@ -1370,7 +1370,7 @@ struct applyActivationLevel: public thrust::unary_function<UUUI, double> {
 
 
 
-struct updateCellFilop: public thrust::unary_function<UUIDDDD, double> {
+struct updateCellFilop: public thrust::unary_function<UUUIDDDD, double> {
 	uint _seed;
 	double _timeStep;
 	double _timeNow;
@@ -1391,28 +1391,30 @@ struct updateCellFilop: public thrust::unary_function<UUIDDDD, double> {
 	bool* _isActiveAddr;
 	int* _nodeAdhereIndexAddr;
 	uint* _nodeActLevelAddr;
+	double* _myosinLevelAddr;
 	// double _grthPrgrCriVal_M;
 	// comment prevents bad formatting issues of __host__ and __device__ in Nsight
 	__host__ __device__ updateCellFilop(uint seed, double timeStep, double timeNow, 
 			double* cellFilopXAddr, double* cellFilopYAddr, double* cellFilopAngleAddr, bool* cellFilopIsActiveAddr, double* cellFilopBirthTimeAddr,
 			uint activeCellCount, double* cellCenterXAddr, double* cellCenterYAddr, double* cellRadiusAddr, uint* cellActiveFilopCountsAddr,
-			uint maxMemNodePerCell, uint maxNodePerCell, double* locXAddr, double* locYAddr, bool* isActiveAddr, int* nodeAdhereIndexAddr, uint* nodeActLevelAddr) :
+			uint maxMemNodePerCell, uint maxNodePerCell, double* locXAddr, double* locYAddr, bool* isActiveAddr, int* nodeAdhereIndexAddr, uint* nodeActLevelAddr, double* myosinLevelAddr) :
 			_seed(seed), _timeStep(timeStep), _timeNow(timeNow),
 			_cellFilopXAddr(cellFilopXAddr), _cellFilopYAddr(cellFilopYAddr), _cellFilopAngleAddr(cellFilopAngleAddr),
 			_cellFilopIsActiveAddr(cellFilopIsActiveAddr), _cellFilopBirthTimeAddr(cellFilopBirthTimeAddr), _activeCellCount(activeCellCount), 
 			_cellCenterXAddr(cellCenterXAddr), _cellCenterYAddr(cellCenterYAddr), _cellRadiusAddr(cellRadiusAddr), _cellActiveFilopCountsAddr(cellActiveFilopCountsAddr),
 			_maxMemNodePerCell(maxMemNodePerCell),_maxNodePerCell(maxNodePerCell), _locXAddr(locXAddr), _locYAddr(locYAddr), _isActiveAddr(isActiveAddr), 
-			_nodeAdhereIndexAddr(nodeAdhereIndexAddr), _nodeActLevelAddr(nodeActLevelAddr) {
+			_nodeAdhereIndexAddr(nodeAdhereIndexAddr), _nodeActLevelAddr(nodeActLevelAddr), _myosinLevelAddr(myosinLevelAddr) {
 	}
 	// comment prevents bad formatting issues of __host__ and __device__ in Nsight
-	__device__ double operator()(const UUIDDDD &cData) const {
+	__device__ double operator()(const UUUIDDDD &cData) const {
 		uint cellRank = thrust::get<0>(cData);
 		uint curActLevel = thrust::get<1>(cData);
-		int cell_Type = thrust::get<2>(cData);
-		double cell_CenterX = thrust::get<3>(cData);
-        double cell_CenterY = thrust::get<4>(cData);
-		double cell_Radius = thrust::get<5>(cData);
-		double cellAngle = thrust::get<6>(cData);
+		uint activeMembrCount = thrust::get<2>(cData);
+		int cell_Type = thrust::get<3>(cData);
+		double cell_CenterX = thrust::get<4>(cData);
+        double cell_CenterY = thrust::get<5>(cData);
+		double cell_Radius = thrust::get<6>(cData);
+		double cellAngle = thrust::get<7>(cData);
 
 		
 		uint maxFilopPerCell = 5;
@@ -1444,30 +1446,9 @@ struct updateCellFilop: public thrust::unary_function<UUIDDDD, double> {
 		double largestCos1 = 0.02;
 		double largestCos2 = 0.01;
 		double randomAngleRd = 0;
-		bool isvalidDirection;
-		/*
-		uint membrNodeIndex;
-		double membrCenterAngle = 0;
-		double membrNodeX;
-		double membrNodeY;
-		double membrCenterVecX=0;
-		double membrCenterVecY=0;
-		double membrCenterVecLen;
-		double cosMCandRdA;
-		double endMemActiveIndex;
-		double membrLeftNodeX;
-		double membrLeftNodeY;
-		double dotP;
-		double dotPL;
-		int tempLeftIndex;
-		int tempRightIndex;
-		int cellIndex1;
-		int cellIndex2;
-		int tempindex1;
-		int tempindex2;
-		*/
+		bool isvalidDirection=false;
 		// if (curActLevel>0){probNewFilop = 0.00001;}
-		if (_nodeActLevelAddr[intnlIndxMemBegin]>0){probNewFilop = 0.00002;}
+		// if (_nodeActLevelAddr[intnlIndxMemBegin]>0){probNewFilop = 0.00002;} // activation level is associated with node ???
 
 		if (_timeNow < 55800.0) {
 			return cellAngle;
@@ -1483,74 +1464,55 @@ struct updateCellFilop: public thrust::unary_function<UUIDDDD, double> {
 					// if this slot has a filopodia already
 					growthTime = _timeNow-_cellFilopBirthTimeAddr[filopIndex]; 
 					isvalidDirection = isValidFilopDirection(intnlIndxMemBegin, _maxMemNodePerCell, _isActiveAddr, _locXAddr, _locYAddr,
-					 						cell_CenterX, cell_CenterY, _cellFilopAngleAddr[filopIndex], _nodeAdhereIndexAddr);
-					if (growthTime<filopMaxLifeTime && isvalidDirection){
+					 						cell_CenterX, cell_CenterY, _cellFilopAngleAddr[filopIndex], _nodeAdhereIndexAddr,activeMembrCount,_maxNodePerCell,_myosinLevelAddr);
+					// if (growthTime<filopMaxLifeTime && isvalidDirection){
+					// isvalidDirection = true;
+					if (isvalidDirection) {
 						// this filopodia is allowed to grow or retract
 						filopLength = filopMaxLen*(1-cos(2*PI*growthTime/filopMaxLifeTime));
 						_cellFilopXAddr[filopIndex] = filopLength*cos(_cellFilopAngleAddr[filopIndex]);
 						_cellFilopYAddr[filopIndex] = filopLength*sin(_cellFilopAngleAddr[filopIndex]);
 					} else{
 						// this filopodia have reached its maximum life time, reset length and angle, active status
-						_cellFilopIsActiveAddr[filopIndex] = false;
-						_cellFilopAngleAddr[filopIndex] = 0.0;
-						_cellFilopXAddr[filopIndex] = 0.0;
-						_cellFilopYAddr[filopIndex] = 0.0;
-						_cellFilopBirthTimeAddr[filopIndex] = 0.0;
-						_cellActiveFilopCountsAddr[cellRank] = _cellActiveFilopCountsAddr[cellRank] - 1;
+						_cellFilopIsActiveAddr[filopIndex] = true;
+						// _cellFilopAngleAddr[filopIndex] = 0.0;
+						_cellFilopXAddr[filopIndex] = 50.0 * cos(_cellFilopAngleAddr[filopIndex]);
+						_cellFilopYAddr[filopIndex] = 50.0 * sin(_cellFilopAngleAddr[filopIndex]);
+						// _cellFilopAngleAddr[filopIndex] = 0.0;
+						// _cellFilopBirthTimeAddr[filopIndex] = 0.0;
+						// _cellActiveFilopCountsAddr[cellRank] = _cellActiveFilopCountsAddr[cellRank] - 1;
 					}
 				} else {
 					// else if this slot does not have an active filopodia
 					randomBirth = u01(rng)/10.0;
 					if (randomBirth<probNewFilop){ // probability of a new filopodia can grow 
-						_cellFilopIsActiveAddr[filopIndex] = true; // find the largest one and use the fact that the membrane nodes are indexed? 
 						randomAngle = u01(rng);
 						randomAngleRd = 6.28*randomAngle;
-						/*
-						for (membrNodeIndex=intnlIndxMemBegin; membrNodeIndex<intnlIndxMemBegin + _maxMemNodePerCell; membrNodeIndex++){ // 
-							if (_isActiveAddr[membrNodeIndex]){
-								membrNodeX = _locXAddr[membrNodeIndex];
-								membrNodeY = _locYAddr[membrNodeIndex];
-								membrCenterVecX = membrNodeX - cell_CenterX;
-								membrCenterVecY = membrNodeY - cell_CenterY;
-								membrCenterVecLen = sqrt(membrCenterVecX*membrCenterVecX + membrCenterVecY*membrCenterVecY); // add a if to avoid small length
-								cosMCandRdA =  (membrCenterVecX*cos(randomAngleRd)+membrCenterVecX*sin(randomAngleRd))/membrCenterVecLen;
-								if (cosMCandRdA>largestCos1){
-									// smallAngle2=smallAngle1;
-									largestCos1=cosMCandRdA;
-									// tempindex2 = tempindex1;
-									tempindex1 = membrNodeIndex;
-									//} else if (cosMCandRdA>smallAngle2){ // add a condition that they are not on the same side 
-									//	smallAngle2 = cosMCandRdA;
-									//	tempindex2 = membrNodeIndex;
-									}
-							} else { endMemActiveIndex = membrNodeIndex-1; break;} // endActiveIndex is the index of last active membrane node
-						}
-						if (membrNodeIndex == intnlIndxMemBegin + _maxMemNodePerCell-1) {endMemActiveIndex=membrNodeIndex;}
-						if (tempindex1 == intnlIndxMemBegin) { tempLeftIndex = endMemActiveIndex;}
-						else {tempLeftIndex = tempindex1-1;}
-						if (tempindex1 == endMemActiveIndex){tempRightIndex = intnlIndxMemBegin;} // this condition is still possible // double check this
-						else {tempRightIndex = tempindex1+1;}
-						membrNodeX = _locXAddr[tempindex1];
-						membrNodeY = _locYAddr[tempindex1];
-						membrLeftNodeX = _locXAddr[tempLeftIndex];
-						membrLeftNodeY = _locYAddr[tempLeftIndex];
-						dotP = (membrNodeX-cell_CenterX)*(-sin(randomAngleRd)) + (membrNodeY-cell_CenterY)*cos(randomAngleRd);
-						dotPL = (membrLeftNodeX-cell_CenterX)*(-sin(randomAngleRd)) + (membrLeftNodeY-cell_CenterY)*cos(randomAngleRd);
-						if (dotPL*dotP>0){tempindex2 = tempRightIndex;}
-						else {tempindex2 = tempLeftIndex;}
-						cellIndex1 = _nodeAdhereIndexAddr[tempindex1];
-						cellIndex2 = _nodeAdhereIndexAddr[tempindex2];
-						*/
 						isvalidDirection = isValidFilopDirection(intnlIndxMemBegin, _maxMemNodePerCell, _isActiveAddr, _locXAddr, _locYAddr,
-												cell_CenterX, cell_CenterY, randomAngleRd, _nodeAdhereIndexAddr);
+												cell_CenterX, cell_CenterY, randomAngleRd, _nodeAdhereIndexAddr,activeMembrCount,_maxNodePerCell,_myosinLevelAddr);
+						// isvalidDirection = true;
 						if (isvalidDirection){
 						// randomAngle = randomAngle*2.0*PI;
+							_cellFilopIsActiveAddr[filopIndex] = true; // find the largest one and use the fact that the membrane nodes are indexed? 
 							_cellFilopAngleAddr[filopIndex] = 6.28*randomAngle;
 							_cellFilopXAddr[filopIndex] = 0.0; // zero length 
 							_cellFilopYAddr[filopIndex] = 0.0;
 							_cellFilopBirthTimeAddr[filopIndex] = _timeNow;
 							_cellActiveFilopCountsAddr[cellRank] = _cellActiveFilopCountsAddr[cellRank] + 1;
+						} else {
+							_cellFilopIsActiveAddr[filopIndex] = true;
+							// _cellFilopAngleAddr[filopIndex] = 0.0;
+							_cellFilopXAddr[filopIndex] = 100.0 * cos(6.28*randomAngle);
+							_cellFilopYAddr[filopIndex] = 100.0 * sin(6.28*randomAngle);
+							_cellFilopBirthTimeAddr[filopIndex] = _timeNow;
+							_cellActiveFilopCountsAddr[cellRank] = _cellActiveFilopCountsAddr[cellRank] + 1;
 						}
+					} else {
+						_cellFilopIsActiveAddr[filopIndex] = false;
+						_cellFilopAngleAddr[filopIndex] = 0.0;
+						_cellFilopXAddr[filopIndex] = 0.0;
+						_cellFilopYAddr[filopIndex] = 0.0;
+						_cellFilopBirthTimeAddr[filopIndex] = 0.0;
 					}
 				}
 			}
@@ -1599,7 +1561,7 @@ struct updateCellFilop: public thrust::unary_function<UUIDDDD, double> {
 
 
 
-// JG050823
+
 struct updateSigPtState: public thrust::unary_function<UiDDDDiU, double> {
 	double _timeStep;
 	double _timeNow;
@@ -4162,7 +4124,7 @@ class SceCells {
 	CellGrowthAuxData growthAuxData;
 	CellDivAuxData divAuxData;
 	ControlPara controlPara;
-	NodeAllocPara_M allocPara_m;
+	NodeAllocPara_M allocPara_m; // Defined in Cell class
 	MembrPara membrPara;
 	// vector<SigptState> sigPtVec;
 
@@ -4533,9 +4495,9 @@ public:
 		return allocPara_m;
 	}
 
-	void setAllocParaM(const NodeAllocPara_M& allocParaM) {
-		allocPara_m = allocParaM;
-	}
+	void setAllocParaM(const NodeAllocPara_M& allocPara_M) {
+		allocPara_m = allocPara_M;
+	} // not used??? not called 
 
 	bool aniDebug;
 };
