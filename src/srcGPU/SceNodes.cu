@@ -183,6 +183,8 @@ SceNodes::SceNodes(uint totalBdryNodeCount, uint maxProfileNodeCount,
 	initControlPara(isStab);
 	readDomainPara();
 	uint maxTotalNodeCount;
+	uint maxIntnlNodeCountPerCell = globalConfigVars.getConfigValue(
+			"MaxIntnlNodeCountPerCell").toInt();
 	if (controlPara.simuType != Disc_M) {
 		initNodeAllocPara(totalBdryNodeCount, maxProfileNodeCount,
 				maxCartNodeCount, maxTotalECMCount, maxNodeInECM,
@@ -200,7 +202,7 @@ SceNodes::SceNodes(uint totalBdryNodeCount, uint maxProfileNodeCount,
 				maxEpiNodeCount, maxInternalNodeCount);
 		maxTotalNodeCount = allocPara_M.maxTotalNodeCount;
 	}
-	allocSpaceForNodes(maxTotalNodeCount);
+	allocSpaceForNodes(maxTotalNodeCount,maxIntnlNodeCountPerCell);
 	thrust::host_vector<SceNodeType> hostTmpVector(maxTotalNodeCount);
 	thrust::host_vector<bool> hostTmpVector2(maxTotalNodeCount);
 	thrust::host_vector<int> hostTmpVector3(maxTotalNodeCount);
@@ -287,7 +289,7 @@ SceNodes::SceNodes(uint maxTotalCellCount, uint maxAllNodePerCell) {
 	std::cout << "    Max total number of nodes in domain = "
 			<< allocPara_M.maxTotalNodeCount << std::endl;
 
-	allocSpaceForNodes(maxTotalNodeCount);
+	allocSpaceForNodes(maxTotalNodeCount,maxIntnlNodeCountPerCell);
 	thrust::host_vector<SceNodeType> hostTmpVector(maxTotalNodeCount);
 	thrust::host_vector<bool> hostTmpVector2(maxTotalNodeCount);
 
@@ -2537,7 +2539,7 @@ void SceNodes::setInfoVecs(const NodeInfoVecs& infoVecs) {
 	this->infoVecs = infoVecs;
 }
 
-void SceNodes::allocSpaceForNodes(uint maxTotalNodeCount) {
+void SceNodes::allocSpaceForNodes(uint maxTotalNodeCount, uint maxIntnlNodeCountPerCell) {
 	infoVecs.nodeLocX.resize(maxTotalNodeCount);
 	infoVecs.nodeLocY.resize(maxTotalNodeCount);
 	infoVecs.nodeLocZ.resize(maxTotalNodeCount);
@@ -2584,7 +2586,10 @@ void SceNodes::allocSpaceForNodes(uint maxTotalNodeCount) {
 		infoVecs.membrBendRightY.resize(maxTotalNodeCount, 0);
 		infoVecs.actinForceX.resize(maxTotalNodeCount,0);
 		infoVecs.actinForceY.resize(maxTotalNodeCount,0);
+		infoVecs.minToMDist.resize(maxTotalNodeCount,0);
+		infoVecs.fluxWeights.resize(maxIntnlNodeCountPerCell*maxIntnlNodeCountPerCell,0);
 		infoVecs.myosinLevel.resize(maxTotalNodeCount,0);
+		infoVecs.tempMyosinLevel.resize(maxTotalNodeCount,0);
 
 		infoVecs.subAdhLocX.resize(maxTotalNodeCount * 10,0); // for substrate binding 
 		infoVecs.subAdhLocY.resize(maxTotalNodeCount * 10,0); // the * 10 is for ten possible binding sites, to be changed or pass as a parameter

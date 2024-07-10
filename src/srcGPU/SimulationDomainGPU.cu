@@ -113,6 +113,12 @@ void SimulationDomainGPU::initialize_v2_M(SimulationInitData_V2_M& initData, dou
 		sigPt.LIFETIME = 10;
 		sigPtVecV2.push_back(sigPt);
 	}
+	/*
+ 	uint maxIntnlNodePerLeader = memPara.maxIntnlNodePerCell;
+    for (uint i=0;i<maxIntnlNodePerLeader*maxIntnlNodePerLeader;i++){
+        fluxWeightsVec.push_back(0.0);
+    }
+	*/
 	std::cout << "Finished initializing simulation domain" << std::endl;
 }
 
@@ -159,7 +165,8 @@ void SimulationDomainGPU::runAllLogic_M(double dt, double Damp_Coef, double Init
 #endif
 	cout << "--- 3 ---" << endl;
 	cout.flush();
-	cells.runAllCellLogicsDisc_M(dt,Damp_Coef,InitTimeStage,sigPtVecV2); // cell level
+	// cells.runAllCellLogicsDisc_M(dt,Damp_Coef,InitTimeStage,sigPtVecV2); // cell level
+	cells.runAllCellLogicsDisc_M(dt,Damp_Coef,InitTimeStage); // ,fluxWeightsVec
 	cout << "--- 4 ---" << endl;
 	cout.flush();
 #ifdef DebugModeDomain

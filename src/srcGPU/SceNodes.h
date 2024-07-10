@@ -985,7 +985,11 @@ public:
 	thrust::device_vector<double> actinForceX;
 	thrust::device_vector<double> actinForceY;
 
+	thrust::device_vector<double> minToMDist;
+	thrust::device_vector<double> fluxWeights;
+
 	thrust::device_vector<double> myosinLevel;
+	thrust::device_vector<double> tempMyosinLevel;
 
 	thrust::device_vector<double> subAdhLocX; 
 	thrust::device_vector<double> subAdhLocY;
@@ -1064,7 +1068,7 @@ class SceNodes {
 
 	void copyParaToGPUConstMem_M();
 
-	void allocSpaceForNodes(uint maxTotalNodeCount);
+	void allocSpaceForNodes(uint maxTotalNodeCount, uint maxIntnlNodeCountPerCell);
 	/**
 	 * this method maps the points to their bucket ID.
 	 * writes data to thrust::device_vector<uint> bucketValues and

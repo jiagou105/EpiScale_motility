@@ -257,7 +257,7 @@ bool isValidFilopDirection(uint& intnlIndxMemBegin, uint _maxMemNodePerCell, boo
 			membrCenterVecX = membrNodeX - cell_CenterX;
 			membrCenterVecY = membrNodeY - cell_CenterY;
 			membrCenterVecLen = sqrt(membrCenterVecX*membrCenterVecX + membrCenterVecY*membrCenterVecY); // add a if to avoid small length
-			cosMCandRdA =  (membrCenterVecX*cos(randomAngleRd)+membrCenterVecX*sin(randomAngleRd))/membrCenterVecLen;
+			cosMCandRdA =  (membrCenterVecX*cos(randomAngleRd)+membrCenterVecY*sin(randomAngleRd))/membrCenterVecLen;
 			if (cosMCandRdA>largestCos1){
 				// smallAngle2=smallAngle1;
 				largestCos1=cosMCandRdA;
@@ -272,6 +272,7 @@ bool isValidFilopDirection(uint& intnlIndxMemBegin, uint _maxMemNodePerCell, boo
 	// if (membrNodeIndex == intnlIndxMemBegin + _maxMemNodePerCell-1) {
 	//	endMemActiveIndex=membrNodeIndex;
 	//	}
+	/*
 	endMemActiveIndex = intnlIndxMemBegin + activeMembrCount - 1;
 	if (tempindex1 == intnlIndxMemBegin) { 
 		tempLeftIndex = endMemActiveIndex; // left and right is defined by assuming indexes are ordered clockwisely ??
@@ -285,6 +286,7 @@ bool isValidFilopDirection(uint& intnlIndxMemBegin, uint _maxMemNodePerCell, boo
 	}
 	membrNodeX = _locXAddr[tempindex1];
 	membrNodeY = _locYAddr[tempindex1];
+	*/
 	tempindex2 = tempindex1;
 	// membrLeftNodeX = _locXAddr[tempLeftIndex];
 	// membrLeftNodeY = _locYAddr[tempLeftIndex];
@@ -292,7 +294,7 @@ bool isValidFilopDirection(uint& intnlIndxMemBegin, uint _maxMemNodePerCell, boo
 	// dotPL = (membrLeftNodeX-cell_CenterX)*(-sin(randomAngleRd)) + (membrLeftNodeY-cell_CenterY)*cos(randomAngleRd);
 	// if (dotPL*dotP>0){tempindex2 = tempRightIndex;}
 	// else {tempindex2 = tempLeftIndex;} // idealy, tempindex1 and tempindex2 are two nodes on two sides of the filopodia
-	_myosinLevelAddr[tempindex1] = _myosinLevelAddr[tempindex1] + 5.0;
+	// _myosinLevelAddr[tempindex1] = _myosinLevelAddr[tempindex1] + 5.0;
 	if (_nodeAdhereIndexAddr[tempindex1]==-1 || _nodeAdhereIndexAddr[tempindex2]==-1){
 		return true;
 	} else {
@@ -1679,8 +1681,8 @@ void SceCells::runAllCellLevelLogicsDisc(double dt) {
 }
 
 //Ali void SceCells::runAllCellLogicsDisc_M(double dt) {
-void SceCells::runAllCellLogicsDisc_M(double dt, double Damp_Coef, double InitTimeStage, std::vector<SigptStateV2>& sigPtVecV2) {   //Ali
-        
+// void SceCells::runAllCellLogicsDisc_M(double dt, double Damp_Coef, double InitTimeStage, std::vector<SigptStateV2>& sigPtVecV2) {   //Ali
+void SceCells::runAllCellLogicsDisc_M(double dt, double Damp_Coef, double InitTimeStage) { // , std::vector<double>& fluxWeightsVec
         
 	std::cout << "     *** 1 ***" << endl;
 	std::cout.flush();
@@ -1704,6 +1706,8 @@ void SceCells::runAllCellLogicsDisc_M(double dt, double Damp_Coef, double InitTi
 	// updateActivationLevel();
 	applySceCellDisc_M();
 	updateCellPolar(); // comment out start for no cell motion
+	// calFluxWeightsMyosin(fluxWeightsVec);
+	calFluxWeightsMyosin();
 	calSceCellMyosin();
 	// applySceCellMyosin();
 	// applySigForce(sigPtVecV2);
@@ -6013,20 +6017,146 @@ void SceCells::applySigForce(std::vector<SigptStateV2>& sigPtVecV2) {
 
 
 
+// define a host vector, size maxIntNode by maxIntNode 
+void SceCells::calFluxWeightsMyosin() { // std::vector<double>& fluxWeightsVec
+	totalNodeCountForActiveCells = allocPara_m.currentActiveCellCount
+			* allocPara_m.maxAllNodePerCell;
+	uint totalActCellCount = allocPara_m.currentActiveCellCount;
+	uint maxAllNodePerCell = allocPara_m.maxAllNodePerCell;
+	uint maxMemNodePerCell = allocPara_m.maxMembrNodePerCell;
+	uint maxIntnlNodePerCell = allocPara_m.maxIntnlNodePerCell;
+
+	thrust::counting_iterator<uint> iBegin(0);
+
+	double* nodeLocXAddr = thrust::raw_pointer_cast(
+			&(nodes->getInfoVecs().nodeLocX[0]));
+	double* nodeLocYAddr = thrust::raw_pointer_cast(
+			&(nodes->getInfoVecs().nodeLocY[0]));
+	bool* nodeIsActiveAddr = thrust::raw_pointer_cast(
+			&(nodes->getInfoVecs().nodeIsActive[0])); // 
+
+    int* nodeAdhIdxAddr = thrust::raw_pointer_cast(
+            &(nodes->getInfoVecs().nodeAdhereIndex[0]));
+
+	double* myosinLevelAddr = thrust::raw_pointer_cast(
+		&(nodes->getInfoVecs().myosinLevel[0]));
+	double* minToMDistAddr = thrust::raw_pointer_cast(
+		&(nodes->getInfoVecs().minToMDist[0]));
+
+	// thrust::device_vector<double> d_fluxWeightsVec(fluxWeightsVec);
+    // double* fluxWeightsAddr = thrust::raw_pointer_cast(&d_fluxWeightsVec[0]);
+	 double* fluxWeightsAddr = thrust::raw_pointer_cast(
+		&(nodes->getInfoVecs().fluxWeights[0]));
+
+	// compute minimal distance from internal nodes of a leader cell to membrane nodes 
+	
+	thrust::transform(
+		thrust::make_zip_iterator(
+				thrust::make_tuple(
+						thrust::make_permutation_iterator(
+								cellInfoVecs.activeMembrNodeCounts.begin(),
+								make_transform_iterator(iBegin,
+										DivideFunctor(maxAllNodePerCell))),
+						thrust::make_permutation_iterator(
+								cellInfoVecs.activeIntnlNodeCounts.begin(),
+								make_transform_iterator(iBegin,
+										DivideFunctor(maxAllNodePerCell))),
+						make_transform_iterator(iBegin,
+								DivideFunctor(maxAllNodePerCell)),
+						make_transform_iterator(iBegin,
+								ModuloFunctor(maxAllNodePerCell)),
+						thrust::make_permutation_iterator(
+								cellInfoVecs.cell_Type.begin(),
+								make_transform_iterator(iBegin,
+										DivideFunctor(maxAllNodePerCell))),
+						nodes->getInfoVecs().minToMDist.begin()
+						)),
+		thrust::make_zip_iterator(
+				thrust::make_tuple(
+						thrust::make_permutation_iterator(
+								cellInfoVecs.activeMembrNodeCounts.begin(),
+								make_transform_iterator(iBegin,
+										DivideFunctor(maxAllNodePerCell))),
+						thrust::make_permutation_iterator(
+								cellInfoVecs.activeIntnlNodeCounts.begin(),
+								make_transform_iterator(iBegin,
+										DivideFunctor(maxAllNodePerCell))),
+						make_transform_iterator(iBegin,
+								DivideFunctor(maxAllNodePerCell)),
+						make_transform_iterator(iBegin,
+								ModuloFunctor(maxAllNodePerCell)),
+						thrust::make_permutation_iterator(
+								cellInfoVecs.cell_Type.begin(),
+								make_transform_iterator(iBegin,
+										DivideFunctor(maxAllNodePerCell))),
+						nodes->getInfoVecs().minToMDist.begin()
+						))
+				+ totalNodeCountForActiveCells,
+		nodes->getInfoVecs().minToMDist.begin(), 
+		updateMinToMDist(maxAllNodePerCell, maxMemNodePerCell, nodeLocXAddr,
+				nodeLocYAddr, nodeIsActiveAddr, nodeAdhIdxAddr));
+	
+
+	
+	// compute the flux weight matrix for all internal nodes in a leader cell
+	thrust::transform(
+			thrust::make_zip_iterator(
+					thrust::make_tuple(
+							thrust::make_permutation_iterator(
+									cellInfoVecs.activeMembrNodeCounts.begin(),
+									make_transform_iterator(iBegin,
+											DivideFunctor(maxAllNodePerCell))),
+							thrust::make_permutation_iterator(
+									cellInfoVecs.activeIntnlNodeCounts.begin(),
+									make_transform_iterator(iBegin,
+											DivideFunctor(maxAllNodePerCell))),
+							make_transform_iterator(iBegin,
+									DivideFunctor(maxAllNodePerCell)),
+							make_transform_iterator(iBegin,
+									ModuloFunctor(maxAllNodePerCell)),
+							thrust::make_permutation_iterator(
+									cellInfoVecs.cell_Type.begin(),
+									make_transform_iterator(iBegin,
+											DivideFunctor(maxAllNodePerCell))),
+							nodes->getInfoVecs().minToMDist.begin()
+							)),
+			thrust::make_zip_iterator(
+					thrust::make_tuple(
+							thrust::make_permutation_iterator(
+									cellInfoVecs.activeMembrNodeCounts.begin(),
+									make_transform_iterator(iBegin,
+											DivideFunctor(maxAllNodePerCell))),
+							thrust::make_permutation_iterator(
+									cellInfoVecs.activeIntnlNodeCounts.begin(),
+									make_transform_iterator(iBegin,
+											DivideFunctor(maxAllNodePerCell))),
+							make_transform_iterator(iBegin,
+									DivideFunctor(maxAllNodePerCell)),
+							make_transform_iterator(iBegin,
+									ModuloFunctor(maxAllNodePerCell)),
+							thrust::make_permutation_iterator(
+									cellInfoVecs.cell_Type.begin(),
+									make_transform_iterator(iBegin,
+											DivideFunctor(maxAllNodePerCell))),
+							nodes->getInfoVecs().minToMDist.begin()
+							))
+					+ totalNodeCountForActiveCells,
+			nodes->getInfoVecs().minToMDist.begin(), 
+			updateFluxWeightsVec(maxAllNodePerCell, maxMemNodePerCell, maxIntnlNodePerCell, nodeLocXAddr,
+					nodeLocYAddr, nodeIsActiveAddr, myosinLevelAddr, nodeAdhIdxAddr, minToMDistAddr, fluxWeightsAddr));
+					
+		//	thrust::copy(d_fluxWeightsVec.begin(), d_fluxWeightsVec.end(), fluxWeightsVec.begin());
+}
 
 
-
-
-
-
-
-// Mar 29, 2023: add actin force on each membrane node, maganitude depending on neighboring myosin concentration
+// add actin force on each membrane node, maganitude depending on neighboring myosin concentration
 // apply to all internal nodes
 void SceCells::calSceCellMyosin() {
 	totalNodeCountForActiveCells = allocPara_m.currentActiveCellCount
 			* allocPara_m.maxAllNodePerCell;
 	uint maxAllNodePerCell = allocPara_m.maxAllNodePerCell;
 	uint maxMemNodePerCell = allocPara_m.maxMembrNodePerCell;
+	uint maxIntnlNodePerCell = allocPara_m.maxIntnlNodePerCell;
 	thrust::counting_iterator<uint> iBegin(0);
 
 	double* nodeLocXAddr = thrust::raw_pointer_cast(
@@ -6042,6 +6172,8 @@ void SceCells::calSceCellMyosin() {
     int* nodeAdhIdxAddr = thrust::raw_pointer_cast(
             &(nodes->getInfoVecs().nodeAdhereIndex[0]));
 
+	double* fluxWeightsAddr = thrust::raw_pointer_cast(
+		&(nodes->getInfoVecs().fluxWeights[0]));
 	// double grthPrgrCriVal_M =growthAuxData.grthPrgrCriVal_M_Ori ; // for now constant  growthAuxData.grthProgrEndCPU
 	//		- growthAuxData.prolifDecay
 	//				* (growthAuxData.grthProgrEndCPU
@@ -6124,15 +6256,11 @@ void SceCells::calSceCellMyosin() {
 											DivideFunctor(maxAllNodePerCell)))
 							))
 					+ totalNodeCountForActiveCells,
-			nodes->getInfoVecs().myosinLevel.begin(), 
-			updateCellMyosin(maxAllNodePerCell, maxMemNodePerCell, nodeLocXAddr,
-					nodeLocYAddr, nodeIsActiveAddr, myosinLevelAddr, myosinDiffusionThreshold, nodeAdhIdxAddr, timeStep, timeNow));
+			nodes->getInfoVecs().tempMyosinLevel.begin(), 
+			updateCellMyosin(maxAllNodePerCell, maxMemNodePerCell, maxIntnlNodePerCell, nodeLocXAddr,
+					nodeLocYAddr, nodeIsActiveAddr, myosinLevelAddr, myosinDiffusionThreshold, nodeAdhIdxAddr, fluxWeightsAddr, timeStep, timeNow));
+			thrust::copy(nodes->getInfoVecs().tempMyosinLevel.begin(),nodes->getInfoVecs().tempMyosinLevel.end(),nodes->getInfoVecs().myosinLevel.begin());
 }
-
-
-
-
-
 
 
 
@@ -6398,10 +6526,10 @@ void SceCells::calSubAdhForce() {
 	thrust::transform(
 			thrust::make_zip_iterator(
 					thrust::make_tuple(
-//							thrust::make_permutation_iterator(
-//									cellInfoVecs.activeMembrNodeCounts.begin(),
-//									make_transform_iterator(iBegin,
-//											DivideFunctor(maxAllNodePerCell))),
+							thrust::make_permutation_iterator(
+									cellInfoVecs.activeMembrNodeCounts.begin(),
+									make_transform_iterator(iBegin,
+											DivideFunctor(maxAllNodePerCell))),
 							thrust::make_permutation_iterator(
 									cellInfoVecs.cell_Type.begin(),
 									make_transform_iterator(iBegin,
@@ -6424,18 +6552,18 @@ void SceCells::calSubAdhForce() {
 									ModuloFunctor(maxAllNodePerCell)),
 							nodes->getInfoVecs().myosinLevel.begin(),
 							nodes->getInfoVecs().nodeVelX.begin(),
-							nodes->getInfoVecs().nodeVelY.begin(),
-							thrust::make_permutation_iterator(
-                                    cellInfoVecs.cellPolarAngle.begin(),
-                                    make_transform_iterator(iBegin,
-                                            DivideFunctor(maxAllNodePerCell)))
+							nodes->getInfoVecs().nodeVelY.begin()
+							//thrust::make_permutation_iterator(
+                            //        cellInfoVecs.cellPolarAngle.begin(),
+                            //        make_transform_iterator(iBegin,
+                            //                DivideFunctor(maxAllNodePerCell)))
 							)),
 			thrust::make_zip_iterator(
 					thrust::make_tuple(
-//							thrust::make_permutation_iterator(
-//									cellInfoVecs.activeMembrNodeCounts.begin(),
-//									make_transform_iterator(iBegin,
-//											DivideFunctor(maxAllNodePerCell))),
+							thrust::make_permutation_iterator(
+									cellInfoVecs.activeMembrNodeCounts.begin(),
+									make_transform_iterator(iBegin,
+											DivideFunctor(maxAllNodePerCell))),
 							thrust::make_permutation_iterator(
 									cellInfoVecs.cell_Type.begin(),
 									make_transform_iterator(iBegin,
@@ -6458,11 +6586,11 @@ void SceCells::calSubAdhForce() {
 									ModuloFunctor(maxAllNodePerCell)),
 							nodes->getInfoVecs().myosinLevel.begin(),
 							nodes->getInfoVecs().nodeVelX.begin(),
-							nodes->getInfoVecs().nodeVelY.begin(),
-							thrust::make_permutation_iterator(
-                                    cellInfoVecs.cellPolarAngle.begin(),
-                                    make_transform_iterator(iBegin,
-                                            DivideFunctor(maxAllNodePerCell)))
+							nodes->getInfoVecs().nodeVelY.begin()
+							//thrust::make_permutation_iterator(
+                            //       cellInfoVecs.cellPolarAngle.begin(),
+                            //        make_transform_iterator(iBegin,
+                            //                DivideFunctor(maxAllNodePerCell)))
 							))
 					+ totalNodeCountForActiveCells,
 			thrust::make_zip_iterator(
