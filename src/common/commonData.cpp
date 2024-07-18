@@ -246,6 +246,13 @@ void VtkAnimationData::outputVtkAni(std::string scriptNameBase, int rank) { //ap
 		}
 	fs << std::endl;
 
+	fs << "SCALARS minToMDist float" << endl;
+	fs << "LOOKUP_TABLE default" << endl;
+		for (uint i = 0; i < pointsAniData.size(); i++) {
+			fs << pointsAniData[i].minToMDist1 << endl;
+		}
+	fs << std::endl;
+
 	//AAMIRI starts writing tension vector data
 	fs << "VECTORS F_MI_M float" << endl;
 		for (uint i = 0; i < pointsAniData.size(); i++) {

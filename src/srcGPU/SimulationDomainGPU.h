@@ -46,7 +46,6 @@ class SimulationDomainGPU {
 	std::vector<std::vector<PreT1State> > preT1Vec;
 	std::vector<SigptState> sigPtVec;
 	std::vector<SigptStateV2> sigPtVecV2;
-	// std::vector<double> fluxWeightsVec;
 
 	std::set<int> t1CellSet;
 	std::vector<double> cellColorVec;

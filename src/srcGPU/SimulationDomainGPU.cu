@@ -113,12 +113,6 @@ void SimulationDomainGPU::initialize_v2_M(SimulationInitData_V2_M& initData, dou
 		sigPt.LIFETIME = 10;
 		sigPtVecV2.push_back(sigPt);
 	}
-	/*
- 	uint maxIntnlNodePerLeader = memPara.maxIntnlNodePerCell;
-    for (uint i=0;i<maxIntnlNodePerLeader*maxIntnlNodePerLeader;i++){
-        fluxWeightsVec.push_back(0.0);
-    }
-	*/
 	std::cout << "Finished initializing simulation domain" << std::endl;
 }
 
@@ -166,7 +160,7 @@ void SimulationDomainGPU::runAllLogic_M(double dt, double Damp_Coef, double Init
 	cout << "--- 3 ---" << endl;
 	cout.flush();
 	// cells.runAllCellLogicsDisc_M(dt,Damp_Coef,InitTimeStage,sigPtVecV2); // cell level
-	cells.runAllCellLogicsDisc_M(dt,Damp_Coef,InitTimeStage); // ,fluxWeightsVec
+	cells.runAllCellLogicsDisc_M(dt,Damp_Coef,InitTimeStage); 
 	cout << "--- 4 ---" << endl;
 	cout.flush();
 #ifdef DebugModeDomain
@@ -261,7 +255,12 @@ void SimulationDomainGPU::outputVtkGivenCellColor(std::string scriptNameBase,
 	// additionalSimuDomainOutput(aniData);
 	// additionalSimuDomainOutputV2(aniData);
 	aniData.outputVtkAni(scriptNameBase, rank);
-	aniData.outputCellVtkAni(scriptNameBase, rank); 
+	aniData.outputCellVtkAni(scriptNameBase, rank);
+
+	// std::ofstream output_file("./testFluxWeights.txt");
+    // std::ostream_iterator<std::string> output_iterator(output_file, "\n");
+    // std::copy(rawAniData.fluxWeights.begin(), rawAniData.fluxWeights.end(), output_iterator); 
+
 	// aniData.outputCellPolarVtkAni(scriptNameBase, rank);
 	// aniData.outputCCAdhesionVtkAni(scriptNameBase, rank);
 	// aniData.outputSigNodeVtkAni(scriptNameBase,rank);

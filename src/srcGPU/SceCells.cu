@@ -74,7 +74,7 @@ __device__ uint obtainMembEndNode(uint& cellRank, uint& activeMembrNodeThis) {
 
 __device__
 bool isAllIntnlFilled(uint& currentIntnlCount) {
-	if (currentIntnlCount < maxIntnlPerFollower) {
+	if (currentIntnlCount < maxIntnlPerFollower) { // change here 
 		return false;
 	} else {
 		return true;
@@ -471,7 +471,7 @@ void SceCells::decideIsScheduleToGrow() {
 							cellInfoVecs.cell_Type.begin()))
 					+ allocPara.currentActiveCellCount,
 			cellInfoVecs.isScheduledToGrow.begin(),
-			PtCondiOp(miscPara.growThreshold));
+			decideIsScheduleToGrow_MDevice(miscPara.growThreshold));
 }
 
 /**
@@ -880,7 +880,7 @@ void SceCells::initCellInfoVecs_M() {
 	cellInfoVecs.cell_DppTkv.resize(allocPara_m.maxCellCount, 0.0);   //Alireza
 	cellInfoVecs.cell_pMad.resize(allocPara_m.maxCellCount, 0.0);   //Alireza
 	cellInfoVecs.cell_pMadOld.resize(allocPara_m.maxCellCount, 0.0);   //Alireza
-	cellInfoVecs.cell_Type.resize(allocPara_m.maxCellCount, 0);   //Alireza
+	cellInfoVecs.cell_Type.resize(allocPara_m.maxCellCount, 1);   //Alireza
 	
         //cout<< "size of dpp in init is "<< cellInfoVecs.cell_Dpp.size() << endl ;          
 	cellInfoVecs.growthProgress.resize(allocPara_m.maxCellCount, 0.0); //A&A
@@ -1083,7 +1083,7 @@ void SceCells::initMyosinLevel() {
                             ))
                     + totalNodeCountForActiveCells,
             nodes->getInfoVecs().myosinLevel.begin(), 
-            initializeMyosinLevel(maxAllNodePerCell, maxMemNodePerCell, nodeLocXAddr,
+            initMyosinLevelDevice(maxAllNodePerCell, maxMemNodePerCell, nodeLocXAddr,
                     nodeLocYAddr, nodeIsActiveAddr, myosinLevelAddr));
 }
 // 
@@ -1706,7 +1706,6 @@ void SceCells::runAllCellLogicsDisc_M(double dt, double Damp_Coef, double InitTi
 	// updateActivationLevel();
 	applySceCellDisc_M();
 	updateCellPolar(); // comment out start for no cell motion
-	// calFluxWeightsMyosin(fluxWeightsVec);
 	calFluxWeightsMyosin();
 	calSceCellMyosin();
 	// applySceCellMyosin();
@@ -3246,7 +3245,7 @@ void SceCells::decideIsScheduleToGrow_M() {
 							cellInfoVecs.cell_Type.begin()))
 					+ allocPara_m.currentActiveCellCount,
 			cellInfoVecs.isScheduledToGrow.begin(),
-			PtCondiOp(miscPara.growThreshold));
+			decideIsScheduleToGrow_MDevice(miscPara.growThreshold));
 }
 
 //AAMIRI May5
@@ -3475,7 +3474,7 @@ void SceCells::addPointIfScheduledToGrow_M() {
 			thrust::make_zip_iterator(
 					thrust::make_tuple(cellInfoVecs.lastCheckPoint.begin(),
 							cellInfoVecs.activeIntnlNodeCounts.begin())),
-			AddPtOp_M(seed, miscPara.addNodeDistance, miscPara.growThreshold,
+			addPointIfScheduledToGrow_MDevice(seed, miscPara.addNodeDistance, miscPara.growThreshold,
 					growthAuxData.nodeXPosAddress,
 					growthAuxData.nodeYPosAddress,
 					growthAuxData.nodeIsActiveAddress,maxAllNodePerCell,maxMemNodePerCell,myosinLevelAddr));
@@ -3860,6 +3859,7 @@ AniRawData SceCells::obtainAniRawDataGivenCellColor(vector<double>& cellColors,
 	uint activeCellCount = allocPara_m.currentActiveCellCount;
 	uint maxNodePerCell = allocPara_m.maxAllNodePerCell;
 	uint maxMemNodePerCell = allocPara_m.maxMembrNodePerCell;
+	uint maxIntnlNodePerCell = maxNodePerCell-maxMemNodePerCell;
 	uint beginIndx = allocPara_m.bdryNodeCount;
 	uint maxFilopPerCell = 5; // to be modified later
 	uint maxFilopCount = activeCellCount * maxFilopPerCell;
@@ -3897,6 +3897,8 @@ AniRawData SceCells::obtainAniRawDataGivenCellColor(vector<double>& cellColors,
 	thrust::host_vector<bool> hostFilopIsActive(maxFilopCount);
 	thrust::host_vector<double> hostFilopAngle(maxFilopCount);
 	thrust::host_vector<int> hostAdhNodeIndex(maxActiveNode);
+	thrust::host_vector<double> hostMinToMDist(maxActiveNode);
+	thrust::host_vector<double> hostFluxWeights = nodes->getInfoVecs().fluxWeights;
 
 	thrust::host_vector<double> hostCellCenterX(activeCellCount);
 	thrust::host_vector<double> hostCellCenterY(activeCellCount);
@@ -3945,7 +3947,8 @@ AniRawData SceCells::obtainAniRawDataGivenCellColor(vector<double>& cellColors,
 							nodes->getInfoVecs().nodeF_MI_M_N.begin(), //Ali
 							nodes->getInfoVecs().myosinLevel.begin(),
 							nodes->getInfoVecs().nodeActLevel.begin(),
-							nodes->getInfoVecs().nodeAdhereIndex.begin()
+							nodes->getInfoVecs().nodeAdhereIndex.begin(),
+							nodes->getInfoVecs().minToMDist.begin()
 							)),
 			thrust::make_zip_iterator(
 					thrust::make_tuple(
@@ -3953,13 +3956,14 @@ AniRawData SceCells::obtainAniRawDataGivenCellColor(vector<double>& cellColors,
 							nodes->getInfoVecs().nodeF_MI_M_N.begin(), //AliE
 							nodes->getInfoVecs().myosinLevel.begin(),
 							nodes->getInfoVecs().nodeActLevel.begin(),
-							nodes->getInfoVecs().nodeAdhereIndex.begin()
+							nodes->getInfoVecs().nodeAdhereIndex.begin(),
+							nodes->getInfoVecs().minToMDist.begin()
 							))
 					+ maxActiveNode,
 			thrust::make_zip_iterator(
 					thrust::make_tuple(
 							hostTmpVectorF_MI_M_T.begin(), hostTmpVectorF_MI_M_N.begin(), hostMyosinLevel.begin(),
-							hostActLevel.begin(),hostAdhNodeIndex.begin()
+							hostActLevel.begin(),hostAdhNodeIndex.begin(),hostMinToMDist.begin()
 							)));
 
 	thrust::copy(
@@ -4051,6 +4055,9 @@ AniRawData SceCells::obtainAniRawDataGivenCellColor(vector<double>& cellColors,
 
 	int tempAdhSiteCount = 0;
         double tmpF_MI_M_MagN_Int[activeCellCount-1] ; //AliE
+//	for (uint i=0; i<hostFluxWeights.size();i++){
+//		rawAniData.fluxWeights.push_back(hostFluxWeights[i]);
+//	}
 
          //This is how the VTK file is intended to be written. First the membrane nodes are going to be written and then internal nodes.
         //loop on membrane nodes
@@ -4090,6 +4097,8 @@ AniRawData SceCells::obtainAniRawDataGivenCellColor(vector<double>& cellColors,
 
 				rawAniData.adhSiteCount.push_back(tempAdhSiteCount);
 				rawAniData.adhNodeIndex.push_back(tempAdhNodeIndex);
+				rawAniData.minToMDist.push_back(hostMinToMDist[index1]);
+				rawAniData.fluxWeights.push_back(0);
 				rawAniData.aniNodeRank.push_back(i);
 
 				}
@@ -4126,7 +4135,12 @@ AniRawData SceCells::obtainAniRawDataGivenCellColor(vector<double>& cellColors,
 					tempAdhSiteCount += hostSubAdhIsBound[index1*10 + k]; //???
 				}
 
+				if (hostAdhNodeIndex[index1] == -1) {tempAdhNodeIndex = -1;}
+				else {tempAdhNodeIndex = hostAdhNodeIndex[index1];};
+
+				rawAniData.adhNodeIndex.push_back(tempAdhNodeIndex);
 				rawAniData.adhSiteCount.push_back(tempAdhSiteCount);
+				rawAniData.minToMDist.push_back(hostMinToMDist[index1]);
 				rawAniData.aniNodeRank.push_back(i);
 				}
 			
@@ -4394,10 +4408,12 @@ void SceCells::copyInitActiveNodeCount_M(
 	*/
 	for (uint cellRank=0; cellRank<allocPara_m.currentActiveCellCount; cellRank++)
     {
-        if (initCellRadii[cellRank]>2.0){
+        if (initCellRadii[cellRank]>2.0){ // 1 is leader
 			cellInfoVecs.cell_Type[cellRank] = 1;
 			nodes->setLeaderRank(cellRank);
-			} // 1 is leader
+			} else {
+				cellInfoVecs.cell_Type[cellRank] = 0;
+			}
     }
 	
 }
@@ -4655,6 +4671,7 @@ VtkAnimationData SceCells::outputVtkData(AniRawData& rawAniData, //apr 05
 		ptAniData.actLevel1= rawAniData.actLevel[i];  
 		ptAniData.adhSiteCount1= rawAniData.adhSiteCount[i];
 		ptAniData.adhNodeIndex1= rawAniData.adhNodeIndex[i];
+		ptAniData.minToMDist1= rawAniData.minToMDist[i];
 		vtkData.pointsAniData.push_back(ptAniData);
 	}
 	// vtk file one 
@@ -6260,6 +6277,7 @@ void SceCells::calSceCellMyosin() {
 			updateCellMyosin(maxAllNodePerCell, maxMemNodePerCell, maxIntnlNodePerCell, nodeLocXAddr,
 					nodeLocYAddr, nodeIsActiveAddr, myosinLevelAddr, myosinDiffusionThreshold, nodeAdhIdxAddr, fluxWeightsAddr, timeStep, timeNow));
 			thrust::copy(nodes->getInfoVecs().tempMyosinLevel.begin(),nodes->getInfoVecs().tempMyosinLevel.end(),nodes->getInfoVecs().myosinLevel.begin());
+			// nodes->getInfoVecs().myosinLevel = nodes->getInfoVecs().tempMyosinLevel;
 }
 
 
@@ -6300,8 +6318,9 @@ void SceCells::updateActivationLevel() {
 							cellInfoVecs.cell_Type.begin() + activeCellCount
 							)),
 			cellInfoVecs.activationLevel.begin(),
-			applyActivationLevel(activeCellCount,maxMemNodePerCell,maxNodePerCell,nodeLocXAddr,nodeLocYAddr,nodeIsActiveAddr,nodeAdhIdxAddr,actLevelAddr));
+			updateActivationLevelDevice(activeCellCount,maxMemNodePerCell,maxNodePerCell,nodeLocXAddr,nodeLocYAddr,nodeIsActiveAddr,nodeAdhIdxAddr,actLevelAddr));
 }
+
 
 
 

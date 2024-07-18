@@ -599,6 +599,7 @@ struct PointAniData {
 	uint actLevel1; 
 	int adhSiteCount1;
 	int adhNodeIndex1;
+	double minToMDist1;
 };
 
 struct PointAniCellData {
@@ -704,6 +705,8 @@ struct AniRawData {
 	std::vector<uint> actLevel;
 	std::vector<int> adhSiteCount;
 	std::vector<int> adhNodeIndex;
+	std::vector<double> minToMDist;
+	std::vector<double> fluxWeights;
 
 	std::vector<CVector> aniFilopPos;
 	std::vector<LinkAniCellData> aniFilopLinks;
