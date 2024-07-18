@@ -1286,7 +1286,7 @@ __host__ __device__ updateFluxWeightsVec(uint maxNodePerCell,
 		double nodeOtherX, nodeOtherY;
 		double distNodes;
 		double sumFlux = 0;
-		double myosinMaxLevel=1000;
+		double myosinMaxLevel=10;
 		uint fluxIndex; // index for the fluxWeights matrix
 		double dist_0=2;
 		
@@ -1391,7 +1391,7 @@ struct updateCellMyosin: public thrust::unary_function<UUDDUUDDDi, double> {
 		// double baseMyosin=1;
 		// if (cell_Type == 0){baseMyosin=1.0;} // follower 
 		double myosinTarget = 0.0; // baseMyosin-((nodeX-Cell_CenterX)*pX + (nodeY-Cell_CenterY)*pY);
-		double kmyo = 0.005; // rate of myosin approaching its target value
+		double kmyo = 0.0001; // rate of myosin approaching its target value
 		double kdeg = 0.001; // was 0.02
 
 		double nodeXTemp, nodeYTemp;
@@ -1490,7 +1490,7 @@ struct updateCellMyosin: public thrust::unary_function<UUDDUUDDDi, double> {
 			if (index>=intnlIndxBegin && index < intnlIndxEnd){ // seems not neccessary, as the if condition gurantees it is an internal node 
 				// nodeMyosin = nodeMyosin + _timeStep * (kmyo* (myosinTarget - nodeMyosin)- kdeg * nodeMyosin); // make sure it is positive
 				// fluxIndex = 1*_maxIntnlNodePerCell+(nodeRank-_maxMemNodePerCell);
-				nodeMyosin = nodeMyosin + _timeStep * deltaMyosin;
+				nodeMyosin = nodeMyosin + _timeStep * kmyo* deltaMyosin;
 			}
 			}
 			return nodeMyosin;
