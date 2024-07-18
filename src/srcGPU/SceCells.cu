@@ -840,7 +840,7 @@ SceCells::SceCells(SceNodes* nodesInput,
 
 	memNewSpacing = globalConfigVars.getConfigValue("MembrLenDiv").toDouble();
 	
-	initialize_M(nodesInput);
+	initialize_M(nodesInput,initCellRadii);
 
         cout<< "size of dpp in constructor  is "<< cellInfoVecs.cell_Dpp.size() << endl ;          
 	copyToGPUConstMem();
@@ -880,7 +880,7 @@ void SceCells::initCellInfoVecs_M() {
 	cellInfoVecs.cell_DppTkv.resize(allocPara_m.maxCellCount, 0.0);   //Alireza
 	cellInfoVecs.cell_pMad.resize(allocPara_m.maxCellCount, 0.0);   //Alireza
 	cellInfoVecs.cell_pMadOld.resize(allocPara_m.maxCellCount, 0.0);   //Alireza
-	cellInfoVecs.cell_Type.resize(allocPara_m.maxCellCount, 1);   //Alireza
+	cellInfoVecs.cell_Type.resize(allocPara_m.maxCellCount, 0);   //Alireza
 	
         //cout<< "size of dpp in init is "<< cellInfoVecs.cell_Dpp.size() << endl ;          
 	cellInfoVecs.growthProgress.resize(allocPara_m.maxCellCount, 0.0); //A&A
@@ -1107,7 +1107,7 @@ void SceCells::initialize(SceNodes* nodesInput) {
 	distributeIsCellRank();
 }
 
-void SceCells::initialize_M(SceNodes* nodesInput) {
+void SceCells::initialize_M(SceNodes* nodesInput, std::vector<double> &initCellRadii) {
 	std::cout << "Initializing cells ...... " << std::endl;
 	//std::cout.flush();
 	nodes = nodesInput;
@@ -1140,6 +1140,15 @@ void SceCells::initialize_M(SceNodes* nodesInput) {
 	initGrowthAuxData_M();
 	//std::cout << "break point 8 " << std::endl;
 	//std::cout.flush();
+	for (uint cellRank=0; cellRank<allocPara_m.currentActiveCellCount; cellRank++)
+    {
+        if (initCellRadii[cellRank]>2.0){ // 1 is leader
+			cellInfoVecs.cell_Type[cellRank] = 1;
+			nodes->setLeaderRank(cellRank);
+			} else {
+				cellInfoVecs.cell_Type[cellRank] = 0;
+			}
+    }
 	initMyosinLevel(); // Mar 31
 }
 
@@ -4405,17 +4414,7 @@ void SceCells::copyInitActiveNodeCount_M(
         double tempProg = cellInfoVecs.growthProgress[i];
         cout << tempProg << endl;
     }
-	*/
-	for (uint cellRank=0; cellRank<allocPara_m.currentActiveCellCount; cellRank++)
-    {
-        if (initCellRadii[cellRank]>2.0){ // 1 is leader
-			cellInfoVecs.cell_Type[cellRank] = 1;
-			nodes->setLeaderRank(cellRank);
-			} else {
-				cellInfoVecs.cell_Type[cellRank] = 0;
-			}
-    }
-	
+	*/	
 }
 
 void SceCells::myDebugFunction() {

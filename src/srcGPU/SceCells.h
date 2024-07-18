@@ -1286,9 +1286,9 @@ __host__ __device__ updateFluxWeightsVec(uint maxNodePerCell,
 		double nodeOtherX, nodeOtherY;
 		double distNodes;
 		double sumFlux = 0;
-		double myosinMaxLevel=5000;
+		double myosinMaxLevel=1000;
 		uint fluxIndex; // index for the fluxWeights matrix
-		double dist_0=1;
+		double dist_0=2;
 		
 		if (cell_Type==1){ // means leader
 			if (nodeRank>=_maxMemNodePerCell && _isActiveAddr[index]==true){ // means internal node 
@@ -1478,7 +1478,7 @@ struct updateCellMyosin: public thrust::unary_function<UUDDUUDDDi, double> {
 			uint fluxIndex,otherMyosinIndex;
 			for (uint tempNodeRank=0; tempNodeRank<activeIntnlCount;tempNodeRank++){ // internal nodes of the current cell, index for the flux matrix
 				fluxIndex = (nodeRank-_maxMemNodePerCell)*_maxIntnlNodePerCell+tempNodeRank; // nodeRank-_maxMembrNode row, tempNodeRank column
-				// deltaMyosin = deltaMyosin - nodeMyosin*_fluxWeightsAddr[fluxIndex];
+				deltaMyosin = deltaMyosin - nodeMyosin*_fluxWeightsAddr[fluxIndex];
 			}
 
 			for (uint tempNodeRank=0; tempNodeRank<activeIntnlCount;tempNodeRank++){ // internal nodes of the current cell 
@@ -2269,18 +2269,18 @@ struct initMyosinLevelDevice: public thrust::unary_function<UUDDUUi, double> {
 
 		if (cellType == 0){
 			if (nodeRank < _maxMemNodePerCell) {
-				nodeMyosin = 3.5;
+				nodeMyosin = 0;
 			} else {
-				nodeMyosin = 6.5;
+				nodeMyosin = 0;
 			}
 		} else {
 			if (nodeRank < _maxMemNodePerCell) {
-				nodeMyosin =4;
+				nodeMyosin =0;
 			} else {
 				if (_isActiveAddr[index] == false) {
-					nodeMyosin = 4.5;
+					nodeMyosin = 0;
 				} else {
-					nodeMyosin = 8.5;
+					nodeMyosin = 2;
 				}
 			}
 		}
@@ -2944,7 +2944,7 @@ struct addPointIfScheduledToGrow_MDevice: thrust::unary_function<BoolUIDDUID, DU
                     // shortestDistantce = distNodes;
                     }
             }
-		nodeMyosin = 1.5; // totalNeighbrMyosin/(neighbrNodesCounts*1.0); // change here
+		nodeMyosin = 0.0; // totalNeighbrMyosin/(neighbrNodesCounts*1.0); // change here
 		for (index_neighbr = 0; index_neighbr<neighbrNodesCounts;
 				index_neighbr++) {
 				_myosinLevelAddr[neighbrNodesIndex[index_neighbr]] = nodeMyosin;
@@ -4390,7 +4390,7 @@ class SceCells {
 	void initMyosinLevel();
 
 	void initialize(SceNodes* nodesInput);
-	void initialize_M(SceNodes* nodesInput);
+	void initialize_M(SceNodes* nodesInput, std::vector<double> &initCellRadii);
 
 	void distributeBdryIsActiveInfo();
 	void distributeProfileIsActiveInfo();

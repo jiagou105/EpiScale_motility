@@ -2589,7 +2589,7 @@ void SceNodes::allocSpaceForNodes(uint maxTotalNodeCount, uint maxIntnlNodeCount
 		infoVecs.minToMDist.resize(maxTotalNodeCount,0);
 		infoVecs.fluxWeights.resize(maxIntnlNodeCountPerCell*maxIntnlNodeCountPerCell,0);
 		infoVecs.myosinLevel.resize(maxTotalNodeCount,0);
-		infoVecs.tempMyosinLevel.resize(maxTotalNodeCount,5);
+		infoVecs.tempMyosinLevel.resize(maxTotalNodeCount,0);
 
 		infoVecs.subAdhLocX.resize(maxTotalNodeCount * 10,0); // for substrate binding 
 		infoVecs.subAdhLocY.resize(maxTotalNodeCount * 10,0); // the * 10 is for ten possible binding sites, to be changed or pass as a parameter
