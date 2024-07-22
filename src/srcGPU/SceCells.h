@@ -29,6 +29,7 @@ typedef thrust::tuple<uint, uint, uint, double, double, double, double, double, 
 typedef thrust::tuple<uint, uint, uint, uint, double, double, double> CellData;
 typedef thrust::tuple<uint, uint, uint, uint, double> UUUUD;
 typedef thrust::tuple<uint, uint, uint, uint, int, double> UUUUID;
+typedef thrust::tuple<uint, uint, uint, uint, int, double, double, double> UUUUIDDD;
 typedef thrust::tuple<uint, uint, double, double, uint, uint,int> UUDDUUi;
 typedef thrust::tuple<uint, uint, uint, uint, double, double, double, double, double> UUUUDDDDD;
 typedef thrust::tuple<uint, uint, uint, uint, double, double, double, double, double, int> UUUUDDDDDi;
@@ -1023,8 +1024,8 @@ struct addSceCellMyosinForce: public thrust::unary_function<UUUUDDDDD, CVec2> {
 		double  myosinLevel= thrust::get<4>(cData); // progress
 		double oriVelX = thrust::get<5>(cData);
 		double oriVelY = thrust::get<6>(cData);
-		double cellCenterXPos = thrust::get<7>(cData);
-		double cellCenterYPos = thrust::get<8>(cData);
+		double cellCenterX = thrust::get<7>(cData);
+		double cellCenterY = thrust::get<8>(cData);
 		uint index = cellRank * _maxNodePerCell + nodeRank;
                 
 		// double totalMyosin = 0.0;
@@ -1101,7 +1102,7 @@ struct addSceCellMyosinForce: public thrust::unary_function<UUUUDDDDD, CVec2> {
 			// new function 
 			normX = -(rightPosY-leftPosY)/lenRightLeft;
 			normY =  (rightPosX-leftPosX)/lenRightLeft;
-			outwardChecker = (nodeX-cellCenterXPos)*normX + (nodeY-cellCenterYPos)*normY;
+			outwardChecker = (nodeX-cellCenterX)*normX + (nodeY-cellCenterY)*normY;
 			if (outwardChecker<0){
 				normX = -normX;
 				normY = -normY;
@@ -1150,8 +1151,8 @@ struct addSceCellSigForce: public thrust::unary_function<UUUUDDDDDi, CVec2> {
 		double  myosinLevel= thrust::get<4>(cDatai); // progress
 		double oriVelX = thrust::get<5>(cDatai);
 		double oriVelY = thrust::get<6>(cDatai);
-		double cellCenterXPos = thrust::get<7>(cDatai);
-		double cellCenterYPos = thrust::get<8>(cDatai);
+		double cellCenterX = thrust::get<7>(cDatai);
+		double cellCenterY = thrust::get<8>(cDatai);
 		int cellType = thrust::get<9>(cDatai);
 		uint index = cellRank * _maxNodePerCell + nodeRank;
                 
@@ -1194,7 +1195,7 @@ struct addSceCellSigForce: public thrust::unary_function<UUUUDDDDDi, CVec2> {
 
 
 
-struct updateMinToMDist: public thrust::unary_function<UUUUID, double> {
+struct updateMinToMDist: public thrust::unary_function<UUUUIDDD, double> {
 	uint _maxNodePerCell;
 	uint _maxMemNodePerCell;
 	double* _locXAddr;
@@ -1211,19 +1212,25 @@ __host__ __device__ updateMinToMDist(uint maxNodePerCell,
 					_nodeAdhereIndexAddr(nodeAdhereIndexAddr) {
 	}
 	// comment prevents bad formatting issues of __host__ and __device__ in Nsight
-	__device__ double operator()(const UUUUID &cData) const {
+	__device__ double operator()(const UUUUIDDD &cData) const {
 		uint activeMembrCount = thrust::get<0>(cData);
 		uint activeIntnlCount = thrust::get<1>(cData);
 		uint cellRank = thrust::get<2>(cData);
 		uint nodeRank = thrust::get<3>(cData);
 		int cell_Type = thrust::get<4>(cData);
-		double minToMDist = thrust::get<5>(cData);
+		double cellCenterX = thrust::get<5>(cData);
+		double cellCenterY = thrust::get<6>(cData);
+		double minToMDist = thrust::get<7>(cData);
 		uint index = cellRank * _maxNodePerCell + nodeRank;
 		uint nodeMembrIndex;
 		double tempMinDist = 100.0;
 		double nodeX = _locXAddr[index];
 		double nodeY = _locYAddr[index];
 		double nodeMembrX, nodeMembrY;
+		double tempNodeX, tempNodeY;
+		double nodeMemVecX, nodeMemVecY, lenNodeMem;
+		double memCenterX, memCenterY, lenMemCenter;
+		double projLen;
 		double distNodes=200.0;
 		minToMDist = 0.0; 
 
@@ -1236,11 +1243,20 @@ __host__ __device__ updateMinToMDist(uint maxNodePerCell,
 						nodeMembrY = _locYAddr[nodeMembrIndex];
 						distNodes = compDist2D(nodeX,nodeY,nodeMembrX,nodeMembrY);
 						if (distNodes<tempMinDist){
-						tempMinDist = distNodes;
+						// tempMinDist = distNodes;
+						tempNodeX = nodeMembrX;
+						tempNodeY = nodeMembrY; 
 						}
 					}
 				}
-				minToMDist = tempMinDist; // if no contact with followers, minToDist is set to be 100.
+				nodeMemVecX = tempNodeX - nodeX;
+				nodeMemVecY = tempNodeY - nodeY;
+				memCenterX = tempNodeX - cellCenterX;
+				memCenterY = tempNodeY - cellCenterY;
+				lenNodeMem = sqrt(nodeMemVecX*nodeMemVecX + nodeMemVecY*nodeMemVecY);
+				lenMemCenter = sqrt(memCenterX * memCenterX + memCenterY * memCenterY);
+				projLen = (nodeMemVecX*memCenterX + nodeMemVecY*memCenterY)/lenMemCenter; // projection along center-membrane connection
+				minToMDist = projLen; // if no contact with followers, minToDist is set to be 100.
 			}
 		}
 		return minToMDist;
@@ -1301,8 +1317,8 @@ __host__ __device__ updateFluxWeightsVec(uint maxNodePerCell,
 						distNodes = compDist2D(nodeX,nodeY,nodeOtherX,nodeOtherY);
 						fluxIndex = (nodeRank-_maxMemNodePerCell)*_maxIntnlNodePerCell+(nodeOtherIntlRank-_maxMemNodePerCell); // nodeRank row, nodeOtherIntlRank column
 						// if current node is farther compared with other node, and the myosin level of other node has not reached max yet
-						if ((minToMDist>_minToMDistAddr[nodeOtherIntlIndex]) && (_myosinLevelAddr[nodeOtherIntlIndex]<myosinMaxLevel)){ 
-							_fluxWeightsAddr[fluxIndex] = exp(-distNodes/dist_0); // flux from nodeIntlIndex1 to nodeOtherIntlRank
+						if ((fabs(minToMDist)>_minToMDistAddr[nodeOtherIntlIndex]) && (_myosinLevelAddr[nodeOtherIntlIndex]<myosinMaxLevel)){ 
+							_fluxWeightsAddr[fluxIndex] = exp(-distNodes/dist_0)/(fabs(minToMDist)+1); // flux from nodeIntlIndex1 to nodeOtherIntlRank
 							sumFlux = sumFlux + _fluxWeightsAddr[fluxIndex]; // sum up flux weights in the nodeRank row
 						} else {
 							_fluxWeightsAddr[fluxIndex] = 0;
@@ -1391,7 +1407,7 @@ struct updateCellMyosin: public thrust::unary_function<UUDDUUDDDi, double> {
 		// double baseMyosin=1;
 		// if (cell_Type == 0){baseMyosin=1.0;} // follower 
 		double myosinTarget = 0.0; // baseMyosin-((nodeX-Cell_CenterX)*pX + (nodeY-Cell_CenterY)*pY);
-		double kmyo = 0.0001; // rate of myosin approaching its target value
+		double kmyo = 0.001; // rate of myosin approaching its target value
 		double kdeg = 0.001; // was 0.02
 
 		double nodeXTemp, nodeYTemp;
@@ -2104,7 +2120,7 @@ struct addSceCellAdhForce: public thrust::unary_function<UIUDDUUDDD, CVec2> {
 		double adhForceY = 0.0;
 		double kAdh = 25.0;
 		double siteBindThreshold;
-		double charMyosin = 1.0; // maybe this should be the same as the myosinTarget???
+		double charMyosin = 10.0; // maybe this should be the same as the myosinTarget???
 		
 		double randomN1;
 		double randomN2;
@@ -2112,8 +2128,8 @@ struct addSceCellAdhForce: public thrust::unary_function<UIUDDUUDDD, CVec2> {
 		double ngbrSiteX;
 		double ngbrSiteY;
 		double nodeMyosinThreshold = 5;
-		if (cellType != 1 && _nodeActLevelAddr[index]>0){kAdh = 50;}
-		if (cellType == 1){kAdh=30.0;} // for leader
+		if (cellType != 1 && _nodeActLevelAddr[index]>0){kAdh = 10;}
+		if (cellType == 1){kAdh=15.0;} // for leader
 		// if (_timeNow > 55800.0 && _isActiveAddr[index] == true && (nodeRank < _maxMemNodePerCell)) {
 		if (_timeNow > 55800.0 && _isActiveAddr[index] == true) {
 			// starting of the index of the substrate site corresponding to this node is: index*10, 10 is the max subs sites

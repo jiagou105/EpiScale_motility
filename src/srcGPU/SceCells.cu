@@ -6085,6 +6085,14 @@ void SceCells::calFluxWeightsMyosin() { // std::vector<double>& fluxWeightsVec
 								cellInfoVecs.cell_Type.begin(),
 								make_transform_iterator(iBegin,
 										DivideFunctor(maxAllNodePerCell))),
+						thrust::make_permutation_iterator(
+									cellInfoVecs.centerCoordX.begin(),
+									make_transform_iterator(iBegin,
+											DivideFunctor(maxAllNodePerCell))),
+						thrust::make_permutation_iterator(
+									cellInfoVecs.centerCoordY.begin(),
+									make_transform_iterator(iBegin,
+											DivideFunctor(maxAllNodePerCell))),
 						nodes->getInfoVecs().minToMDist.begin()
 						)),
 		thrust::make_zip_iterator(
@@ -6105,6 +6113,14 @@ void SceCells::calFluxWeightsMyosin() { // std::vector<double>& fluxWeightsVec
 								cellInfoVecs.cell_Type.begin(),
 								make_transform_iterator(iBegin,
 										DivideFunctor(maxAllNodePerCell))),
+						thrust::make_permutation_iterator(
+									cellInfoVecs.centerCoordX.begin(),
+									make_transform_iterator(iBegin,
+											DivideFunctor(maxAllNodePerCell))),
+						thrust::make_permutation_iterator(
+									cellInfoVecs.centerCoordY.begin(),
+									make_transform_iterator(iBegin,
+											DivideFunctor(maxAllNodePerCell))),
 						nodes->getInfoVecs().minToMDist.begin()
 						))
 				+ totalNodeCountForActiveCells,
