@@ -6124,7 +6124,10 @@ void SceCells::calFluxWeightsMyosin() { // std::vector<double>& fluxWeightsVec
 						nodes->getInfoVecs().minToMDist.begin()
 						))
 				+ totalNodeCountForActiveCells,
-		nodes->getInfoVecs().minToMDist.begin(), 
+				thrust::make_zip_iterator(
+					thrust::make_tuple(
+						nodes->getInfoVecs().minToMDist.begin(), 
+						nodes->getInfoVecs().cenToAdhMDist.begin())),
 		updateMinToMDist(maxAllNodePerCell, maxMemNodePerCell, nodeLocXAddr,
 				nodeLocYAddr, nodeIsActiveAddr, nodeAdhIdxAddr));
 	
@@ -6150,7 +6153,8 @@ void SceCells::calFluxWeightsMyosin() { // std::vector<double>& fluxWeightsVec
 									cellInfoVecs.cell_Type.begin(),
 									make_transform_iterator(iBegin,
 											DivideFunctor(maxAllNodePerCell))),
-							nodes->getInfoVecs().minToMDist.begin()
+							nodes->getInfoVecs().minToMDist.begin(),
+							nodes->getInfoVecs().cenToAdhMDist.begin()
 							)),
 			thrust::make_zip_iterator(
 					thrust::make_tuple(
@@ -6170,7 +6174,8 @@ void SceCells::calFluxWeightsMyosin() { // std::vector<double>& fluxWeightsVec
 									cellInfoVecs.cell_Type.begin(),
 									make_transform_iterator(iBegin,
 											DivideFunctor(maxAllNodePerCell))),
-							nodes->getInfoVecs().minToMDist.begin()
+							nodes->getInfoVecs().minToMDist.begin(),
+							nodes->getInfoVecs().cenToAdhMDist.begin()
 							))
 					+ totalNodeCountForActiveCells,
 			nodes->getInfoVecs().minToMDist.begin(), 
@@ -6634,7 +6639,7 @@ void SceCells::calSubAdhForce() {
 							   //nodes->getInfoVecs().subAdhLocY.begin(),
 							   //nodes->getInfoVecs().subAdhIsBound.begin(),
 								)), 
-			addSceCellAdhForce(maxAllNodePerCell, maxMemNodePerCell, nodeLocXAddr,
+			calSubAdhForceDevice(maxAllNodePerCell, maxMemNodePerCell, nodeLocXAddr,
 					nodeLocYAddr, nodeIsActiveAddr, myosinLevelAddr, timeStep, timeNow, 
 					subAdhLocXAddr, subAdhLocYAddr, subAdhIsBoundAddr, maxSubSitePerNode, seed,nodeActLevelAddr));
 }

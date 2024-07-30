@@ -986,6 +986,7 @@ public:
 	thrust::device_vector<double> actinForceY;
 
 	thrust::device_vector<double> minToMDist;
+	thrust::device_vector<double> cenToAdhMDist;
 	thrust::device_vector<double> fluxWeights;
 
 	thrust::device_vector<double> myosinLevel;
