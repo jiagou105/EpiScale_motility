@@ -61,7 +61,7 @@ void SimulationDomainGPU::initializeNodes_M(std::vector<SceNodeType> &nodeTypes,
 	//std::cout << "break point 3 " << std::endl;
 	//std::cout.flush();
 
-	nodes.initValues_M(nodeIsActive, initNodesVec, nodeTypes);
+	nodes.initValues_M(nodeIsActive, initNodesVec, nodeTypes); // update nodes location, type, whether is active
 
 	//std::cout << "break point 4 " << std::endl;
 	//std::cout.flush();
@@ -149,7 +149,7 @@ void SimulationDomainGPU::runAllLogic_M(double dt, double Damp_Coef, double Init
 #endif
 	cout << "--- 1 ---" << endl;
 	cout.flush();
-	nodes.sceForcesDisc_M(dt,sigPtVecV2); // node level
+	nodes.sceForcesDisc_M(dt,sigPtVecV2); // node level forces
 	cout << "--- 2 ---" << endl;
 	cout.flush();
 #ifdef DebugModeDomain
@@ -160,7 +160,7 @@ void SimulationDomainGPU::runAllLogic_M(double dt, double Damp_Coef, double Init
 	cout << "--- 3 ---" << endl;
 	cout.flush();
 	// cells.runAllCellLogicsDisc_M(dt,Damp_Coef,InitTimeStage,sigPtVecV2); // cell level
-	cells.runAllCellLogicsDisc_M(dt,Damp_Coef,InitTimeStage); 
+	cells.runAllCellLogicsDisc_M(dt,Damp_Coef,InitTimeStage);  // cell level forces
 	cout << "--- 4 ---" << endl;
 	cout.flush();
 #ifdef DebugModeDomain

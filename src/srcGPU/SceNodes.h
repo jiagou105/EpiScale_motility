@@ -637,7 +637,7 @@ struct AddForceDisc_M: public thrust::unary_function<Tuuudd, CVec2> {
 				continue;
 			}
 			if (bothMembrDiffCell(myValue, nodeRankOther)) {
-                            if (Lennard_Jones) {
+                            if (Lennard_Jones) { // for Lennard Jones force
 				calAndAddInter_M2(xPos, yPos, _nodeLocXAddress[nodeRankOther],
 						_nodeLocYAddress[nodeRankOther], xRes, yRes);
                                                }

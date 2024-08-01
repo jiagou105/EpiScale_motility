@@ -922,6 +922,7 @@ void SceCells::initCellInfoVecs_M() {
 	cellInfoVecs.membrGrowProgress.resize(allocPara_m.maxCellCount, 0.0);
 	cellInfoVecs.membrGrowSpeed.resize(allocPara_m.maxCellCount, 0.0);
 	cellInfoVecs.cellAreaVec.resize(allocPara_m.maxCellCount, 0.0);
+	cellInfoVecs.cellAreaInit.resize(allocPara_m.maxCellCount, 0.0);
     cellInfoVecs.cellPerimVec.resize(allocPara_m.maxCellCount, 0.0);//AAMIRI
 
 	
@@ -1088,6 +1089,11 @@ void SceCells::initMyosinLevel() {
 }
 // 
 
+// calculate the initial cell area
+void SceCells::initCellArea() {
+	calCellArea();
+	// thrust::copy(cellInfoVecs.cellAreaVec.begin(),cellInfoVecs.cellAreaVec.end(),cellInfoVecs.cellAreaInit.begin());
+}
 
 void SceCells::initialize(SceNodes* nodesInput) {
 	nodes = nodesInput;
@@ -1107,6 +1113,7 @@ void SceCells::initialize(SceNodes* nodesInput) {
 	distributeIsCellRank();
 }
 
+// in the constructor 
 void SceCells::initialize_M(SceNodes* nodesInput, std::vector<double> &initCellRadii) {
 	std::cout << "Initializing cells ...... " << std::endl;
 	//std::cout.flush();
@@ -1137,7 +1144,7 @@ void SceCells::initialize_M(SceNodes* nodesInput, std::vector<double> &initCellR
 	initCellNodeInfoVecs_M();
 	//std::cout << "break point 7 " << std::endl;
 	//std::cout.flush();
-	initGrowthAuxData_M();
+	initGrowthAuxData_M(); 
 	//std::cout << "break point 8 " << std::endl;
 	//std::cout.flush();
 	for (uint cellRank=0; cellRank<allocPara_m.currentActiveCellCount; cellRank++)
@@ -1149,7 +1156,8 @@ void SceCells::initialize_M(SceNodes* nodesInput, std::vector<double> &initCellR
 				cellInfoVecs.cell_Type[cellRank] = 0;
 			}
     }
-	initMyosinLevel(); // Mar 31
+	initMyosinLevel(); 
+	initCellArea();
 }
 
 void SceCells::copyInitActiveNodeCount(
@@ -1732,7 +1740,6 @@ void SceCells::runAllCellLogicsDisc_M(double dt, double Damp_Coef, double InitTi
 	std::cout.flush();
         	
 //Ali 
-
 
 
 	applyMemForce_M();
@@ -2651,7 +2658,7 @@ void SceCells::applyMemForce_M() {
 							nodes->getInfoVecs().membrBendRightX.begin(),
 							nodes->getInfoVecs().membrBendRightY.begin()))
 					+ allocPara_m.bdryNodeCount,
-			AddMembrForce(allocPara_m.bdryNodeCount, maxAllNodePerCell,
+			AddMemAngDevice(allocPara_m.bdryNodeCount, maxAllNodePerCell,
 					nodeLocXAddr, nodeLocYAddr, nodeIsActiveAddr, grthPrgrCriVal_M)); // , nodeActinXAddr, nodeActinYAddr
 
 
@@ -2708,17 +2715,11 @@ void SceCells::applyMemForce_M() {
 							nodes->getInfoVecs().membrBendRightX.begin(),
 							nodes->getInfoVecs().membrBendRightY.begin()))
 					+ allocPara_m.bdryNodeCount,
-			AddMembrForce(allocPara_m.bdryNodeCount, maxAllNodePerCell,
+			AddMemAngDeviceNotUsed(allocPara_m.bdryNodeCount, maxAllNodePerCell,
 					nodeLocXAddr, nodeLocYAddr, nodeIsActiveAddr));
 
 **/
-// Ali comment end
-//Ali 
-
-//Ali
-
-
-
+// bending force 
 	double* bendLeftXAddr = thrust::raw_pointer_cast(
 			&(nodes->getInfoVecs().membrBendLeftX[0]));
 	double* bendLeftYAddr = thrust::raw_pointer_cast(
@@ -2757,13 +2758,63 @@ void SceCells::applyMemForce_M() {
 			thrust::make_zip_iterator(
 					thrust::make_tuple(nodes->getInfoVecs().nodeVelX.begin(),
 							nodes->getInfoVecs().nodeVelY.begin())),
-			AddMembrBend(maxAllNodePerCell, nodeIsActiveAddr, bendLeftXAddr,
+			AddMembrBendDevice(maxAllNodePerCell, nodeIsActiveAddr, bendLeftXAddr,
 					bendLeftYAddr, bendRightXAddr, bendRightYAddr));
+
+
+// add the force accounting for the volume preservation
+	thrust::transform(
+			thrust::make_zip_iterator(
+					thrust::make_tuple(
+							thrust::make_permutation_iterator(
+									cellInfoVecs.activeMembrNodeCounts.begin(),
+									make_transform_iterator(iBegin1,
+											DivideFunctor(maxAllNodePerCell))),
+							make_transform_iterator(iBegin1,
+									DivideFunctor(maxAllNodePerCell)),
+							make_transform_iterator(iBegin1,
+									ModuloFunctor(maxAllNodePerCell)),
+							thrust::make_permutation_iterator(
+									cellInfoVecs.cellAreaInit.begin(),
+									make_transform_iterator(iBegin1,
+											DivideFunctor(maxAllNodePerCell))),
+							thrust::make_permutation_iterator(
+									cellInfoVecs.cellAreaVec.begin(),
+									make_transform_iterator(iBegin1,
+											DivideFunctor(maxAllNodePerCell))),
+							nodes->getInfoVecs().nodeVelX.begin(),
+							nodes->getInfoVecs().nodeVelY.begin())),
+			thrust::make_zip_iterator(
+					thrust::make_tuple(
+							thrust::make_permutation_iterator(
+									cellInfoVecs.activeMembrNodeCounts.begin(),
+									make_transform_iterator(iBegin1,
+											DivideFunctor(maxAllNodePerCell))),
+							make_transform_iterator(iBegin1,
+									DivideFunctor(maxAllNodePerCell)),
+							make_transform_iterator(iBegin1,
+									ModuloFunctor(maxAllNodePerCell)),
+							thrust::make_permutation_iterator(
+									cellInfoVecs.cellAreaInit.begin(),
+									make_transform_iterator(iBegin1,
+											DivideFunctor(maxAllNodePerCell))),
+							thrust::make_permutation_iterator(
+									cellInfoVecs.cellAreaVec.begin(),
+									make_transform_iterator(iBegin1,
+											DivideFunctor(maxAllNodePerCell))),
+							nodes->getInfoVecs().nodeVelX.begin(),
+							nodes->getInfoVecs().nodeVelY.begin()))
+					+ totalNodeCountForActiveCells,
+			thrust::make_zip_iterator(
+					thrust::make_tuple(nodes->getInfoVecs().nodeVelX.begin(),
+							nodes->getInfoVecs().nodeVelY.begin())),
+			AddMembrVolDevice(maxAllNodePerCell, nodeIsActiveAddr,nodeLocXAddr, nodeLocYAddr));
+
 }
 
 
 //AAMIRI
-
+// 
 void SceCells::findTangentAndNormal_M() {
 
 	uint totalNodeCountForActiveCells = allocPara_m.currentActiveCellCount
@@ -6694,7 +6745,9 @@ void calAndAddIB_M(double& xPos, double& yPos, double& xPos2, double& yPos2,
 	xRes = xRes + forceValue * (xPos2 - xPos) / linkLength;
 	yRes = yRes + forceValue * (yPos2 - yPos) / linkLength;
 }
+
 //Ali function added for eventually computing pressure for each cells
+// same as the above function except this function also updates F_MI_M_x and F_MI_M_y
 __device__
 void calAndAddIB_M2(double& xPos, double& yPos, double& xPos2, double& yPos2,
 		double& growPro, double& xRes, double& yRes, double & F_MI_M_x, double & F_MI_M_y, double grthPrgrCriVal_M) {
@@ -6741,6 +6794,7 @@ void calAndAddIB_M2(double& xPos, double& yPos, double& xPos2, double& yPos2,
 	xRes = xRes + forceValue * (xPos2 - xPos) / linkLength;
 	yRes = yRes + forceValue * (yPos2 - yPos) / linkLength;
 }
+
 __device__
 void calAndAddII_M(double& xPos, double& yPos, double& xPos2, double& yPos2,
 		double& growPro, double& xRes, double& yRes, double grthPrgrCriVal_M) {

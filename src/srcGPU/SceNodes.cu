@@ -380,9 +380,9 @@ void SceNodes::copyParaToGPUConstMem_M() {
 	cudaMemcpyToSymbol(minAdhBondLen_M, &mechPara_M.minAdhBondLenCPU_M,
 			sizeof(double));
 	cudaMemcpyToSymbol(sceInterBPara_M, mechPara_M.sceInterBParaCPU_M,
-			5 * sizeof(double));
+			5 * sizeof(double)); // membrane - membrane interactions
 	cudaMemcpyToSymbol(sceInterBPara_Jones_On_M, &mechPara_M.sceInterBParaCPU_Jones_On_M,
-			    sizeof(int)); //Ali 
+			    sizeof(int)); // 
 	cudaMemcpyToSymbol(sceInterBPara_Jones_M,    mechPara_M.sceInterBParaCPU_Jones_M,
 			3 * sizeof(double)); //Ali 
 	cudaMemcpyToSymbol(sceIntnlBPara_M, mechPara_M.sceIntnlBParaCPU_M,
@@ -1447,7 +1447,9 @@ void calAndAddInter_M(double& xPos, double& yPos, double& xPos2, double& yPos2,
 	xRes = xRes + forceValue * (xPos2 - xPos) / linkLength;
 	yRes = yRes + forceValue * (yPos2 - yPos) / linkLength;
 }
-//Ali
+
+
+// for Lennard Jones force
 __device__
 void calAndAddInter_M2(double& xPos, double& yPos, double& xPos2, double& yPos2,
 		double& xRes, double& yRes) {
@@ -1920,6 +1922,7 @@ void handleSceForceNodesDisc(uint& nodeRank1, uint& nodeRank2, double& xPos,
 	}
 }
 
+// not used 
 __device__
 void handleSceForceNodesDisc_M(uint& nodeRank1, uint& nodeRank2, double& xPos,
 		double& yPos, double& xPos2, double& yPos2, double& xRes, double& yRes,

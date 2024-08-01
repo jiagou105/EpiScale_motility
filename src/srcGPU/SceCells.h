@@ -31,6 +31,7 @@ typedef thrust::tuple<uint, uint, uint, uint, double> UUUUD;
 typedef thrust::tuple<uint, uint, uint, uint, int, double, double> UUUUIDD;
 typedef thrust::tuple<uint, uint, uint, uint, int, double, double, double> UUUUIDDD;
 typedef thrust::tuple<uint, uint, double, double, uint, uint,int> UUDDUUi;
+typedef thrust::tuple<uint, uint, uint, double, double, double, double> UUUDDDD;
 typedef thrust::tuple<uint, uint, uint, uint, double, double, double, double, double> UUUUDDDDD;
 typedef thrust::tuple<uint, uint, uint, uint, double, double, double, double, double, int> UUUUDDDDDi;
 typedef thrust::tuple<uint, uint, double, double, uint, uint, double> UUDDUUD;
@@ -283,14 +284,14 @@ struct LessEqualTo: public thrust::unary_function<UiB, bool> {
 // maxMemThres, cellRank, nodeRank , locX, locY, velX, velY
 //Ali comment
 /**
-struct AddMembrForce: public thrust::unary_function<TensionData, CVec10> {
+struct AddMemAngDeviceNotUsed: public thrust::unary_function<TensionData, CVec10> {
 	uint _bdryCount;
 	uint _maxNodePerCell;
 	double* _locXAddr;
 	double* _locYAddr;
 	bool* _isActiveAddr;
 	// comment prevents bad formatting issues of __host__ and __device__ in Nsight
-	__host__ __device__ AddMembrForce(uint bdryCount, uint maxNodePerCell,
+	__host__ __device__ AddMemAngDeviceNotUsed(uint bdryCount, uint maxNodePerCell,
 			double* locXAddr, double* locYAddr, bool* isActiveAddr) :
 			_bdryCount(bdryCount), _maxNodePerCell(maxNodePerCell), _locXAddr(
 					locXAddr), _locYAddr(locYAddr), _isActiveAddr(isActiveAddr) {
@@ -471,7 +472,7 @@ struct AddMembrForce: public thrust::unary_function<TensionData, CVec10> {
 //Ali comment end
 
 //Ali
-struct AddMembrForce: public thrust::binary_function<TensionData, CVec4, CVec10> {
+struct AddMemAngDevice: public thrust::binary_function<TensionData, CVec4, CVec10> {
 	uint _bdryCount;
 	uint _maxNodePerCell;
 	double* _locXAddr;
@@ -480,7 +481,7 @@ struct AddMembrForce: public thrust::binary_function<TensionData, CVec4, CVec10>
 	double _mitoticCri;
 
 	// comment prevents bad formatting issues of __host__ and __device__ in Nsight
-	__host__ __device__ AddMembrForce(uint bdryCount, uint maxNodePerCell,
+	__host__ __device__ AddMemAngDevice(uint bdryCount, uint maxNodePerCell,
 			double* locXAddr, double* locYAddr, bool* isActiveAddr, double mitoticCri) :
 			_bdryCount(bdryCount), _maxNodePerCell(maxNodePerCell), _locXAddr(
 					locXAddr), _locYAddr(locYAddr), _isActiveAddr(isActiveAddr), _mitoticCri(mitoticCri) {
@@ -803,11 +804,7 @@ struct CalCurvatures: public thrust::unary_function<CurvatureData, CVec6> {
 };
 
 
-
-
-
-//Ali
-struct AddMembrBend: public thrust::unary_function<BendData, CVec2> {
+struct AddMembrBendDevice: public thrust::unary_function<BendData, CVec2> {
 	uint _maxNodePerCell;
 	bool* _isActiveAddr;
 	double* _bendLeftXAddr;
@@ -815,7 +812,7 @@ struct AddMembrBend: public thrust::unary_function<BendData, CVec2> {
 	double* _bendRightXAddr;
 	double* _bendRightYAddr;
 	// comment prevents bad formatting issues of __host__ and __device__ in Nsight
-	__host__ __device__ AddMembrBend(uint maxNodePerCell, bool* isActiveAddr,
+	__host__ __device__ AddMembrBendDevice(uint maxNodePerCell, bool* isActiveAddr,
 			double* bendLeftXAddr, double* bendLeftYAddr,
 			double* bendRightXAddr, double* bendRightYAddr) :
 			_maxNodePerCell(maxNodePerCell), _isActiveAddr(isActiveAddr), _bendLeftXAddr(
@@ -860,6 +857,57 @@ struct AddMembrBend: public thrust::unary_function<BendData, CVec2> {
 	}
 };
 
+
+
+struct AddMembrVolDevice: public thrust::unary_function<UUUDDDD, CVec2> {
+	uint _maxNodePerCell;
+	bool* _isActiveAddr;
+	double* _locXAddr;
+	double* _locYAddr;
+
+	// comment prevents bad formatting issues of __host__ and __device__ in Nsight
+	__host__ __device__ AddMembrVolDevice(uint maxNodePerCell, bool* isActiveAddr,
+			double* locXAddr, double* locYAddr) :
+			_maxNodePerCell(maxNodePerCell), _isActiveAddr(isActiveAddr), _locXAddr(
+					locXAddr), _locYAddr(locYAddr) {
+	}
+	// comment prevents bad formatting issues of __host__ and __device__ in Nsight
+	__device__ CVec2 operator()(const UUUDDDD &cData) const {
+		uint activeMembrCount = thrust::get<0>(cData);
+		uint cellRank = thrust::get<1>(cData);
+		uint nodeRank = thrust::get<2>(cData);
+		double initCellArea0 = thrust::get<3>(cData);
+		double curCellArea = thrust::get<4>(cData);
+		double oriVelX = thrust::get<5>(cData);
+		double oriVelY = thrust::get<6>(cData);
+
+		double kVol = 0.1; // volume preservation parameter 
+
+		uint index = cellRank * _maxNodePerCell + nodeRank;
+		if (_isActiveAddr[index] == false || nodeRank >= activeMembrCount) {
+			return thrust::make_tuple(oriVelX, oriVelY);
+		}
+		// left node
+		int index_left = nodeRank - 1;
+		if (index_left == -1) {
+			index_left = activeMembrCount - 1;
+		}
+		index_left = index_left + cellRank * _maxNodePerCell;
+
+		// right node 
+		int index_right = nodeRank + 1;
+		if (index_right == (int) activeMembrCount) {
+			index_right = 0;
+		}
+		index_right = index_right + cellRank * _maxNodePerCell;
+		// 
+		if (_isActiveAddr[index_right] && _isActiveAddr[index_left]) { // why need this condition???
+			oriVelX = oriVelX + kVol*(curCellArea-initCellArea0)*(_locYAddr[index_right] - _locYAddr[index_left]);
+			oriVelY = oriVelY + kVol*(curCellArea-initCellArea0)*(_locXAddr[index_left]-_locXAddr[index_right]);
+		}
+		return thrust::make_tuple(oriVelX, oriVelY);
+	}
+};
 
 
 
@@ -4213,9 +4261,9 @@ struct CellInfoVecs {
 	thrust::device_vector<bool> isMembrAddingNode;
 
 	thrust::device_vector<double> cellAreaVec;
+	thrust::device_vector<double> cellAreaInit;
     thrust::device_vector<double> cellPerimVec;//AAMIRI
 
-	// JG050823
 	thrust::device_vector<double> cellFilopX;
 	thrust::device_vector<double> cellFilopY;
 	thrust::device_vector<double> cellFilopAngle;
@@ -4437,6 +4485,8 @@ class SceCells {
 	void initGrowthAuxData();
 	void initGrowthAuxData_M();
 	void initMyosinLevel();
+	void initCellArea();
+	
 
 	void initialize(SceNodes* nodesInput);
 	void initialize_M(SceNodes* nodesInput, std::vector<double> &initCellRadii);
