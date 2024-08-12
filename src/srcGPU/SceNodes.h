@@ -1202,9 +1202,9 @@ public:
 	 * wrap apply forces methods together.
 	 * This is for performance testing only.
 	 */
-	void sceForcesPerfTesting();
+	// void sceForcesPerfTesting();
 
-	void sceForcesPerfTesting_M();
+	// void sceForcesPerfTesting_M();
 
 	/**
 	 * wrap apply forces methods together.
@@ -1292,6 +1292,13 @@ public:
 	void setLeaderRank(uint leaderRank) {
 		allocPara_M.leaderRank = leaderRank;
 	}
+
+	/*
+	uint getLeaderRank() const{
+		return allocPara_M.leaderRank;
+	}
+	*/
+
 };
 
 #endif /* SCENODES_H_ */

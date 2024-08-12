@@ -145,6 +145,16 @@ __device__
 bool isValidFilopDirection(uint& intnlIndxMemBegin, uint _maxMemNodePerCell, bool* _isActiveAddr, double* _locXAddr, double* _locYAddr,
 	double& cell_CenterX, double& cell_CenterY, double& randomAngleRd, int* _nodeAdhereIndexAddr, uint& activeMembrCount, uint _maxNodePerCell, double* _myosinLevelAddr);
 
+__device__
+bool isTangFilopDirection(uint& intnlIndxMemBegin, bool* _isActiveAddr, double* _locXAddr, double* _locYAddr,
+	double& cell_CenterX, double& cell_CenterY, double& randomAngleRd, int* _nodeAdhereIndexAddr, 
+	uint& activeMembrCount, uint _maxNodePerCell, int* _cellTypeAddr, uint leaderRank, double* _myosinLevelAddr);
+
+__device__
+double computeCurvature(double& xpos1, double& ypos1, double& xpos2, double& ypos2, double& xpos3, double& ypos3);
+
+
+
 /**
  * Functor for divide operation.
  * @param dividend divisor for divide operator.
@@ -890,7 +900,7 @@ struct AddMembrVolDevice: public thrust::unary_function<UUUDDDD, CVec2> {
 		// left node
 		int index_left = nodeRank - 1;
 		if (index_left == -1) {
-			index_left = activeMembrCount - 1;
+			index_left = (int) (activeMembrCount - 1);
 		}
 		index_left = index_left + cellRank * _maxNodePerCell;
 
@@ -902,8 +912,8 @@ struct AddMembrVolDevice: public thrust::unary_function<UUUDDDD, CVec2> {
 		index_right = index_right + cellRank * _maxNodePerCell;
 		// 
 		if (_isActiveAddr[index_right] && _isActiveAddr[index_left]) { // why need this condition???
-			oriVelX = oriVelX + kVol*(curCellArea-initCellArea0)*(_locYAddr[index_right] - _locYAddr[index_left]);
-			oriVelY = oriVelY + kVol*(curCellArea-initCellArea0)*(_locXAddr[index_left]-_locXAddr[index_right]);
+			oriVelX = oriVelX - kVol*(curCellArea-initCellArea0)*(_locYAddr[index_right] - _locYAddr[index_left]);
+			oriVelY = oriVelY - kVol*(curCellArea-initCellArea0)*(_locXAddr[index_left]-_locXAddr[index_right]);
 		}
 		return thrust::make_tuple(oriVelX, oriVelY);
 	}
@@ -1502,7 +1512,8 @@ struct updateCellMyosin: public thrust::unary_function<UUDDUUDDDi, double> {
 				}
 			
 			} else { // membrane of follower cells
-				nodeMyosin = 0;
+				
+				// nodeMyosin = 0;
 			}
 			
 			return nodeMyosin;
@@ -1651,18 +1662,22 @@ struct updateCellFilop: public thrust::unary_function<UUUIDDDD, double> {
 	int* _nodeAdhereIndexAddr;
 	uint* _nodeActLevelAddr;
 	double* _myosinLevelAddr;
+	int* _cellTypeAddr;
+	uint _leaderRank;
 	// double _grthPrgrCriVal_M;
 	// comment prevents bad formatting issues of __host__ and __device__ in Nsight
 	__host__ __device__ updateCellFilop(uint seed, double timeStep, double timeNow, 
 			double* cellFilopXAddr, double* cellFilopYAddr, double* cellFilopAngleAddr, bool* cellFilopIsActiveAddr, double* cellFilopBirthTimeAddr,
 			uint activeCellCount, double* cellCenterXAddr, double* cellCenterYAddr, double* cellRadiusAddr, uint* cellActiveFilopCountsAddr,
-			uint maxMemNodePerCell, uint maxNodePerCell, double* locXAddr, double* locYAddr, bool* isActiveAddr, int* nodeAdhereIndexAddr, uint* nodeActLevelAddr, double* myosinLevelAddr) :
+			uint maxMemNodePerCell, uint maxNodePerCell, double* locXAddr, double* locYAddr, bool* isActiveAddr, int* nodeAdhereIndexAddr, 
+			uint* nodeActLevelAddr, double* myosinLevelAddr, int* cellTypeAddr, int leaderRank) :
 			_seed(seed), _timeStep(timeStep), _timeNow(timeNow),
 			_cellFilopXAddr(cellFilopXAddr), _cellFilopYAddr(cellFilopYAddr), _cellFilopAngleAddr(cellFilopAngleAddr),
 			_cellFilopIsActiveAddr(cellFilopIsActiveAddr), _cellFilopBirthTimeAddr(cellFilopBirthTimeAddr), _activeCellCount(activeCellCount), 
 			_cellCenterXAddr(cellCenterXAddr), _cellCenterYAddr(cellCenterYAddr), _cellRadiusAddr(cellRadiusAddr), _cellActiveFilopCountsAddr(cellActiveFilopCountsAddr),
 			_maxMemNodePerCell(maxMemNodePerCell),_maxNodePerCell(maxNodePerCell), _locXAddr(locXAddr), _locYAddr(locYAddr), _isActiveAddr(isActiveAddr), 
-			_nodeAdhereIndexAddr(nodeAdhereIndexAddr), _nodeActLevelAddr(nodeActLevelAddr), _myosinLevelAddr(myosinLevelAddr) {
+			_nodeAdhereIndexAddr(nodeAdhereIndexAddr), _nodeActLevelAddr(nodeActLevelAddr), _myosinLevelAddr(myosinLevelAddr), _cellTypeAddr(cellTypeAddr),
+			_leaderRank(leaderRank) {
 	}
 	// comment prevents bad formatting issues of __host__ and __device__ in Nsight
 	__device__ double operator()(const UUUIDDDD &cData) const {
@@ -1706,6 +1721,7 @@ struct updateCellFilop: public thrust::unary_function<UUUIDDDD, double> {
 		double largestCos2 = 0.01;
 		double randomAngleRd = 0;
 		bool isvalidDirection=false;
+		bool isTangDirection = false;
 		// if (curActLevel>0){probNewFilop = 0.00001;}
 		// if (_nodeActLevelAddr[intnlIndxMemBegin]>0){probNewFilop = 0.00002;} // activation level is associated with node ???
 
@@ -1713,7 +1729,10 @@ struct updateCellFilop: public thrust::unary_function<UUUIDDDD, double> {
 			return cellAngle;
 			}
 		else{// if is a follower
-			if (cell_Type==0){
+			if (cell_Type==0){ // change here 
+				//_myosinLevelAddr[intnlIndxMemBegin] = 10;
+				//_myosinLevelAddr[intnlIndxMemBegin+10] = 50;
+				//_myosinLevelAddr[intnlIndxMemBegin+20] = 50;
 			// if (_cellRadiusAddr[cellRank]<3.0){
 			for (uint filopIndex=filopIndxBegin; filopIndex<filopIndxEnd; filopIndex++){
 				// tempindex1 = 0;
@@ -1747,10 +1766,11 @@ struct updateCellFilop: public thrust::unary_function<UUUIDDDD, double> {
 					if (randomBirth<probNewFilop){ // probability of a new filopodia can grow 
 						randomAngle = u01(rng);
 						randomAngleRd = 6.28*randomAngle;
-						isvalidDirection = isValidFilopDirection(intnlIndxMemBegin, _maxMemNodePerCell, _isActiveAddr, _locXAddr, _locYAddr,
-												cell_CenterX, cell_CenterY, randomAngleRd, _nodeAdhereIndexAddr,activeMembrCount,_maxNodePerCell,_myosinLevelAddr);
-						// isvalidDirection = true;
-						if (isvalidDirection){
+						// isvalidDirection = isValidFilopDirection(intnlIndxMemBegin, _maxMemNodePerCell, _isActiveAddr, _locXAddr, _locYAddr,
+					 	//					cell_CenterX, cell_CenterY, _cellFilopAngleAddr[filopIndex], _nodeAdhereIndexAddr,activeMembrCount,_maxNodePerCell,_myosinLevelAddr);
+						isTangDirection = isTangFilopDirection(intnlIndxMemBegin, _isActiveAddr, _locXAddr, _locYAddr,cell_CenterX, cell_CenterY, 
+																randomAngleRd, _nodeAdhereIndexAddr, activeMembrCount, _maxNodePerCell, _cellTypeAddr, _leaderRank, _myosinLevelAddr);
+						if (isTangDirection){
 						// randomAngle = randomAngle*2.0*PI;
 							_cellFilopIsActiveAddr[filopIndex] = true; // find the largest one and use the fact that the membrane nodes are indexed? 
 							_cellFilopAngleAddr[filopIndex] = 6.28*randomAngle;
@@ -2198,8 +2218,8 @@ struct calSubAdhForceDevice: public thrust::unary_function<UIUDDUUDDD, CVec2> {
 		double minDistIntl=100;
 		double nodeXTemp, nodeYTemp, tempdistMI;
 		double charMIntlDist=0.8;
-		if (cellType != 1 && _nodeActLevelAddr[index]>0){kAdh = 1;}
-		if (cellType == 1){kAdh=2.0;} // for leader
+		if (cellType != 1 && _nodeActLevelAddr[index]>0){kAdh = 20;}
+		if (cellType == 1){kAdh=20.0;} // for leader
 		// if (_timeNow > 55800.0 && _isActiveAddr[index] == true && (nodeRank < _maxMemNodePerCell)) {
 		if (_timeNow > 55800.0 && _isActiveAddr[index] == true) {
 			if (nodeRank < _maxMemNodePerCell && nodeMyosin>0){
@@ -4648,6 +4668,8 @@ class SceCells {
 // 	void copyExtForcesCell_M();
 
 	void applySceCellDisc_M();
+
+	// void updateCellAdhIndex();
 
 	void updateCellPolar();
 

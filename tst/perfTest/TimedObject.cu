@@ -112,7 +112,7 @@ double TimedObject::countSceMove(uint size) {
 	cudaEventRecord(start, 0);
 
 	for (uint i = 0; i < 3000; i++) {
-		nodes.sceForcesPerfTesting();
+		// nodes.sceForcesPerfTesting(); // commented as not sure if necessary
 	}
 
 	cudaEventRecord(stop, 0);

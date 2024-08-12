@@ -2419,15 +2419,21 @@ void SceNodes::initControlPara(bool isStab) {
 
 }
 
+// not used, so commented
+/*
 void SceNodes::sceForcesPerfTesting() {
 	prepareSceForceComputation();
 	applySceForcesBasic();
 }
+*/
 
+// not used so commented
+/*
 void SceNodes::sceForcesPerfTesting_M() {
 	prepareSceForceComputation_M();
 	applySceForcesBasic_M();
 }
+*/
 
 void SceNodes::applySceForcesBasic_M() {
 }
@@ -2742,6 +2748,7 @@ void SceNodes::removeInvalidPairs_M() {
 }
 
 
+// 
 void SceNodes::applyMembrAdh_M() {
 	thrust::counting_iterator<uint> iBegin(0);
 	uint maxTotalNode = allocPara_M.currentActiveCellCount

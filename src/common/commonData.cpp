@@ -703,7 +703,8 @@ void CellStats::printToFile(ofstream& ofs) {
 	ofs << "    IsBoundrayCell:" << isBdryCell << std::endl;
 	ofs << "    NumOfNeighbors:" << numNeighbors << std::endl;
 	ofs << "    CellArea:" << cellArea << std::endl;
-        ofs << "    CellPerim:" << cellPerim << std::endl;//AAMIRI
+    ofs << "    CellPerim:" << cellPerim << std::endl;
+	ofs << "    CellType:" << cell_Type << std::endl;
 	ofs << "    NeighborCellsOrdered:{ ";
 	//for (std::set<int>::iterator it = neighborVec.begin();
 	//		it != neighborVec.end(); ++it) {

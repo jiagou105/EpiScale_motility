@@ -173,6 +173,18 @@ double Angle2D(double x1, double y1, double x2, double y2)
    return(dtheta);
 }
 
+// compute menger curvature 
+__device__
+double computeCurvature(double& xpos1, double& ypos1, double& xpos2, double& ypos2, double& xpos3, double& ypos3){
+	double curvature1;
+	double areaA;
+	double dist12, dist13, dist23;
+	dist12 = compDist2D(xpos1, ypos1, xpos2, ypos2);
+	dist13 = compDist2D(xpos1, ypos1, xpos3, ypos3);
+	dist23 = compDist2D(xpos2, ypos2, xpos3, ypos3);
+	areaA = (xpos2-xpos1)*(ypos3-ypos1) - (ypos2-ypos1)*(xpos3-xpos1);
+	curvature1 = 4*areaA/(dist12*dist13*dist23);
+}
 
 /*
 __device__
@@ -310,6 +322,134 @@ bool isValidFilopDirection(uint& intnlIndxMemBegin, uint _maxMemNodePerCell, boo
 		}
 	}
 }
+
+
+__device__
+bool isTangFilopDirection(uint& intnlIndxMemBegin, bool* _isActiveAddr, double* _locXAddr, double* _locYAddr,
+	double& cell_CenterX, double& cell_CenterY, double& randomAngleRd, int* _nodeAdhereIndexAddr, 
+	uint& activeMembrCount, uint _maxNodePerCell, int* _cellTypeAddr, uint leaderRank, double* _myosinLevelAddr){
+	//1. determine whether this cell is attached to the leader cell. If yes, find the two nodes at the boundary of the contact line; If no, return prefered direction.
+	//2. If yes, add a small angle to the direction connecting the follower center to the two boundary nodes; If this follower cell is adhered to another follower cell, 
+	// choose a preferred direction 
+	//3. return the direction
+	// int membrNodeIndex;
+	uint lowestAdhMemInd = 0;
+	uint highestAdhMemInd = 0;
+	int count = 0;
+	int adhNodeIndex,adhCellIndex;
+	int adhCellType;
+
+	double highNodeX, highNodeY, highVecX, highVecY, lenHighVec;
+	double lowNodeX, lowNodeY, lowVecX, lowVecY, lenLowVec;
+	double dotPHigh, dotPLow;
+	double bisecVecX, bisecVecY, dotP;
+	// check if there is any adhered nodes in both [0 ,5] and [end-5, end] ranges
+	// if yes, means the total list of attached nodes are crossing 0, case 0, else case 1
+	// for case 0, starting from 0, find the node with largest index n1 such that [0 n1] are all adhereed
+	// then find the next first node that is adhered to leader
+	// for case 1, just use the following code
+	int maxGapInt = 3;
+	int adhIndex0, tempNodeIndex, notAdhCounter;
+	int clockwiseMostNodeIndex, counterClockwiseMostNodeIndex;
+	int iterCount = 0;
+
+	adhIndex0 = (int) intnlIndxMemBegin;
+	if (_nodeAdhereIndexAddr[adhIndex0] == -1) {
+		adhCellType = 0;
+	} else {
+		adhCellIndex = _nodeAdhereIndexAddr[adhIndex0]/_maxNodePerCell;
+		adhCellType = _cellTypeAddr[adhCellIndex];
+	}
+	// 1st and 2nd conditions are duplicated
+	while (_isActiveAddr[adhIndex0] && adhIndex0<intnlIndxMemBegin + activeMembrCount && adhCellType != 1){
+		adhIndex0 += 1;
+		adhCellIndex = _nodeAdhereIndexAddr[adhIndex0]/_maxNodePerCell;
+		adhCellType = _cellTypeAddr[adhCellIndex];
+	}
+	
+	if (adhIndex0<intnlIndxMemBegin + activeMembrCount){ 
+		count = 1; // at least one node is adhered to the leader
+		tempNodeIndex = adhIndex0;
+		notAdhCounter = 0;
+		while (notAdhCounter<maxGapInt && iterCount<450){
+			iterCount +=1;
+			tempNodeIndex = tempNodeIndex - 1;
+			if (tempNodeIndex == intnlIndxMemBegin-1){tempNodeIndex = intnlIndxMemBegin + activeMembrCount-1;}
+			if (_nodeAdhereIndexAddr[adhIndex0] == -1) {
+				adhCellType = 0;
+			} else {
+				adhCellIndex = _nodeAdhereIndexAddr[adhIndex0]/_maxNodePerCell;
+				adhCellType = _cellTypeAddr[adhCellIndex];
+			}
+			if (adhCellType == 1){
+				notAdhCounter = 0;
+			} else {
+				notAdhCounter += 1;
+			}
+		}
+		tempNodeIndex = tempNodeIndex + maxGapInt;
+		if (tempNodeIndex>intnlIndxMemBegin + activeMembrCount-1) {tempNodeIndex = tempNodeIndex - activeMembrCount;}
+		clockwiseMostNodeIndex = tempNodeIndex;
+
+		iterCount = 0;
+		tempNodeIndex = adhIndex0;
+		notAdhCounter = 0;
+		while (notAdhCounter<maxGapInt && iterCount<450){
+			iterCount += 1;
+			tempNodeIndex += 1;
+			if (tempNodeIndex == intnlIndxMemBegin + activeMembrCount){tempNodeIndex=intnlIndxMemBegin;}
+			if (_nodeAdhereIndexAddr[adhIndex0] == -1) {
+				adhCellType = 0;
+			} else {
+				adhCellIndex = _nodeAdhereIndexAddr[adhIndex0]/_maxNodePerCell;
+				adhCellType = _cellTypeAddr[adhCellIndex];
+			}
+			if (adhCellType == 1){
+				notAdhCounter = 0;
+			} else {
+				notAdhCounter += 1;
+			}
+		}
+		tempNodeIndex = tempNodeIndex - maxGapInt;
+		if (tempNodeIndex<intnlIndxMemBegin) {tempNodeIndex = tempNodeIndex+activeMembrCount;}
+		counterClockwiseMostNodeIndex = tempNodeIndex;
+	} else {
+		count = 0;
+	}
+
+	_myosinLevelAddr[counterClockwiseMostNodeIndex] = 50;
+	_myosinLevelAddr[clockwiseMostNodeIndex] = 10;
+
+	if (count == 0){
+		return true;
+	} else{
+		highNodeX = _locXAddr[counterClockwiseMostNodeIndex];
+		highNodeY = _locYAddr[counterClockwiseMostNodeIndex];
+		lowNodeX = _locXAddr[clockwiseMostNodeIndex];
+		lowNodeY = _locYAddr[clockwiseMostNodeIndex];
+		highVecX = highNodeX - cell_CenterX;
+		highVecY = highNodeY - cell_CenterY;
+		lowVecX = lowNodeX - cell_CenterX;
+		lowVecY = lowNodeY - cell_CenterY;
+
+		// dotPHigh = cos(randomAngleRd)*highVecX + sin(randomAngleRd)*highVecY;
+		// dotPLow = cos(randomAngleRd)*lowVecX + sin(randomAngleRd)*lowVecY;
+		lenLowVec = sqrt(lowVecX*lowVecX + lowVecY*lowVecY);
+		lenHighVec = sqrt(highVecX*highVecX + highVecY*highVecY);
+		lowVecX = lowVecX/lenLowVec;
+		lowVecY = lowVecY/lenLowVec;
+		highVecX = highVecX/lenHighVec;
+		highVecY = highVecY/lenHighVec;
+		bisecVecX = lowVecX + highVecX;
+		bisecVecY = lowVecY + highVecY;
+		dotP = cos(randomAngleRd)*bisecVecX + sin(randomAngleRd)*bisecVecY;
+		if (dotP>0.1){ // dotPHigh>0 || dotPLow>0 
+			return true;
+		} 
+	}
+	return false;
+}
+
 
 
 
@@ -1092,7 +1232,7 @@ void SceCells::initMyosinLevel() {
 // calculate the initial cell area
 void SceCells::initCellArea() {
 	calCellArea();
-	// thrust::copy(cellInfoVecs.cellAreaVec.begin(),cellInfoVecs.cellAreaVec.end(),cellInfoVecs.cellAreaInit.begin());
+	thrust::copy(cellInfoVecs.cellAreaVec.begin(),cellInfoVecs.cellAreaVec.end(),cellInfoVecs.cellAreaInit.begin());
 }
 
 void SceCells::initialize(SceNodes* nodesInput) {
@@ -1130,7 +1270,7 @@ void SceCells::initialize_M(SceNodes* nodesInput, std::vector<double> &initCellR
 	readMiscPara_M();
 	//std::cout << "break point 3 " << std::endl;
 	//std::cout.flush();
-	initCellInfoVecs_M();
+	initCellInfoVecs_M(); // initialize cell info vecs 
 
     cout<< "size of dpp initilizie  is "<< cellInfoVecs.cell_Dpp.size() << endl ;          
 	//std::cout << "break point 4 " << std::endl;
@@ -1141,7 +1281,7 @@ void SceCells::initialize_M(SceNodes* nodesInput, std::vector<double> &initCellR
 
 	//std::cout << "break point 6 " << std::endl;
 	//std::cout.flush();
-	initCellNodeInfoVecs_M();
+	initCellNodeInfoVecs_M(); // initialize cell node info vec 
 	//std::cout << "break point 7 " << std::endl;
 	//std::cout.flush();
 	initGrowthAuxData_M(); 
@@ -1152,6 +1292,7 @@ void SceCells::initialize_M(SceNodes* nodesInput, std::vector<double> &initCellR
         if (initCellRadii[cellRank]>2.0){ // 1 is leader
 			cellInfoVecs.cell_Type[cellRank] = 1;
 			nodes->setLeaderRank(cellRank);
+			allocPara_m.leaderRank = cellRank;
 			} else {
 				cellInfoVecs.cell_Type[cellRank] = 0;
 			}
@@ -1722,6 +1863,7 @@ void SceCells::runAllCellLogicsDisc_M(double dt, double Damp_Coef, double InitTi
 	// copyExtForcesCell_M(); // moved from node
 	// updateActivationLevel();
 	applySceCellDisc_M();
+	// updateCellAdhIndex();
 	updateCellPolar(); // comment out start for no cell motion
 	calFluxWeightsMyosin();
 	calSceCellMyosin();
@@ -2763,13 +2905,14 @@ void SceCells::applyMemForce_M() {
 
 
 // add the force accounting for the volume preservation
+
 	thrust::transform(
 			thrust::make_zip_iterator(
 					thrust::make_tuple(
-							thrust::make_permutation_iterator(
+							thrust::make_permutation_iterator( // source[map[0]], source[map[1]], etc...
 									cellInfoVecs.activeMembrNodeCounts.begin(),
 									make_transform_iterator(iBegin1,
-											DivideFunctor(maxAllNodePerCell))),
+											DivideFunctor(maxAllNodePerCell))), 
 							make_transform_iterator(iBegin1,
 									DivideFunctor(maxAllNodePerCell)),
 							make_transform_iterator(iBegin1,
@@ -6394,15 +6537,6 @@ void SceCells::updateActivationLevel() {
 
 
 
-
-
-
-
-
-
-
-
-
 void SceCells::updateCellPolar() {
 	random_device rd;
  	uint seed = time(NULL);
@@ -6449,6 +6583,10 @@ void SceCells::updateCellPolar() {
             &(nodes->getInfoVecs().nodeIsActive[0])); // 
 	double* myosinLevelAddr = thrust::raw_pointer_cast(
 		&(nodes->getInfoVecs().myosinLevel[0]));
+	int* cellTypeAddr = thrust::raw_pointer_cast(
+            &(cellInfoVecs.cell_Type[0]));
+	uint leaderRank = allocPara_m.leaderRank; // 
+	// uint leaderRank = nodes->getLeaderRank();
 
 	thrust::counting_iterator<uint> iBegin(0);
 	thrust::counting_iterator<uint> iEnd(activeCellCount); // make sure not iterate on inactive cells already 
@@ -6479,7 +6617,7 @@ void SceCells::updateCellPolar() {
 			cellFilopXAddr,cellFilopYAddr,cellFilopAngleAddr,cellFilopIsActiveAddr,
 			cellFilopBirthTimeAddr,activeCellCount,cellCenterXAddr,cellCenterYAddr,cellRadiusAddr,
 			cellActiveFilopCountsAddr,maxMemNodePerCell,maxNodePerCell,nodeLocXAddr,nodeLocYAddr,
-			nodeIsActiveAddr,nodeAdhIdxAddr,nodeActLevelAddr,myosinLevelAddr));
+			nodeIsActiveAddr,nodeAdhIdxAddr,nodeActLevelAddr,myosinLevelAddr,cellTypeAddr,leaderRank));
 	/*
 	for (uint i=0;i<activeCellCount*5;i++){
 		double tempAngle = cellInfoVecs.cellFilopAngle[i];
