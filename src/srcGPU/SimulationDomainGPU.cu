@@ -72,7 +72,7 @@ void SimulationDomainGPU::initializeNodes_M(std::vector<SceNodeType> &nodeTypes,
 	//}
 	//std::cout << std::endl;
 	cells = SceCells(&nodes, initActiveMembrNodeCounts,
-			initActiveIntnlNodeCounts, initGrowProgVec, initCellRadii,InitTimeStage);  //Ali
+			initActiveIntnlNodeCounts, initGrowProgVec, initCellRadii,InitTimeStage);  
 
 	//std::cout << "break point 5 " << std::endl;
 	//std::cout.flush();	
@@ -226,6 +226,7 @@ void SimulationDomainGPU::readAllParameters() {
 cout<< "I am in SimulationDomainGPU constructor" << endl ; 
 }
 
+// not used?
 void SimulationDomainGPU::outputVtkFilesWithCri(std::string scriptNameBase,
 		int rank, AnimationCriteria aniCri) {
 	nodes.prepareSceForceComputation();

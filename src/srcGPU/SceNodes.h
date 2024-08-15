@@ -229,8 +229,8 @@ struct pointToBucketIndex2D: public thrust::unary_function<CVec3BoolInt, Tuint2>
 	double _minY;
 	double _maxY;
 
-	double _bucketSize;
-	unsigned int width;
+	double _bucketSize; // is the spacing between grids
+	unsigned int width; // is the grid size in x direction
 
 	__host__ __device__ pointToBucketIndex2D(double minX, double maxX,
 			double minY, double maxY, double bucketSize) :
@@ -240,6 +240,7 @@ struct pointToBucketIndex2D: public thrust::unary_function<CVec3BoolInt, Tuint2>
 
 	__host__ __device__ Tuint2 operator()(const CVec3BoolInt& v) const {
 		// find the raster indices of p's bucket
+		// 0:x, 1:y, 2:z, 3:isactive, 4:node index in the whole vector
 		if (thrust::get<3>(v) == true) {
 			unsigned int x = static_cast<unsigned int>((thrust::get<0>(v)
 					- _minX) / _bucketSize);
@@ -310,7 +311,7 @@ struct NeighborFunctor2D: public thrust::unary_function<Tuint2, Tuint2> {
 					numOfBucketsInYDim) {
 	}
 	__host__ __device__ Tuint2 operator()(const Tuint2 &v) {
-		uint relativeRank = thrust::get<1>(v) % 9;
+		uint relativeRank = thrust::get<1>(v) % 9; // global rank?
 		uint xPos = thrust::get<0>(v) % _numOfBucketsInXDim;
 		uint yPos = thrust::get<0>(v) / _numOfBucketsInXDim;
 		switch (relativeRank) {
@@ -319,7 +320,7 @@ struct NeighborFunctor2D: public thrust::unary_function<Tuint2, Tuint2> {
 		case 1:
 			if (xPos > 0 && yPos > 0) {
 				uint topLeft = (xPos - 1) + (yPos - 1) * _numOfBucketsInXDim;
-				return thrust::make_tuple(topLeft, thrust::get<1>(v));
+				return thrust::make_tuple(topLeft, thrust::get<1>(v));// first variable returns the index of the paired node
 			} else {
 				return thrust::make_tuple(UINT_MAX, thrust::get<1>(v));
 			}
@@ -694,7 +695,7 @@ struct AddForceDisc_M: public thrust::unary_function<Tuuudd, CVec2> {
 
 
 
-struct updateNodeCCadh: public thrust::unary_function<Int2, int> {
+struct updateNodeCCadhDevice: public thrust::unary_function<Int2, int> {
 	uint* _extendedValuesAddress;
 	double* _nodeLocXAddress;
 	double* _nodeLocYAddress;
@@ -708,7 +709,7 @@ struct updateNodeCCadh: public thrust::unary_function<Int2, int> {
 	bool* _nodeIsActiveAddr;
 	// comment prevents bad formatting issues of __host__ and __device__ in Nsight
 	__host__ __device__
-	updateNodeCCadh(uint* valueAddress, double* nodeLocXAddress,
+	updateNodeCCadhDevice(uint* valueAddress, double* nodeLocXAddress,
 			double* nodeLocYAddress, int* nodeAdhereIndex, int* membrIntnlIndex,
 			double* nodeGrowProAddr, uint maxNodePerOneCell, uint leaderRank, double timeNow, uint* curActLevelAddr, bool* nodeIsActiveAddr) :
 			_extendedValuesAddress(valueAddress), _nodeLocXAddress(
@@ -1107,7 +1108,7 @@ class SceNodes {
 	void applySceForcesDisc();
 
 	void applySceForcesDisc_M(std::vector<SigptStateV2>& sigPtVecV2);
-	void adjustNodeCCAdh();
+	void updateNodeCCAdh();
 	void updateSigVec(std::vector<SigptStateV2>& sigPtVecV2);
 
 	/**

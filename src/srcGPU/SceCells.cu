@@ -338,11 +338,15 @@ bool isTangFilopDirection(uint& intnlIndxMemBegin, bool* _isActiveAddr, double* 
 	int count = 0;
 	int adhNodeIndex,adhCellIndex;
 	int adhCellType;
+	int intnlIndxMemBeginInt = (int) intnlIndxMemBegin;
+	int activeMembrCountInt = (int) activeMembrCount;
+	int _maxNodePerCellInt = (int) _maxNodePerCell;
 
 	double highNodeX, highNodeY, highVecX, highVecY, lenHighVec;
 	double lowNodeX, lowNodeY, lowVecX, lowVecY, lenLowVec;
 	double dotPHigh, dotPLow;
 	double bisecVecX, bisecVecY, dotP;
+	double crossP;
 	// check if there is any adhered nodes in both [0 ,5] and [end-5, end] ranges
 	// if yes, means the total list of attached nodes are crossing 0, case 0, else case 1
 	// for case 0, starting from 0, find the node with largest index n1 such that [0 n1] are all adhereed
@@ -353,32 +357,32 @@ bool isTangFilopDirection(uint& intnlIndxMemBegin, bool* _isActiveAddr, double* 
 	int clockwiseMostNodeIndex, counterClockwiseMostNodeIndex;
 	int iterCount = 0;
 
-	adhIndex0 = (int) intnlIndxMemBegin;
+	adhIndex0 = (int) intnlIndxMemBeginInt;
 	if (_nodeAdhereIndexAddr[adhIndex0] == -1) {
 		adhCellType = 0;
 	} else {
-		adhCellIndex = _nodeAdhereIndexAddr[adhIndex0]/_maxNodePerCell;
+		adhCellIndex = _nodeAdhereIndexAddr[adhIndex0]/_maxNodePerCellInt;
 		adhCellType = _cellTypeAddr[adhCellIndex];
 	}
 	// 1st and 2nd conditions are duplicated
-	while (_isActiveAddr[adhIndex0] && adhIndex0<intnlIndxMemBegin + activeMembrCount && adhCellType != 1){
+	while (_isActiveAddr[adhIndex0] && adhIndex0<intnlIndxMemBeginInt + activeMembrCountInt && adhCellType != 1){
 		adhIndex0 += 1;
-		adhCellIndex = _nodeAdhereIndexAddr[adhIndex0]/_maxNodePerCell;
+		adhCellIndex = _nodeAdhereIndexAddr[adhIndex0]/_maxNodePerCellInt;
 		adhCellType = _cellTypeAddr[adhCellIndex];
 	}
 	
-	if (adhIndex0<intnlIndxMemBegin + activeMembrCount){ 
+	if (adhIndex0<intnlIndxMemBeginInt + activeMembrCountInt){ 
 		count = 1; // at least one node is adhered to the leader
 		tempNodeIndex = adhIndex0;
 		notAdhCounter = 0;
-		while (notAdhCounter<maxGapInt && iterCount<450){
+		while (notAdhCounter<maxGapInt && iterCount<activeMembrCountInt){
 			iterCount +=1;
 			tempNodeIndex = tempNodeIndex - 1;
-			if (tempNodeIndex == intnlIndxMemBegin-1){tempNodeIndex = intnlIndxMemBegin + activeMembrCount-1;}
-			if (_nodeAdhereIndexAddr[adhIndex0] == -1) {
+			if (tempNodeIndex == intnlIndxMemBeginInt-1){tempNodeIndex = intnlIndxMemBeginInt + activeMembrCountInt-1;}
+			if (_nodeAdhereIndexAddr[tempNodeIndex] == -1) {
 				adhCellType = 0;
 			} else {
-				adhCellIndex = _nodeAdhereIndexAddr[adhIndex0]/_maxNodePerCell;
+				adhCellIndex = _nodeAdhereIndexAddr[tempNodeIndex]/_maxNodePerCellInt;
 				adhCellType = _cellTypeAddr[adhCellIndex];
 			}
 			if (adhCellType == 1){
@@ -388,20 +392,20 @@ bool isTangFilopDirection(uint& intnlIndxMemBegin, bool* _isActiveAddr, double* 
 			}
 		}
 		tempNodeIndex = tempNodeIndex + maxGapInt;
-		if (tempNodeIndex>intnlIndxMemBegin + activeMembrCount-1) {tempNodeIndex = tempNodeIndex - activeMembrCount;}
+		if (tempNodeIndex>intnlIndxMemBeginInt + activeMembrCountInt-1) {tempNodeIndex = tempNodeIndex - activeMembrCountInt;}
 		clockwiseMostNodeIndex = tempNodeIndex;
 
 		iterCount = 0;
 		tempNodeIndex = adhIndex0;
 		notAdhCounter = 0;
-		while (notAdhCounter<maxGapInt && iterCount<450){
+		while (notAdhCounter<maxGapInt && iterCount<activeMembrCountInt){
 			iterCount += 1;
 			tempNodeIndex += 1;
-			if (tempNodeIndex == intnlIndxMemBegin + activeMembrCount){tempNodeIndex=intnlIndxMemBegin;}
-			if (_nodeAdhereIndexAddr[adhIndex0] == -1) {
+			if (tempNodeIndex == intnlIndxMemBeginInt + activeMembrCountInt){tempNodeIndex=intnlIndxMemBeginInt;}
+			if (_nodeAdhereIndexAddr[tempNodeIndex] == -1) {
 				adhCellType = 0;
 			} else {
-				adhCellIndex = _nodeAdhereIndexAddr[adhIndex0]/_maxNodePerCell;
+				adhCellIndex = _nodeAdhereIndexAddr[tempNodeIndex]/_maxNodePerCellInt;
 				adhCellType = _cellTypeAddr[adhCellIndex];
 			}
 			if (adhCellType == 1){
@@ -411,18 +415,17 @@ bool isTangFilopDirection(uint& intnlIndxMemBegin, bool* _isActiveAddr, double* 
 			}
 		}
 		tempNodeIndex = tempNodeIndex - maxGapInt;
-		if (tempNodeIndex<intnlIndxMemBegin) {tempNodeIndex = tempNodeIndex+activeMembrCount;}
+		if (tempNodeIndex<intnlIndxMemBeginInt) {tempNodeIndex = tempNodeIndex+activeMembrCountInt;}
 		counterClockwiseMostNodeIndex = tempNodeIndex;
 	} else {
 		count = 0;
 	}
 
-	_myosinLevelAddr[counterClockwiseMostNodeIndex] = 50;
-	_myosinLevelAddr[clockwiseMostNodeIndex] = 10;
-
 	if (count == 0){
 		return true;
 	} else{
+		// _myosinLevelAddr[counterClockwiseMostNodeIndex] = 50;
+		// _myosinLevelAddr[clockwiseMostNodeIndex] = 10;
 		highNodeX = _locXAddr[counterClockwiseMostNodeIndex];
 		highNodeY = _locYAddr[counterClockwiseMostNodeIndex];
 		lowNodeX = _locXAddr[clockwiseMostNodeIndex];
@@ -443,15 +446,13 @@ bool isTangFilopDirection(uint& intnlIndxMemBegin, bool* _isActiveAddr, double* 
 		bisecVecX = lowVecX + highVecX;
 		bisecVecY = lowVecY + highVecY;
 		dotP = cos(randomAngleRd)*bisecVecX + sin(randomAngleRd)*bisecVecY;
-		if (dotP>0.1){ // dotPHigh>0 || dotPLow>0 
+		crossP = bisecVecX*sin(randomAngleRd) - cos(randomAngleRd)*bisecVecY;
+		if (dotP>0.1&&crossP>0){ // dotPHigh>0 || dotPLow>0 
 			return true;
 		} 
 	}
 	return false;
 }
-
-
-
 
 
 void SceCells::distributeBdryIsActiveInfo() {
@@ -982,7 +983,7 @@ SceCells::SceCells(SceNodes* nodesInput,
 	
 	initialize_M(nodesInput,initCellRadii);
 
-        cout<< "size of dpp in constructor  is "<< cellInfoVecs.cell_Dpp.size() << endl ;          
+    cout<< "size of dpp in constructor  is "<< cellInfoVecs.cell_Dpp.size() << endl ;          
 	copyToGPUConstMem();
 	copyInitActiveNodeCount_M(initActiveMembrNodeCounts,
 			initActiveIntnlNodeCounts,initGrowProgVec,initCellRadii);
@@ -1289,14 +1290,19 @@ void SceCells::initialize_M(SceNodes* nodesInput, std::vector<double> &initCellR
 	//std::cout.flush();
 	for (uint cellRank=0; cellRank<allocPara_m.currentActiveCellCount; cellRank++)
     {
-        if (initCellRadii[cellRank]>2.0){ // 1 is leader
+        if (initCellRadii[cellRank]>2.0){ // 1 is leader // do not change the randii threshold from 2 to 3, it will not detect leader in this case
 			cellInfoVecs.cell_Type[cellRank] = 1;
-			nodes->setLeaderRank(cellRank);
+			// nodes->setLeaderRank(cellRank);
 			allocPara_m.leaderRank = cellRank;
+			nodes->setAllocParaM(allocPara_m);// allocPara_m is of type NodeAllocPara_M
+			break;
 			} else {
 				cellInfoVecs.cell_Type[cellRank] = 0;
 			}
     }
+	// assert(allocPara_m.leaderRank == ? );
+	cout<< "leader Rank is "<< allocPara_m.leaderRank << endl ; 
+	cout<< "Node leader Rank is"<<nodes->getAllocParaM().leaderRank << endl; 
 	initMyosinLevel(); 
 	initCellArea();
 }
@@ -1861,7 +1867,9 @@ void SceCells::runAllCellLogicsDisc_M(double dt, double Damp_Coef, double InitTi
 
 	// applyMembrAdhCell_M(); // moved from node 
 	// copyExtForcesCell_M(); // moved from node
-	// updateActivationLevel();
+	updateActivationLevel();
+	distributeCellActivationLevel_M();
+
 	applySceCellDisc_M();
 	// updateCellAdhIndex();
 	updateCellPolar(); // comment out start for no cell motion
@@ -1901,6 +1909,7 @@ void SceCells::runAllCellLogicsDisc_M(double dt, double Damp_Coef, double InitTi
 	std::cout << "     *** 7 ***" << endl;
 	std::cout.flush();
 	distributeCellGrowthProgress_M();
+	
 	std::cout << "     *** 8 ***" << endl;
 	std::cout.flush();
 
@@ -3036,6 +3045,7 @@ void SceCells::runAblationTest(AblationEvent& ablEvent) {
 	}
 }
 
+// compute cell center location
 void SceCells::computeCenterPos_M() {
 	totalNodeCountForActiveCells = allocPara_m.currentActiveCellCount
 			* allocPara_m.maxAllNodePerCell;
@@ -3327,7 +3337,7 @@ void SceCells::distributeCellGrowthProgress_M() {
 							DivideFunctor(allocPara_m.maxAllNodePerCell))),
 			nodes->getInfoVecs().nodeGrowPro.begin()
 					+ allocPara_m.bdryNodeCount);
-    std::cout << "the vlaue of init time stage in distributeCellGrowthProgress_M is"<< InitTimeStage << std:: endl ; 
+    std::cout << "the value of init time stage in distributeCellGrowthProgress_M is"<< InitTimeStage << std:: endl ; 
 			if (curTime <= InitTimeStage+dt)//AAMIRI   /A & A 
 				thrust::copy(
 					cellInfoVecs.growthProgress.begin(),
@@ -3335,6 +3345,32 @@ void SceCells::distributeCellGrowthProgress_M() {
 					cellInfoVecs.lastCheckPoint.begin()
 				);
 }
+
+
+
+
+void SceCells::distributeCellActivationLevel_M() {
+	totalNodeCountForActiveCells = allocPara_m.currentActiveCellCount
+			* allocPara_m.maxAllNodePerCell;
+	thrust::counting_iterator<uint> countingBegin(0);
+	thrust::counting_iterator<uint> countingEnd(totalNodeCountForActiveCells);
+	
+	thrust::copy(
+			thrust::make_permutation_iterator(
+					cellInfoVecs.activationLevel.begin(),
+					make_transform_iterator(countingBegin,
+							DivideFunctor(allocPara_m.maxAllNodePerCell))),
+			thrust::make_permutation_iterator(
+					cellInfoVecs.activationLevel.begin(),
+					make_transform_iterator(countingEnd,
+							DivideFunctor(allocPara_m.maxAllNodePerCell))),
+			nodes->getInfoVecs().nodeActLevel.begin()
+					+ allocPara_m.bdryNodeCount);
+    std::cout << "Done distributeCellActivationLevel_M "<< std:: endl; 
+}
+
+
+
 
 void SceCells::allComponentsMove_M() {
 	//moveNodes_M();  //Ali 
@@ -5585,11 +5621,16 @@ void SceCells::calCellArea() {
 											make_transform_iterator(iBegin,
 													DivideFunctor(
 															maxAllNodePerCell))))),
-					CalTriArea(maxAllNodePerCell, nodeIsActiveAddr,
+					CalTriAreaV1(maxAllNodePerCell, nodeIsActiveAddr,
 							nodeLocXAddr, nodeLocYAddr)),
 			cellInfoVecs.cellRanksTmpStorage.begin(),
 			cellInfoVecs.cellAreaVec.begin(), thrust::equal_to<uint>(),
 			thrust::plus<double>());
+	// thurst make positive
+	thrust::transform(cellInfoVecs.cellAreaVec.begin(), cellInfoVecs.cellAreaVec.begin()+allocPara_m.currentActiveCellCount, cellInfoVecs.cellAreaVec.begin(), calAbs(totalNodeCountForActiveCells));
+	// for (uint tempCellInd=0; tempCellInd<allocPara_m.currentActiveCellCount; tempCellInd++){
+		
+	// }
 }
 
 
@@ -6515,6 +6556,8 @@ void SceCells::updateActivationLevel() {
  	uint* actLevelAddr = thrust::raw_pointer_cast(
             &(cellInfoVecs.activationLevel[0]));
 
+	int* cellTypeAddr = thrust::raw_pointer_cast(
+            &(cellInfoVecs.cell_Type[0]));
 	thrust::counting_iterator<uint> iBegin(0);
 	thrust::counting_iterator<uint> iEnd(activeCellCount); // make sure not iterate on inactive cells already 
 	thrust::transform(
@@ -6532,7 +6575,7 @@ void SceCells::updateActivationLevel() {
 							cellInfoVecs.cell_Type.begin() + activeCellCount
 							)),
 			cellInfoVecs.activationLevel.begin(),
-			updateActivationLevelDevice(activeCellCount,maxMemNodePerCell,maxNodePerCell,nodeLocXAddr,nodeLocYAddr,nodeIsActiveAddr,nodeAdhIdxAddr,actLevelAddr));
+			updateActivationLevelDevice(activeCellCount,maxMemNodePerCell,maxNodePerCell,nodeLocXAddr,nodeLocYAddr,nodeIsActiveAddr,nodeAdhIdxAddr,actLevelAddr,cellTypeAddr));
 }
 
 
@@ -6613,7 +6656,7 @@ void SceCells::updateCellPolar() {
 							cellInfoVecs.cellPolarAngle.begin() + activeCellCount
 							)),
 			cellInfoVecs.cellPolarAngle.begin(),
-			updateCellFilop(seed, ddt, timeNow, 
+			updateCellPolarDevice(seed, ddt, timeNow, 
 			cellFilopXAddr,cellFilopYAddr,cellFilopAngleAddr,cellFilopIsActiveAddr,
 			cellFilopBirthTimeAddr,activeCellCount,cellCenterXAddr,cellCenterYAddr,cellRadiusAddr,
 			cellActiveFilopCountsAddr,maxMemNodePerCell,maxNodePerCell,nodeLocXAddr,nodeLocYAddr,

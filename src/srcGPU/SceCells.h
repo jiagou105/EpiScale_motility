@@ -891,7 +891,7 @@ struct AddMembrVolDevice: public thrust::unary_function<UUUDDDD, CVec2> {
 		double oriVelX = thrust::get<5>(cData);
 		double oriVelY = thrust::get<6>(cData);
 
-		double kVol = 0.1; // volume preservation parameter 
+		double kVol = 0.01; // volume preservation parameter 
 
 		uint index = cellRank * _maxNodePerCell + nodeRank;
 		if (_isActiveAddr[index] == false || nodeRank >= activeMembrCount) {
@@ -911,7 +911,7 @@ struct AddMembrVolDevice: public thrust::unary_function<UUUDDDD, CVec2> {
 		}
 		index_right = index_right + cellRank * _maxNodePerCell;
 		// 
-		if (_isActiveAddr[index_right] && _isActiveAddr[index_left]) { // why need this condition???
+		if (_isActiveAddr[index_right] && _isActiveAddr[index_left]) { 
 			oriVelX = oriVelX - kVol*(curCellArea-initCellArea0)*(_locYAddr[index_right] - _locYAddr[index_left]);
 			oriVelY = oriVelY - kVol*(curCellArea-initCellArea0)*(_locXAddr[index_left]-_locXAddr[index_right]);
 		}
@@ -1377,7 +1377,7 @@ __host__ __device__ updateFluxWeightsVec(uint maxNodePerCell,
 						distNodes = compDist2D(nodeX,nodeY,nodeOtherX,nodeOtherY);
 						fluxIndex = (nodeRank-_maxMemNodePerCell)*_maxIntnlNodePerCell+(nodeOtherIntlRank-_maxMemNodePerCell); // nodeRank row, nodeOtherIntlRank column
 						// if current node is farther compared with other node, and the myosin level of other node has not reached max yet
-						if (((minToMDist>_minToMDistAddr[nodeOtherIntlIndex]) || minToMDist<0) && cenToMDist>minToMDist  && (_myosinLevelAddr[nodeOtherIntlIndex]<myosinMaxLevel)){ 
+						if ((minToMDist>_minToMDistAddr[nodeOtherIntlIndex])  && cenToMDist>minToMDist  && (_myosinLevelAddr[nodeOtherIntlIndex]<myosinMaxLevel)){  // || minToMDist<0)
 							_fluxWeightsAddr[fluxIndex] = exp(-distNodes/dist_0)/(fabs(minToMDist)+1); // flux from nodeIntlIndex1 to nodeOtherIntlRank
 							sumFlux = sumFlux + _fluxWeightsAddr[fluxIndex]; // sum up flux weights in the nodeRank row
 						} else {
@@ -1602,13 +1602,14 @@ struct updateActivationLevelDevice: public thrust::unary_function<UUUI, double> 
 	bool* _isActiveAddr;
 	int* _nodeAdhereIndexAddr;
 	uint* _actLevelAddr;
+	int* _cellTypeAddr;
 	// double _grthPrgrCriVal_M;
 	// comment prevents bad formatting issues of __host__ and __device__ in Nsight
 	__host__ __device__ updateActivationLevelDevice(
 			uint activeCellCount, uint maxMemNodePerCell, uint maxNodePerCell, double* locXAddr, double* locYAddr, 
-			bool* isActiveAddr, int* nodeAdhereIndexAddr, uint* actLevelAddr) :
+			bool* isActiveAddr, int* nodeAdhereIndexAddr, uint* actLevelAddr, int* cellTypeAddr) :
 			_activeCellCount(activeCellCount), _maxMemNodePerCell(maxMemNodePerCell),_maxNodePerCell(maxNodePerCell), _locXAddr(locXAddr), _locYAddr(locYAddr), 
-			_isActiveAddr(isActiveAddr), _nodeAdhereIndexAddr(nodeAdhereIndexAddr), _actLevelAddr(actLevelAddr){
+			_isActiveAddr(isActiveAddr), _nodeAdhereIndexAddr(nodeAdhereIndexAddr), _actLevelAddr(actLevelAddr), _cellTypeAddr(cellTypeAddr){
 	}
 	// comment prevents bad formatting issues of __host__ and __device__ in Nsight
 	__device__ double operator()(const UUUI &cData) const {
@@ -1620,17 +1621,24 @@ struct updateActivationLevelDevice: public thrust::unary_function<UUUI, double> 
 
 		uint intnlIndxMemBegin = cellRank * _maxNodePerCell;
 		uint otherNodeRank, otherCellRank;
+		int count=0;
 		if (cell_Type==1){
 			curActLevel = 1;
 			return curActLevel;
 		}
-		if (curActLevel==0){ // no adhesion with other active cells before
-			for (uint tempNodeRank=intnlIndxMemBegin; tempNodeRank<intnlIndxMemBegin+curActMembrNodeCount;tempNodeRank++){
-				otherNodeRank = _nodeAdhereIndexAddr[tempNodeRank];
+			// no adhesion with other active cells before
+		for (uint tempNodeRank=intnlIndxMemBegin; tempNodeRank<intnlIndxMemBegin+curActMembrNodeCount;tempNodeRank++){
+			otherNodeRank = _nodeAdhereIndexAddr[tempNodeRank];
+			if (otherNodeRank == -1){
+				// do nothing
+			} else{
 				otherCellRank = otherNodeRank/_maxNodePerCell;
-				if (_actLevelAddr[otherCellRank]>0){curActLevel = curActLevel+1;}
+				if (_cellTypeAddr[otherCellRank]==1){curActLevel = 1; count=1; break;}
 			}
-		} // else {}: for future version, add an else condition such that we can update the activation level if a cell is isolated 
+			// if (_actLevelAddr[otherCellRank]>0){curActLevel = curActLevel+1;}
+		}
+		if (count == 0) {curActLevel=0;}
+		 // else {}: for future version, add an else condition such that we can update the activation level if a cell is isolated 
 		return curActLevel;
 	}
 };
@@ -1640,7 +1648,7 @@ struct updateActivationLevelDevice: public thrust::unary_function<UUUI, double> 
 
 
 
-struct updateCellFilop: public thrust::unary_function<UUUIDDDD, double> {
+struct updateCellPolarDevice: public thrust::unary_function<UUUIDDDD, double> {
 	uint _seed;
 	double _timeStep;
 	double _timeNow;
@@ -1666,7 +1674,7 @@ struct updateCellFilop: public thrust::unary_function<UUUIDDDD, double> {
 	uint _leaderRank;
 	// double _grthPrgrCriVal_M;
 	// comment prevents bad formatting issues of __host__ and __device__ in Nsight
-	__host__ __device__ updateCellFilop(uint seed, double timeStep, double timeNow, 
+	__host__ __device__ updateCellPolarDevice(uint seed, double timeStep, double timeNow, 
 			double* cellFilopXAddr, double* cellFilopYAddr, double* cellFilopAngleAddr, bool* cellFilopIsActiveAddr, double* cellFilopBirthTimeAddr,
 			uint activeCellCount, double* cellCenterXAddr, double* cellCenterYAddr, double* cellRadiusAddr, uint* cellActiveFilopCountsAddr,
 			uint maxMemNodePerCell, uint maxNodePerCell, double* locXAddr, double* locYAddr, bool* isActiveAddr, int* nodeAdhereIndexAddr, 
@@ -1722,7 +1730,7 @@ struct updateCellFilop: public thrust::unary_function<UUUIDDDD, double> {
 		double randomAngleRd = 0;
 		bool isvalidDirection=false;
 		bool isTangDirection = false;
-		// if (curActLevel>0){probNewFilop = 0.00001;}
+		if (curActLevel>0){probNewFilop = 0.01;filopMaxLifeTime=150;} // higher likely to form filopodia
 		// if (_nodeActLevelAddr[intnlIndxMemBegin]>0){probNewFilop = 0.00002;} // activation level is associated with node ???
 
 		if (_timeNow < 55800.0) {
@@ -2218,8 +2226,8 @@ struct calSubAdhForceDevice: public thrust::unary_function<UIUDDUUDDD, CVec2> {
 		double minDistIntl=100;
 		double nodeXTemp, nodeYTemp, tempdistMI;
 		double charMIntlDist=0.8;
-		if (cellType != 1 && _nodeActLevelAddr[index]>0){kAdh = 20;}
-		if (cellType == 1){kAdh=20.0;} // for leader
+		if (cellType != 1 && _nodeActLevelAddr[index]>0){kAdh = 30;}
+		if (cellType == 1){kAdh=30.0;} // for leader
 		// if (_timeNow > 55800.0 && _isActiveAddr[index] == true && (nodeRank < _maxMemNodePerCell)) {
 		if (_timeNow > 55800.0 && _isActiveAddr[index] == true) {
 			if (nodeRank < _maxMemNodePerCell && nodeMyosin>0){
@@ -3987,7 +3995,8 @@ struct DppGrowRegulator: public thrust::unary_function<DDDDi, double> {
 		// double smallValue = 0.000001 ;
 
 		if (cell_Type == 0){// followers
-			progressNew=progress+speed*_dt ;} 
+			// progressNew=progress+speed*_dt ;} 
+			progressNew = 0.1;}
 		else {
 			progressNew=0.1; // leader cell never divides 
 		}
@@ -4102,6 +4111,52 @@ struct CalTriArea: public thrust::unary_function<Tuuudd, double> {
 };
 
 
+
+struct CalTriAreaV1: public thrust::unary_function<Tuuudd, double> {
+	uint _maxNodePerCell;
+	bool* _isActiveAddr;
+	double* _locXAddr;
+	double* _locYAddr;
+	// comment prevents bad formatting issues of __host__ and __device__ in Nsight
+	__host__ __device__ CalTriAreaV1(uint maxNodePerCell, bool* isActiveAddr,
+			double* locXAddr, double* locYAddr) :
+			_maxNodePerCell(maxNodePerCell), _isActiveAddr(isActiveAddr), _locXAddr(
+					locXAddr), _locYAddr(locYAddr) {
+	}
+	__device__
+	double operator()(const Tuuudd &inputData) const {
+		uint activeMembrCount = thrust::get<0>(inputData);
+		uint cellRank = thrust::get<1>(inputData);
+		uint nodeRank = thrust::get<2>(inputData);
+		double centerX = thrust::get<3>(inputData);
+		double centerY = thrust::get<4>(inputData);
+		uint index = cellRank * _maxNodePerCell + nodeRank;
+
+		if (_isActiveAddr[index] == false || nodeRank >= activeMembrCount ) {
+			return 0.0;
+		} else {
+			int index_right = nodeRank + 1;
+			if (index_right == (int) activeMembrCount) {
+				index_right = 0;
+			}
+			index_right = index_right + cellRank * _maxNodePerCell;
+			// apply tension force from right
+			if (_isActiveAddr[index_right]) {
+				double posX = _locXAddr[index];
+				double posY = _locYAddr[index];
+				double pos1X = _locXAddr[index_right];
+				double pos1Y = _locYAddr[index_right];
+				double result = (posX * pos1Y - pos1X * posY) / 2.0;
+				return result;
+			} else {
+				return 0.0;
+			}
+		}
+	}
+};
+
+
+
 struct BC_Tissue_Damp: public thrust::unary_function<CVec3,CVec2> {
 	double _TMinX, _TMaxX,_TMinY,_TMaxY,_Damp_Coef ; 
         int    _NumActCells ; 
@@ -4160,6 +4215,20 @@ struct BC_Tissue_Damp: public thrust::unary_function<CVec3,CVec2> {
 }; 
 
 **/
+
+struct calAbs: public thrust::unary_function<double, double> {
+	uint _totalNodeCountForActiveCells; 
+__host__ __device__ calAbs (uint totalNodeCountForActiveCells) : 
+	_totalNodeCountForActiveCells(totalNodeCountForActiveCells) {
+	}
+
+__host__ __device__
+double operator()(const double &inputData) const {
+	return fabs(inputData);
+	}
+};
+
+
 
 
 struct CalPerim: public thrust::unary_function<Tuuudd, double> {
@@ -4692,6 +4761,8 @@ class SceCells {
 	void divide2D_M();
 
 	void distributeCellGrowthProgress_M();
+
+	void distributeCellActivationLevel_M();
 
 	void allComponentsMove_M();
 

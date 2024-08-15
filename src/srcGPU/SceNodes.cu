@@ -413,7 +413,7 @@ void SceNodes::initDimension(double domainMinX, double domainMaxX,
 }
 
 
-
+// not used ?
 std::vector<std::pair<uint, uint> > SceNodes::obtainPossibleNeighborPairs() {
 	std::vector<std::pair<uint, uint> > result;
 	thrust::host_vector<uint> keyBeginCPU = auxVecs.keyBegin;
@@ -578,6 +578,7 @@ void SceNodes::debugNAN() {
 	}
 }
 
+// not used?
 std::vector<std::pair<uint, uint> > SceNodes::obtainPossibleNeighborPairs_M() {
 	std::vector<std::pair<uint, uint> > result;
 	thrust::host_vector<uint> keyBeginCPU = auxVecs.keyBegin;
@@ -606,7 +607,7 @@ std::vector<std::pair<uint, uint> > SceNodes::obtainPossibleNeighborPairs_M() {
 				nodeRank1 = (node1 - offSet) % maxNodePerCell;
 				cellRank2 = (node2 - offSet) / maxNodePerCell;
 				nodeRank2 = (node2 - offSet) % maxNodePerCell;
-				if (nodeRank1 >= memThreshold && nodeRank2 >= memThreshold
+				if (nodeRank1 >= memThreshold && nodeRank2 >= memThreshold // means internal nodes
 						&& cellRank1 == cellRank2) {
 					result.push_back(std::make_pair<uint, uint>(node1, node2));
 				}
@@ -716,6 +717,7 @@ void SceNodes::initValues_M(std::vector<bool>& initIsActive,
 
 }
 
+// not used
 VtkAnimationData SceNodes::obtainAnimationData(AnimationCriteria aniCri) {
 	VtkAnimationData vtkData;
 	std::vector<std::pair<uint, uint> > pairs = obtainPossibleNeighborPairs();
@@ -942,6 +944,7 @@ VtkAnimationData SceNodes::obtainAnimationData(AnimationCriteria aniCri) {
 }
 
 // TODO
+// not used 
 VtkAnimationData SceNodes::obtainAnimationData_M(AnimationCriteria aniCri) {
 	VtkAnimationData vtkData;
 	std::vector<std::pair<uint, uint> > pairs = obtainPossibleNeighborPairs_M();
@@ -1045,6 +1048,7 @@ VtkAnimationData SceNodes::obtainAnimationData_M(AnimationCriteria aniCri) {
 	return vtkData;
 }
 
+// not used
 void SceNodes::findBucketBounds() {
 	thrust::counting_iterator<unsigned int> search_begin(0);
 	thrust::lower_bound(auxVecs.bucketKeysExpanded.begin(),
@@ -1061,7 +1065,7 @@ void SceNodes::findBucketBounds_M() {
 	thrust::lower_bound(auxVecs.bucketKeysExpanded.begin(),
 			auxVecs.bucketKeysExpanded.begin() + endIndxExtProc_M, search_begin,
 			search_begin + domainPara.totalBucketCount,
-			auxVecs.keyBegin.begin());
+			auxVecs.keyBegin.begin());// for each calue in search, find the first place in bucketKeysExpanded that can be inserted while not alter the order, return the place to keybegin
 	thrust::upper_bound(auxVecs.bucketKeysExpanded.begin(),
 			auxVecs.bucketKeysExpanded.begin() + endIndxExtProc_M, search_begin,
 			search_begin + domainPara.totalBucketCount, auxVecs.keyEnd.begin());
@@ -1084,10 +1088,11 @@ void SceNodes::prepareSceForceComputation() {
 	findBucketBounds();
 }
 
+// generate bucket values 
 void SceNodes::prepareSceForceComputation_M() {
-	buildBuckets2D_M();
-	extendBuckets2D_M();
-	findBucketBounds_M();
+	buildBuckets2D_M(); // build the basic line index to node index map
+	extendBuckets2D_M(); // expand the bucket list to find a neighbor
+	findBucketBounds_M(); // find keybegin and keyend to insert certain value
 }
 
 void SceNodes::prepareSceForceComputation3D() {
@@ -1136,6 +1141,8 @@ void SceNodes::addNewlyDividedCells(
 			+ addCellCount;
 }
 
+
+// not used
 void SceNodes::buildBuckets2D() {
 	int totalActiveNodes;
 	if (controlPara.simuType != Disc_M) {
@@ -1187,6 +1194,7 @@ void SceNodes::buildBuckets2D() {
 			auxVecs.bucketValues.end());
 }
 
+// used 
 void SceNodes::buildBuckets2D_M() {
 	int totalActiveNodes = allocPara_M.bdryNodeCount
 			+ allocPara_M.currentActiveCellCount
@@ -1214,14 +1222,14 @@ void SceNodes::buildBuckets2D_M() {
 			pointToBucketIndex2D(domainPara.minX, domainPara.maxX,
 					domainPara.minY, domainPara.maxY, domainPara.gridSpacing));
 
-	// sort the points by their bucket index
+	// sort the points by their bucket index, which creates a map, that maps bucket index to true index
 	thrust::sort_by_key(auxVecs.bucketKeys.begin(),
 			auxVecs.bucketKeys.begin() + totalActiveNodes,
 			auxVecs.bucketValues.begin());
 	// for those nodes that are inactive, key value of UINT_MAX will be returned.
 	// we need to removed those keys along with their values.
 	int numberOfOutOfRange = thrust::count(auxVecs.bucketKeys.begin(),
-			auxVecs.bucketKeys.begin() + totalActiveNodes, UINT_MAX);
+			auxVecs.bucketKeys.begin() + totalActiveNodes, UINT_MAX); // semms redundant as the previous calculation is for all active nodes
 
 	endIndx_M = totalActiveNodes - numberOfOutOfRange;
 }
@@ -2011,11 +2019,11 @@ void SceNodes::extendBuckets2D() {
 }
 
 void SceNodes::extendBuckets2D_M() {
-	endIndxExt_M = endIndx_M * 9;
+	endIndxExt_M = endIndx_M * 9; // to copy each bucket key 9 times
 	/**
 	 * beginning of constant iterator
 	 */
-	thrust::constant_iterator<uint> first(9);
+	thrust::constant_iterator<uint> first(9); // first is the name of the array
 	/**
 	 * end of constant iterator.
 	 * the plus sign only indicate movement of position, not value.
@@ -2258,7 +2266,8 @@ void SceNodes::applySceForcesDisc_M(std::vector<SigptStateV2>& sigPtVecV2) {
 // 			thrust::copy(d_sigPtVec.begin(), d_sigPtVec.end(), sigPtVecV2.begin());
 }
 
-void SceNodes::adjustNodeCCAdh() {
+// wrong, do not use
+void SceNodes::updateNodeCCAdh() {
 	
 	
 	uint* valueAddress = thrust::raw_pointer_cast(
@@ -2293,26 +2302,26 @@ void SceNodes::adjustNodeCCAdh() {
 						infoVecs.nodeAdhereIndex.begin()
 					))+totalActiveNodes,
 			infoVecs.nodeAdhereIndex.begin(),
-			updateNodeCCadh(valueAddress, nodeLocXAddress, nodeLocYAddress,
+			updateNodeCCadhDevice(valueAddress, nodeLocXAddress, nodeLocYAddress,
 					nodeAdhIdxAddress, membrIntnlAddress, nodeGrowProAddr, maxAllNodePerCell, leaderRank,timeNow,nodeActLevelAddr,nodeIsActiveAddr));
 	
 
-	
+	// wrong, do not use
 	// uint maxAllNodePerCell = allocPara_M.maxAllNodePerCell;
 	if (timeNow>55800.0){
 		for (uint tempcellRank=0; tempcellRank<allocPara_M.currentActiveCellCount; tempcellRank++){ //
 			uint beginInd = allocPara_M.bdryNodeCount + tempcellRank*maxAllNodePerCell;
 			uint endInd = allocPara_M.bdryNodeCount + (tempcellRank+1)*maxAllNodePerCell;
 			if (tempcellRank != allocPara_M.leaderRank){
-				if (timeNow>55800.0+90.0){
+				// if (timeNow>55800.0){
 					for (uint tempLocalNodeInd=0; tempLocalNodeInd<maxAllNodePerCell; tempLocalNodeInd++){
 						uint nodeInd = tempcellRank*maxAllNodePerCell+tempLocalNodeInd;
 						if (infoVecs.nodeActLevel[nodeInd]>0 && infoVecs.nodeIsActive[nodeInd] == true){
-							thrust::fill(infoVecs.nodeActLevel.begin()+beginInd,infoVecs.nodeActLevel.begin()+endInd,(uint)2);// double check the index
+							thrust::fill(infoVecs.nodeActLevel.begin()+beginInd,infoVecs.nodeActLevel.begin()+endInd,(uint)0);// double check the index
 							break;
 						}
 					}
-				}
+				// }
 			} else {
 				// uint activeTotal = 
 				thrust::fill(infoVecs.nodeActLevel.begin()+beginInd,infoVecs.nodeActLevel.begin()+beginInd+allocPara_M.maxMembrNodePerCell,(uint)1);
@@ -2466,7 +2475,7 @@ void SceNodes::sceForcesDisc_M(double dt, std::vector<SigptStateV2>& sigPtVecV2)
 	cout << "     --- 2 ---" << endl;
 	cout.flush();
 	applySceForcesDisc_M(sigPtVecV2);
-	adjustNodeCCAdh(); // make sure all nodes in a cell have the correct activation level 
+	// updateNodeCCAdh(); // make sure all nodes in a cell have the correct activation level 
 	// updateSigVec(sigPtVecV2);
 
 
@@ -2495,7 +2504,7 @@ void SceNodes::sceForcesDisc_M(double dt, std::vector<SigptStateV2>& sigPtVecV2)
 #endif
 }
 
-
+// used to determine bucket gridspacing
 double SceNodes::getMaxEffectiveRange() {
 	int simuTypeConfigValue =
 			globalConfigVars.getConfigValue("SimulationType").toInt();
@@ -2543,6 +2552,7 @@ double SceNodes::getMaxEffectiveRange() {
 		return maxEffRange;
 	}
 }
+
 
 void SceNodes::setInfoVecs(const NodeInfoVecs& infoVecs) {
 	this->infoVecs = infoVecs;
