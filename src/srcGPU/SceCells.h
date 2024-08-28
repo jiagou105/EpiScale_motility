@@ -891,7 +891,7 @@ struct AddMembrVolDevice: public thrust::unary_function<UUUDDDD, CVec2> {
 		double oriVelX = thrust::get<5>(cData);
 		double oriVelY = thrust::get<6>(cData);
 
-		double kVol = 0.01; // volume preservation parameter 
+		double kVol = 0; // volume preservation parameter 
 
 		uint index = cellRank * _maxNodePerCell + nodeRank;
 		if (_isActiveAddr[index] == false || nodeRank >= activeMembrCount) {
@@ -900,7 +900,7 @@ struct AddMembrVolDevice: public thrust::unary_function<UUUDDDD, CVec2> {
 		// left node
 		int index_left = nodeRank - 1;
 		if (index_left == -1) {
-			index_left = (int) (activeMembrCount - 1);
+			index_left = (int) activeMembrCount - 1;
 		}
 		index_left = index_left + cellRank * _maxNodePerCell;
 
@@ -1290,7 +1290,7 @@ __host__ __device__ updateMinToMDist(uint maxNodePerCell,
 		double memCenterX, memCenterY, lenMemCenter;
 		double projLen;
 		double distNodes=200.0;
-		minToMDist = 0.0; 
+		minToMDist = 100.0; 
 
 		if (cell_Type==1){ // means leader
 			if (nodeRank>=_maxMemNodePerCell){ // means an internal node, note the greater than or equal to 
@@ -1307,14 +1307,14 @@ __host__ __device__ updateMinToMDist(uint maxNodePerCell,
 						}
 					}
 				}
-				nodeMemVecX = tempNodeX - nodeX;
-				nodeMemVecY = tempNodeY - nodeY;
+				// nodeMemVecX = tempNodeX - nodeX;
+				// nodeMemVecY = tempNodeY - nodeY;
 				memCenterX = tempNodeX - cellCenterX;
 				memCenterY = tempNodeY - cellCenterY;
 				// lenNodeMem = sqrt(nodeMemVecX*nodeMemVecX + nodeMemVecY*nodeMemVecY);
 				lenMemCenter = sqrt(memCenterX * memCenterX + memCenterY * memCenterY);
-				projLen = (nodeMemVecX*memCenterX + nodeMemVecY*memCenterY)/lenMemCenter; // projection along center-membrane connection
-				minToMDist = projLen; // if no contact with followers, minToDist is set to be 100.
+				// projLen = (nodeMemVecX*memCenterX + nodeMemVecY*memCenterY)/lenMemCenter; // projection along center-membrane connection
+				minToMDist = tempMinDist; // if no contact with followers, minToDist is set to be 100.
 				// minToMDistRaw = tempMinDist;
 			}
 		}
@@ -1324,7 +1324,7 @@ __host__ __device__ updateMinToMDist(uint maxNodePerCell,
 
 
 
-
+/*
 struct updateFluxWeightsVec: public thrust::unary_function<UUUUIDD, double> {
 	uint _maxNodePerCell;
 	uint _maxMemNodePerCell;
@@ -1402,6 +1402,91 @@ __host__ __device__ updateFluxWeightsVec(uint maxNodePerCell,
 		return minToMDist;
 	}
 };
+*/
+
+
+
+struct updateFluxWeightsVec: public thrust::unary_function<UUUUIDD, double> {
+	uint _maxNodePerCell;
+	uint _maxMemNodePerCell;
+	uint _maxIntnlNodePerCell;
+	double* _locXAddr;
+	double* _locYAddr;
+	bool* _isActiveAddr;
+	int* _nodeAdhereIndexAddr;
+	double* _myosinLevelAddr;
+	double* _minToMDistAddr;
+	double* _fluxWeightsAddr;
+
+
+__host__ __device__ updateFluxWeightsVec(uint maxNodePerCell,
+			uint maxMemNodePerCell, uint maxIntnlNodePerCell, double* locXAddr, double* locYAddr,
+			bool* isActiveAddr, double* myosinLevelAddr, int* nodeAdhereIndexAddr, double* minToMDistAddr, double* fluxWeightsAddr) :
+			_maxNodePerCell(maxNodePerCell), _maxMemNodePerCell(maxMemNodePerCell), _maxIntnlNodePerCell(maxIntnlNodePerCell),
+			_locXAddr(locXAddr), _locYAddr(locYAddr), _isActiveAddr(isActiveAddr), _myosinLevelAddr(myosinLevelAddr),
+			_nodeAdhereIndexAddr(nodeAdhereIndexAddr), _minToMDistAddr(minToMDistAddr), _fluxWeightsAddr(fluxWeightsAddr) {
+	}
+	// comment prevents bad formatting issues of __host__ and __device__ in Nsight
+	__device__ double operator()(const UUUUIDD &cData) const {
+		uint activeMembrCount = thrust::get<0>(cData);
+		uint activeIntnlCount = thrust::get<1>(cData);
+		uint cellRank = thrust::get<2>(cData);
+		uint nodeRank = thrust::get<3>(cData); // relative rank 
+		int cell_Type = thrust::get<4>(cData);
+		double minToMDist = thrust::get<5>(cData);
+		double cenToMDist = thrust::get<6>(cData);
+
+		uint index = cellRank * _maxNodePerCell + nodeRank; // absolute index
+		uint nodeOtherIntlIndex;
+		double nodeX = _locXAddr[index];
+		double nodeY = _locYAddr[index];
+		double nodeOtherX, nodeOtherY;
+		double distNodes;
+		double distThrd = 3;
+		double distThrd2 = 200;
+		double sumFlux = 0;
+		double myosinMaxLevel=4;
+		uint fluxIndex; // index for the fluxWeights matrix
+		double dist_0=2;
+		
+		if (cell_Type==1){ // means leader
+			if (nodeRank>=_maxMemNodePerCell && _isActiveAddr[index]==true){ // means internal node 
+				// loop over other internal nodes in the leader 
+				for (uint nodeOtherIntlRank=_maxMemNodePerCell; nodeOtherIntlRank<_maxMemNodePerCell+activeIntnlCount; nodeOtherIntlRank++) {
+					nodeOtherIntlIndex = cellRank * _maxNodePerCell + nodeOtherIntlRank;
+					if (nodeRank!=nodeOtherIntlRank) {
+						nodeOtherX = _locXAddr[nodeOtherIntlIndex];
+						nodeOtherY = _locYAddr[nodeOtherIntlIndex];
+						distNodes = compDist2D(nodeX,nodeY,nodeOtherX,nodeOtherY); // flux from current node to the other node
+						fluxIndex = (nodeRank-_maxMemNodePerCell)*_maxIntnlNodePerCell+(nodeOtherIntlRank-_maxMemNodePerCell); // nodeRank row, nodeOtherIntlRank column
+						// if current node is farther compared with other node, and the myosin level of other node has not reached max yet
+						if (distNodes<distThrd && (minToMDist>_minToMDistAddr[nodeOtherIntlIndex]) && _myosinLevelAddr[nodeOtherIntlIndex]<myosinMaxLevel){ // && minToMDist<distThrd2 && _minToMDistAddr[nodeOtherIntlIndex]<distThrd2
+							_fluxWeightsAddr[fluxIndex] = 0.2;// omega0 // flux from nodeIntlIndex1 to nodeOtherIntlRank
+							// sumFlux = sumFlux + _fluxWeightsAddr[fluxIndex]; // sum up flux weights in the nodeRank row
+						} else {
+							_fluxWeightsAddr[fluxIndex] = 0;
+						}
+					} else {
+						fluxIndex = (nodeRank-_maxMemNodePerCell)*(_maxIntnlNodePerCell +1);
+						_fluxWeightsAddr[fluxIndex] = 0;
+					}
+				}
+				/*
+				for (uint nodeOtherIntlRank=_maxMemNodePerCell; nodeOtherIntlRank<_maxMemNodePerCell+activeIntnlCount; nodeOtherIntlRank++) {
+					fluxIndex = (nodeRank-_maxMemNodePerCell)*_maxIntnlNodePerCell+(nodeOtherIntlRank-_maxMemNodePerCell);
+					if (bigEnough(sumFlux)){
+						// _fluxWeightsAddr[fluxIndex] = _fluxWeightsAddr[fluxIndex];///sumFlux;
+					} else {
+						// _fluxWeightsAddr[fluxIndex] = _fluxWeightsAddr[fluxIndex];
+					}
+				}
+				*/
+			}
+		}
+		return minToMDist;
+	}
+};
+
 
 
 
@@ -1512,8 +1597,7 @@ struct updateCellMyosin: public thrust::unary_function<UUDDUUDDDi, double> {
 				}
 			
 			} else { // membrane of follower cells
-				
-				// nodeMyosin = 0;
+				nodeMyosin = 0;
 			}
 			
 			return nodeMyosin;
@@ -1912,7 +1996,7 @@ struct updateSigPtState: public thrust::unary_function<UiDDDDiU, double> {
 
 
 
-// JG051223
+
 struct calCellRadius: public thrust::unary_function<UiDDU, double> {
 	uint _maxNodePerCell;
 	uint _maxMemNodePerCell;
@@ -2141,7 +2225,7 @@ struct calSubAdhForceDevice: public thrust::unary_function<UIUDDUUDDD, CVec2> {
 	double* _subAdhLocXAddr; 
 	double* _subAdhLocYAddr;
 	bool* _subAdhIsBoundAddr;
-	uint _maxSubSitePerNode; 
+	uint* _cellActLevelAddr; 
 	uint _seed;
 	uint* _nodeActLevelAddr;
 	// double _grthPrgrCriVal_M;
@@ -2149,14 +2233,14 @@ struct calSubAdhForceDevice: public thrust::unary_function<UIUDDUUDDD, CVec2> {
 	__host__ __device__ calSubAdhForceDevice(uint maxNodePerCell,
 			uint maxMemNodePerCell, double* locXAddr, double* locYAddr,
 			bool* isActiveAddr, double* myosinLevelAddr, double timeStep, double timeNow,
-			double* subAdhLocXAddr, double* subAdhLocYAddr, bool* subAdhIsBoundAddr, uint maxSubSitePerNode, 
+			double* subAdhLocXAddr, double* subAdhLocYAddr, bool* subAdhIsBoundAddr, uint* cellActLevelAddr, 
 			uint seed, uint* nodeActLevelAddr) :
 			_maxNodePerCell(maxNodePerCell), _maxMemNodePerCell(
 					maxMemNodePerCell), _locXAddr(locXAddr), _locYAddr(
 					locYAddr), _isActiveAddr(isActiveAddr), _myosinLevelAddr(myosinLevelAddr), 
 					_timeStep(timeStep), _timeNow(timeNow), 
 					_subAdhLocXAddr(subAdhLocXAddr), _subAdhLocYAddr(subAdhLocYAddr), _subAdhIsBoundAddr(subAdhIsBoundAddr), 
-					_maxSubSitePerNode(maxSubSitePerNode), _seed(seed), _nodeActLevelAddr(nodeActLevelAddr)  {
+					_cellActLevelAddr(cellActLevelAddr), _seed(seed), _nodeActLevelAddr(nodeActLevelAddr)  {
 	}
 	// comment prevents bad formatting issues of __host__ and __device__ in Nsight
 	__device__ CVec2 operator()(const UIUDDUUDDD &cData) const {
@@ -2226,8 +2310,15 @@ struct calSubAdhForceDevice: public thrust::unary_function<UIUDDUUDDD, CVec2> {
 		double minDistIntl=100;
 		double nodeXTemp, nodeYTemp, tempdistMI;
 		double charMIntlDist=0.8;
+		uint maxSubSitePerNode;
 		if (cellType != 1 && _nodeActLevelAddr[index]>0){kAdh = 30;}
 		if (cellType == 1){kAdh=30.0;} // for leader
+		if (_cellActLevelAddr[cellRank] == 1){// including leader cell and cells adhere to it
+			maxSubSitePerNode = 10;
+		} else {
+			maxSubSitePerNode = 10;
+		}
+		
 		// if (_timeNow > 55800.0 && _isActiveAddr[index] == true && (nodeRank < _maxMemNodePerCell)) {
 		if (_timeNow > 55800.0 && _isActiveAddr[index] == true) {
 			if (nodeRank < _maxMemNodePerCell && nodeMyosin>0){
@@ -2240,16 +2331,16 @@ struct calSubAdhForceDevice: public thrust::unary_function<UIUDDUUDDD, CVec2> {
 				}
 			}
 			// starting of the index of the substrate site corresponding to this node is: index*10, 10 is the max subs sites
-			for (int bindSiteIndex = 0; bindSiteIndex < _maxSubSitePerNode; // interaction between cur internal node and other internal node
+			for (int bindSiteIndex = 0; bindSiteIndex < maxSubSitePerNode; // interaction between cur internal node and other internal node
 					bindSiteIndex++) {
-						bindSiteCounts += _subAdhIsBoundAddr[index*_maxSubSitePerNode + bindSiteIndex];
+						bindSiteCounts += _subAdhIsBoundAddr[index*maxSubSitePerNode + bindSiteIndex];
 					}
 			// Perform the unbinding and binding events by adding the location of the site to the siteXY vector 
 			if (bindSiteCounts > 0){
 				// means there are possibilities for unbinding, compute the unbinding probability 
-				for (int bindSiteIndex = 0; bindSiteIndex < _maxSubSitePerNode; bindSiteIndex++){
+				for (int bindSiteIndex = 0; bindSiteIndex < maxSubSitePerNode; bindSiteIndex++){
 					randomN1 = u01(rng);
-					siteIndex = index*_maxSubSitePerNode + bindSiteIndex; 
+					siteIndex = index*maxSubSitePerNode + bindSiteIndex; 
 					if (_subAdhIsBoundAddr[siteIndex] == 1){
 						siteX = _subAdhLocXAddr[siteIndex];
 						siteY = _subAdhLocYAddr[siteIndex];
@@ -2262,10 +2353,10 @@ struct calSubAdhForceDevice: public thrust::unary_function<UIUDDUUDDD, CVec2> {
 					}
 				}
 			}
-			if (bindSiteCounts < _maxSubSitePerNode){
+			if (bindSiteCounts < maxSubSitePerNode){
 				// compute possibility for binding to an arbitrary site 
 				// 
-				for (int allNbrIndex = 0; allNbrIndex < (_maxSubSitePerNode-bindSiteCounts); allNbrIndex++){
+				for (int allNbrIndex = 0; allNbrIndex < (maxSubSitePerNode-bindSiteCounts); allNbrIndex++){
 					randomN2= u01(rng);
 					randomN3 = u01(rng);
 					randAngle = u0TwoPi(rng);
@@ -2302,8 +2393,8 @@ struct calSubAdhForceDevice: public thrust::unary_function<UIUDDUUDDD, CVec2> {
 						siteBindThreshold = 0.5;
 					// }
 					if (randomN3<siteBindThreshold) { 
-						for (int bindSiteIndex = 0; bindSiteIndex < _maxSubSitePerNode; bindSiteIndex++){
-							siteIndex = index*_maxSubSitePerNode + bindSiteIndex; 
+						for (int bindSiteIndex = 0; bindSiteIndex < maxSubSitePerNode; bindSiteIndex++){
+							siteIndex = index*maxSubSitePerNode + bindSiteIndex; 
 							if (_subAdhIsBoundAddr[siteIndex] == 0){
 								_subAdhLocXAddr[siteIndex] = ngbrSiteX; 
 								_subAdhLocYAddr[siteIndex] = ngbrSiteY;
@@ -2315,8 +2406,8 @@ struct calSubAdhForceDevice: public thrust::unary_function<UIUDDUUDDD, CVec2> {
 				}
 			}
 			// Compute the updated force depending on updated distance for each binding site
-			for (int bindSiteIndex = 0; bindSiteIndex < _maxSubSitePerNode; bindSiteIndex++){
-				siteIndex = index*_maxSubSitePerNode + bindSiteIndex; 
+			for (int bindSiteIndex = 0; bindSiteIndex < maxSubSitePerNode; bindSiteIndex++){
+				siteIndex = index*maxSubSitePerNode + bindSiteIndex; 
 				if (_subAdhIsBoundAddr[siteIndex] == 1){
 						siteX = _subAdhLocXAddr[siteIndex];
 						siteY = _subAdhLocYAddr[siteIndex];
