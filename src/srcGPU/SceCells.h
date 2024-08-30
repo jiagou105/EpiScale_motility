@@ -1442,33 +1442,35 @@ __host__ __device__ updateFluxWeightsVec(uint maxNodePerCell,
 		double nodeY = _locYAddr[index];
 		double nodeOtherX, nodeOtherY;
 		double distNodes;
-		double distThrd = 3;
+		double distThrd = 2;
 		double distThrd2 = 200;
 		double sumFlux = 0;
-		double myosinMaxLevel=4;
+		double myosinMaxLevel=5;
 		uint fluxIndex; // index for the fluxWeights matrix
 		double dist_0=2;
 		
 		if (cell_Type==1){ // means leader
 			if (nodeRank>=_maxMemNodePerCell && _isActiveAddr[index]==true){ // means internal node 
 				// loop over other internal nodes in the leader 
-				for (uint nodeOtherIntlRank=_maxMemNodePerCell; nodeOtherIntlRank<_maxMemNodePerCell+activeIntnlCount; nodeOtherIntlRank++) {
+				for (uint nodeOtherIntlRank=_maxMemNodePerCell; nodeOtherIntlRank<_maxMemNodePerCell+_maxIntnlNodePerCell; nodeOtherIntlRank++) {
 					nodeOtherIntlIndex = cellRank * _maxNodePerCell + nodeOtherIntlRank;
-					if (nodeRank!=nodeOtherIntlRank) {
-						nodeOtherX = _locXAddr[nodeOtherIntlIndex];
-						nodeOtherY = _locYAddr[nodeOtherIntlIndex];
-						distNodes = compDist2D(nodeX,nodeY,nodeOtherX,nodeOtherY); // flux from current node to the other node
-						fluxIndex = (nodeRank-_maxMemNodePerCell)*_maxIntnlNodePerCell+(nodeOtherIntlRank-_maxMemNodePerCell); // nodeRank row, nodeOtherIntlRank column
-						// if current node is farther compared with other node, and the myosin level of other node has not reached max yet
-						if (distNodes<distThrd && (minToMDist>_minToMDistAddr[nodeOtherIntlIndex]) && _myosinLevelAddr[nodeOtherIntlIndex]<myosinMaxLevel){ // && minToMDist<distThrd2 && _minToMDistAddr[nodeOtherIntlIndex]<distThrd2
-							_fluxWeightsAddr[fluxIndex] = 0.2;// omega0 // flux from nodeIntlIndex1 to nodeOtherIntlRank
-							// sumFlux = sumFlux + _fluxWeightsAddr[fluxIndex]; // sum up flux weights in the nodeRank row
-						} else {
+					if (_isActiveAddr[nodeOtherIntlIndex]==true){
+						if (nodeRank!=nodeOtherIntlRank) {
+							nodeOtherX = _locXAddr[nodeOtherIntlIndex];
+							nodeOtherY = _locYAddr[nodeOtherIntlIndex];
+							distNodes = compDist2D(nodeX,nodeY,nodeOtherX,nodeOtherY); // flux from current node to the other node
+							fluxIndex = (nodeRank-_maxMemNodePerCell)*_maxIntnlNodePerCell+(nodeOtherIntlRank-_maxMemNodePerCell); // nodeRank row, nodeOtherIntlRank column
+							// if current node is farther compared with other node, and the myosin level of other node has not reached max yet
+							if (distNodes<distThrd && (minToMDist>_minToMDistAddr[nodeOtherIntlIndex]) && _myosinLevelAddr[nodeOtherIntlIndex]<myosinMaxLevel){ // && minToMDist<distThrd2 && _minToMDistAddr[nodeOtherIntlIndex]<distThrd2 && // &&  //  //
+								_fluxWeightsAddr[fluxIndex] = 0.2;// omega0 // flux from nodeIntlIndex1 to nodeOtherIntlRank
+								// sumFlux = sumFlux + _fluxWeightsAddr[fluxIndex]; // sum up flux weights in the nodeRank row
+							} else {
+								_fluxWeightsAddr[fluxIndex] = 0;
+							}
+						} else { 
+							fluxIndex = (nodeRank-_maxMemNodePerCell)*(_maxIntnlNodePerCell +1);
 							_fluxWeightsAddr[fluxIndex] = 0;
 						}
-					} else {
-						fluxIndex = (nodeRank-_maxMemNodePerCell)*(_maxIntnlNodePerCell +1);
-						_fluxWeightsAddr[fluxIndex] = 0;
 					}
 				}
 				/*
@@ -1534,6 +1536,8 @@ struct updateCellMyosin: public thrust::unary_function<UUDDUUDDDi, double> {
 		uint index = cellRank * _maxNodePerCell + nodeRank;
 
 		if (_isActiveAddr[index] == false) {
+			// if there is a bug in the number of activeinternalnode ?
+			// nodeMyosin = 10;
 			return nodeMyosin; 
 		}
 		uint intnlIndxMemBegin = cellRank * _maxNodePerCell;
@@ -1662,11 +1666,12 @@ struct updateCellMyosin: public thrust::unary_function<UUDDUUDDDi, double> {
 				deltaMyosin = deltaMyosin + _myosinLevelAddr[otherMyosinIndex]*_fluxWeightsAddr[fluxIndex];
 			}
 			
-			if (index>=intnlIndxBegin && index < intnlIndxEnd){ // seems not neccessary, as the if condition gurantees it is an internal node 
+			//if (index>=intnlIndxBegin && index < intnlIndxEnd){ // seems not neccessary, as the if condition gurantees it is an internal node 
 				// nodeMyosin = nodeMyosin + _timeStep * (kmyo* (myosinTarget - nodeMyosin)- kdeg * nodeMyosin); // make sure it is positive
-				// fluxIndex = 1*_maxIntnlNodePerCell+(nodeRank-_maxMemNodePerCell);
-				nodeMyosin = nodeMyosin + _timeStep * kmyo* deltaMyosin;
-			}
+			//	fluxIndex = 1*_maxIntnlNodePerCell+(nodeRank-_maxMemNodePerCell); // row 2, different columns
+			// if (_isActiveAddr[index]) // seems no need as it the inactive nodes has return value already 
+			nodeMyosin = nodeMyosin + _timeStep * kmyo* deltaMyosin; // _fluxWeightsAddr[fluxIndex]; //
+			//}
 			}
 			return nodeMyosin;
 		}
@@ -1704,7 +1709,7 @@ struct updateActivationLevelDevice: public thrust::unary_function<UUUI, double> 
 
 
 		uint intnlIndxMemBegin = cellRank * _maxNodePerCell;
-		uint otherNodeRank, otherCellRank;
+		int otherNodeRank, otherCellRank;
 		int count=0;
 		if (cell_Type==1){
 			curActLevel = 1;

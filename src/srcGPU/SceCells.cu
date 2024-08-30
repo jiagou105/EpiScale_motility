@@ -553,6 +553,7 @@ void MembrPara::initFromConfig() {
 			globalConfigVars.getConfigValue("InitCellNodeCount").toInt();
 }
 
+
 SceCells::SceCells() {
 	//curTime = 0 + 55800.0;//AAMIRI // Ali I comment that our safely on 04/04/2017
         std ::cout << "I am in SceCells constructor with zero element "<<InitTimeStage<<std::endl ; 
@@ -6369,24 +6370,25 @@ void SceCells::calFluxWeightsMyosin() { // std::vector<double>& fluxWeightsVec
 
 	
 	// compute the flux weight matrix for all internal nodes in a leader cell
+	thrust::counting_iterator<uint> iBegin1(0);
 	thrust::transform(
 			thrust::make_zip_iterator(
 					thrust::make_tuple(
 							thrust::make_permutation_iterator(
 									cellInfoVecs.activeMembrNodeCounts.begin(),
-									make_transform_iterator(iBegin,
+									make_transform_iterator(iBegin1,
 											DivideFunctor(maxAllNodePerCell))),
 							thrust::make_permutation_iterator(
 									cellInfoVecs.activeIntnlNodeCounts.begin(),
-									make_transform_iterator(iBegin,
+									make_transform_iterator(iBegin1,
 											DivideFunctor(maxAllNodePerCell))),
-							make_transform_iterator(iBegin,
+							make_transform_iterator(iBegin1,
 									DivideFunctor(maxAllNodePerCell)),
-							make_transform_iterator(iBegin,
+							make_transform_iterator(iBegin1,
 									ModuloFunctor(maxAllNodePerCell)),
 							thrust::make_permutation_iterator(
 									cellInfoVecs.cell_Type.begin(),
-									make_transform_iterator(iBegin,
+									make_transform_iterator(iBegin1,
 											DivideFunctor(maxAllNodePerCell))),
 							nodes->getInfoVecs().minToMDist.begin(),
 							nodes->getInfoVecs().cenToAdhMDist.begin()
@@ -6395,19 +6397,19 @@ void SceCells::calFluxWeightsMyosin() { // std::vector<double>& fluxWeightsVec
 					thrust::make_tuple(
 							thrust::make_permutation_iterator(
 									cellInfoVecs.activeMembrNodeCounts.begin(),
-									make_transform_iterator(iBegin,
+									make_transform_iterator(iBegin1,
 											DivideFunctor(maxAllNodePerCell))),
 							thrust::make_permutation_iterator(
 									cellInfoVecs.activeIntnlNodeCounts.begin(),
-									make_transform_iterator(iBegin,
+									make_transform_iterator(iBegin1,
 											DivideFunctor(maxAllNodePerCell))),
-							make_transform_iterator(iBegin,
+							make_transform_iterator(iBegin1,
 									DivideFunctor(maxAllNodePerCell)),
-							make_transform_iterator(iBegin,
+							make_transform_iterator(iBegin1,
 									ModuloFunctor(maxAllNodePerCell)),
 							thrust::make_permutation_iterator(
 									cellInfoVecs.cell_Type.begin(),
-									make_transform_iterator(iBegin,
+									make_transform_iterator(iBegin1,
 											DivideFunctor(maxAllNodePerCell))),
 							nodes->getInfoVecs().minToMDist.begin(),
 							nodes->getInfoVecs().cenToAdhMDist.begin()
