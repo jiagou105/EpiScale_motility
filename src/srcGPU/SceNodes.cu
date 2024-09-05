@@ -1833,12 +1833,14 @@ void handleAdhesionForce_M(int& adhereIndex, double& xPos, double& yPos,
 		double& curAdherePosX, double& curAdherePosY, double& xRes,
 		double& yRes, double& alpha, uint& curActLevel, bool& attLeader) {
 	double curLen = computeDist2D(xPos, yPos, curAdherePosX, curAdherePosY);
+	double newbondStiff_M = bondStiff_M;
 	if (curLen > maxAdhBondLen_M) {
 		adhereIndex = -1;
 		return;
 	} else {
 		if (curLen > minAdhBondLen_M) {
-			double forceValue = (curLen - minAdhBondLen_M) * (bondStiff_M * alpha + bondStiff_Mitotic * (1.0-alpha) );
+			if (attLeader) {newbondStiff_M = newbondStiff_M*1.5;}
+			double forceValue = (curLen - minAdhBondLen_M) * (newbondStiff_M * alpha + bondStiff_Mitotic * (1.0-alpha) );
 			if (!attLeader){forceValue = 1*forceValue;}
 			xRes = xRes + forceValue * (curAdherePosX - xPos) / curLen;
 			yRes = yRes + forceValue * (curAdherePosY - yPos) / curLen;
@@ -2592,6 +2594,7 @@ void SceNodes::allocSpaceForNodes(uint maxTotalNodeCount, uint maxIntnlNodeCount
 	if (controlPara.simuType == Disc_M) {
 		infoVecs.nodeAdhereIndex.resize(maxTotalNodeCount,-1);
 		infoVecs.nodeAdhIndxHostCopy.resize(maxTotalNodeCount);
+		infoVecs.myosinLevelHostCopy.resize(maxTotalNodeCount);
 		infoVecs.membrIntnlIndex.resize(maxTotalNodeCount);
 		infoVecs.nodeGrowPro.resize(maxTotalNodeCount);
 		infoVecs.membrTensionMag.resize(maxTotalNodeCount, 0);
@@ -2731,13 +2734,16 @@ void SceNodes::processMembrAdh_M() {
 	removeInvalidPairs_M();
 }
 
-
+// 090324
 void SceNodes::keepAdhIndxCopyInHost_M() {
 	uint maxTotalNode = allocPara_M.currentActiveCellCount
 			* allocPara_M.maxAllNodePerCell;
 	thrust::copy(infoVecs.nodeAdhereIndex.begin(),
 			infoVecs.nodeAdhereIndex.begin() + maxTotalNode,
 			infoVecs.nodeAdhIndxHostCopy.begin());
+	thrust::copy(infoVecs.myosinLevel.begin(),
+			infoVecs.myosinLevel.begin() + maxTotalNode,
+			infoVecs.myosinLevelHostCopy.begin());
 }
 
 void SceNodes::removeInvalidPairs_M() {

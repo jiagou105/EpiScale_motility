@@ -918,11 +918,16 @@ vector<CVector> CellInitHelper::tryGenInitCellNodes(uint initNodeCt, CVector& ce
 	double randX, randY, randRad, randAngle;
 	static const double PI = acos(-1.0);
 	double radiusFollower = globalConfigVars.getConfigValue("InitCellRadius").toDouble();
+	uint maxIntnlNodeCountPerCell = globalConfigVars.getConfigValue("MaxIntnlNodeCountPerCell").toInt();
 	//Ali
 	cout << "I am in the right one" << endl;
 	cout << "# of internal Nodes" << initNodeCt << endl;
 	//Ali
-	if (radius>2*radiusFollower) {initNodeCt = initNodeCt * 15;} // for leader cell 
+	if (radius>2*radiusFollower) {
+		initNodeCt = initNodeCt * 15;
+		if (initNodeCt>maxIntnlNodeCountPerCell) {initNodeCt=maxIntnlNodeCountPerCell;}
+		} // for leader cell 
+
 	while (foundCount < initNodeCt) {
 		bool isInCircle = false;
 //		randX = getRandomNum(-radius, radius);

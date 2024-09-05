@@ -1927,7 +1927,6 @@ void SceCells::runAllCellLogicsDisc_M(double dt, double Damp_Coef, double InitTi
 
 void SceCells::exchSignal(){
 
-
 if (firstTimeReadDpp) {	
 		uint maxTotalNodes=nodes->getInfoVecs().nodeLocX.size() ; 
     	signal.Initialize(allocPara_m.maxAllNodePerCell,allocPara_m.maxMembrNodePerCell,maxTotalNodes, allocPara_m.maxCellCount) ;
@@ -5715,6 +5714,9 @@ CellsStatsData SceCells::outputPolyCountData() {
 	// already on host; no need to call thrust::copy
 	thrust::host_vector<int> adhIndxHost =
 			nodes->getInfoVecs().nodeAdhIndxHostCopy;
+	thrust::host_vector<double> myosinLevelHost =
+			nodes->getInfoVecs().myosinLevelHostCopy;
+	double totalMyosinPerCell = 0;
 
 	thrust::host_vector<double> growthProVecHost(
 			allocPara_m.currentActiveCellCount);
@@ -5847,7 +5849,14 @@ CellsStatsData SceCells::outputPolyCountData() {
 			}
 
 		}
-                 
+        
+		// 090324
+		uint indexNew;
+		totalMyosinPerCell = 0;
+		for (uint j=allocPara_m.maxMembrNodePerCell; j<allocPara_m.maxAllNodePerCell;j++){
+			indexNew = i*allocPara_m.maxAllNodePerCell + j;
+			totalMyosinPerCell += myosinLevelHost[indexNew];
+		}
                 
 		cellStatsData.isBdryCell = isBdry;
 		cellStatsData.numNeighbors = neighbors.size();
@@ -5865,6 +5874,7 @@ CellsStatsData SceCells::outputPolyCountData() {
         cellStatsData.cellPerim = cellPerimHost[i];//AAMIRI
         cellStatsData.cellDpp = cellDppHost[i];//Ali
 		cellStatsData.cell_Type = cellTypeHost[i];
+		cellStatsData.myosinLevel = totalMyosinPerCell;
 		result.cellsStats.push_back(cellStatsData);
         sumX=sumX+cellStatsData.cellCenter.x ; 
         sumY=sumY+cellStatsData.cellCenter.y ;
@@ -6535,6 +6545,7 @@ void SceCells::calSceCellMyosin() {
 					nodeLocYAddr, nodeIsActiveAddr, myosinLevelAddr, myosinDiffusionThreshold, nodeAdhIdxAddr, fluxWeightsAddr, timeStep, timeNow));
 			thrust::copy(nodes->getInfoVecs().tempMyosinLevel.begin(),nodes->getInfoVecs().tempMyosinLevel.end(),nodes->getInfoVecs().myosinLevel.begin());
 			// nodes->getInfoVecs().myosinLevel = nodes->getInfoVecs().tempMyosinLevel;
+
 }
 
 
@@ -6608,6 +6619,8 @@ void SceCells::updateCellPolar() {
             &(cellInfoVecs.centerCoordY[0]));
 	double* cellRadiusAddr = thrust::raw_pointer_cast(
             &(cellInfoVecs.cellRadius[0]));
+	double* cellPolarAngleAddr = thrust::raw_pointer_cast(
+			&(cellInfoVecs.cellPolarAngle[0]));
  	int* nodeAdhIdxAddr = thrust::raw_pointer_cast(
             &(nodes->getInfoVecs().nodeAdhereIndex[0]));
  	uint* nodeActLevelAddr = thrust::raw_pointer_cast(
@@ -6632,6 +6645,8 @@ void SceCells::updateCellPolar() {
             &(cellInfoVecs.cell_Type[0]));
 	uint leaderRank = allocPara_m.leaderRank; // 
 	// uint leaderRank = nodes->getLeaderRank();
+	uint* cellActLevelAddr = thrust::raw_pointer_cast(
+        &(cellInfoVecs.activationLevel[0]));
 
 	thrust::counting_iterator<uint> iBegin(0);
 	thrust::counting_iterator<uint> iEnd(activeCellCount); // make sure not iterate on inactive cells already 
@@ -6662,7 +6677,7 @@ void SceCells::updateCellPolar() {
 			cellFilopXAddr,cellFilopYAddr,cellFilopAngleAddr,cellFilopIsActiveAddr,
 			cellFilopBirthTimeAddr,activeCellCount,cellCenterXAddr,cellCenterYAddr,cellRadiusAddr,
 			cellActiveFilopCountsAddr,maxMemNodePerCell,maxNodePerCell,nodeLocXAddr,nodeLocYAddr,
-			nodeIsActiveAddr,nodeAdhIdxAddr,nodeActLevelAddr,myosinLevelAddr,cellTypeAddr,leaderRank));
+			nodeIsActiveAddr,nodeAdhIdxAddr,nodeActLevelAddr,myosinLevelAddr,cellTypeAddr,leaderRank,cellPolarAngleAddr,cellActLevelAddr));
 	/*
 	for (uint i=0;i<activeCellCount*5;i++){
 		double tempAngle = cellInfoVecs.cellFilopAngle[i];
@@ -6790,6 +6805,8 @@ void SceCells::calSubAdhForce() {
 
 	uint* cellActLevelAddr = thrust::raw_pointer_cast(
         &(cellInfoVecs.activationLevel[0]));
+	double* cellPolarAngleAddr = thrust::raw_pointer_cast(
+        &(cellInfoVecs.cellPolarAngle[0]));
 
 	double timeStep = dt;
 	double timeNow = curTime;
@@ -6878,7 +6895,7 @@ void SceCells::calSubAdhForce() {
 								)), 
 			calSubAdhForceDevice(maxAllNodePerCell, maxMemNodePerCell, nodeLocXAddr,
 					nodeLocYAddr, nodeIsActiveAddr, myosinLevelAddr, timeStep, timeNow, 
-					subAdhLocXAddr, subAdhLocYAddr, subAdhIsBoundAddr, cellActLevelAddr, seed,nodeActLevelAddr));
+					subAdhLocXAddr, subAdhLocYAddr, subAdhIsBoundAddr, cellActLevelAddr, seed,nodeActLevelAddr,cellPolarAngleAddr));
 }
 
 

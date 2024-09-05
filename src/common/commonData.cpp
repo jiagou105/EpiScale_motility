@@ -726,6 +726,7 @@ void CellStats::printToFile(ofstream& ofs) {
 	ofs << "    CurrentActiveMembrNodes:" << currentActiveMembrNodes
 			<< std::endl;
 	ofs << "    CellCenter:" << cellCenter << std::endl;
+	ofs << "    MyosinLevel:" << myosinLevel << std::endl;
 	ofs << std::endl;
 }
 

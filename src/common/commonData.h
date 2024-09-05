@@ -747,6 +747,7 @@ struct CellStats {
 	CVector cellCenter;
 	void printToFile(ofstream& ofs);
 	int cell_Type;
+	double myosinLevel;
 };
 
 struct CountEntry {

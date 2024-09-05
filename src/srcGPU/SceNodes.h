@@ -970,6 +970,7 @@ public:
 // only for modified version
 	thrust::device_vector<int> nodeAdhereIndex;
 	thrust::host_vector<int> nodeAdhIndxHostCopy;
+	thrust::host_vector<double> myosinLevelHostCopy;
 	thrust::device_vector<int> membrIntnlIndex;
 
 	thrust::device_vector<double> membrTensionMag;
