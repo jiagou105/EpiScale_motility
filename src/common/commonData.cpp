@@ -211,6 +211,13 @@ void VtkAnimationData::outputVtkAni(std::string scriptNameBase, int rank) { //ap
 	}
 	fs << std::endl;
 
+	fs << "SCALARS nodeRank int" << endl;
+	fs << "LOOKUP_TABLE default" << endl;
+	for (uint i = 0; i < pointsAniData.size(); i++) {
+		fs << pointsAniData[i].nodeRankScale << endl;
+	}
+	fs << std::endl;
+
 	fs << "SCALARS dppLevel float" << endl;
 	fs << "LOOKUP_TABLE default" << endl;
 	for (uint i = 0; i < pointsAniData.size(); i++) {

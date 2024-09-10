@@ -595,6 +595,7 @@ struct PointAniData {
 	double colorScale;
 	double colorScale2;//AAMIRI
 	int rankScale;//AAMIRI
+	int nodeRankScale;
 	double myoLevel1; 
 	uint actLevel1; 
 	int adhSiteCount1;
@@ -696,6 +697,7 @@ struct AniRawData {
 	std::vector<CVector> aniNodeExtForceArr;//AAMIRI
 	std::vector<double> aniNodeVal;
 	std::vector<double> aniNodeCurvature;//AAMIRI
+	std::vector<int> aniCellRank;//AAMIRI
 	std::vector<int> aniNodeRank;//AAMIRI
 	std::vector<LinkAniData> memLinks;
 	std::vector<LinkAniData> internalLinks;

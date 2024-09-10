@@ -1444,8 +1444,8 @@ __host__ __device__ updateFluxWeightsVec(uint maxNodePerCell,
 		double nodeY = _locYAddr[index];
 		double nodeOtherX, nodeOtherY;
 		double distNodes;
-		double distThrd = 2;
-		double distThrd2 = 200;
+		double distThrd = 1;
+		double distThrd2 = 2;
 		double sumFlux = 0;
 		double myosinMaxLevel=5;
 		uint fluxIndex; // index for the fluxWeights matrix
@@ -1463,8 +1463,8 @@ __host__ __device__ updateFluxWeightsVec(uint maxNodePerCell,
 							distNodes = compDist2D(nodeX,nodeY,nodeOtherX,nodeOtherY); // flux from current node to the other node
 							fluxIndex = (nodeRank-_maxMemNodePerCell)*_maxIntnlNodePerCell+(nodeOtherIntlRank-_maxMemNodePerCell); // nodeRank row, nodeOtherIntlRank column
 							// if current node is farther compared with other node, and the myosin level of other node has not reached max yet
-							if (distNodes<distThrd && (minToMDist>_minToMDistAddr[nodeOtherIntlIndex]) && minToMDist<distThrd2 && _minToMDistAddr[nodeOtherIntlIndex]<distThrd2 && _myosinLevelAddr[nodeOtherIntlIndex]<myosinMaxLevel){ // && _myosinLevelAddr[nodeOtherIntlIndex]<myosinMaxLevel
-								_fluxWeightsAddr[fluxIndex] = 0.2;// omega0 // flux from nodeIntlIndex1 to nodeOtherIntlRank
+							if (distNodes<distThrd && (minToMDist>_minToMDistAddr[nodeOtherIntlIndex]) &&  _minToMDistAddr[nodeOtherIntlIndex]<distThrd2 && _myosinLevelAddr[nodeOtherIntlIndex]<myosinMaxLevel){ // && _myosinLevelAddr[nodeOtherIntlIndex]<myosinMaxLevel // minToMDist<distThrd2 &&
+								_fluxWeightsAddr[fluxIndex] = 1;// omega0 // flux from nodeIntlIndex1 to nodeOtherIntlRank
 								// sumFlux = sumFlux + _fluxWeightsAddr[fluxIndex]; // sum up flux weights in the nodeRank row
 							} else {
 								_fluxWeightsAddr[fluxIndex] = 0;
@@ -1942,7 +1942,7 @@ struct updateCellPolarDevice: public thrust::unary_function<UUUIDDDD, double> {
 						allPolar = allPolar + sin(atan2(cell_CenterY - _locYAddr[nodeIndex],cell_CenterX - _locXAddr[nodeIndex])-cellAngle);
 					}
 				}
-				cellAngle = cellAngle + _timeStep*rateRep*(allPolar+randNoiseAngle);
+				cellAngle = u01(rng)*2*3.1415926;// cellAngle + _timeStep*rateRep*(allPolar+randNoiseAngle);
 			}
 			return cellAngle;
 		}
@@ -1950,6 +1950,164 @@ struct updateCellPolarDevice: public thrust::unary_function<UUUIDDDD, double> {
 };
 
 
+
+
+
+
+
+
+struct updateCellPolarLeaderDevice: public thrust::unary_function<UUUIDDDD, double> {
+	uint _seed;
+	double _timeStep;
+	double _timeNow;
+	uint _activeCellCount;
+	double* _cellCenterXAddr;
+	double* _cellCenterYAddr;
+	double* _cellRadiusAddr;
+	uint* _cellActiveFilopCountsAddr;
+	uint _maxMemNodePerCell;
+	uint _maxNodePerCell;
+	double* _locXAddr;
+	double* _locYAddr;
+	bool* _isActiveAddr;
+	int* _nodeAdhereIndexAddr;
+	uint* _nodeActLevelAddr;
+	double* _myosinLevelAddr;
+	int* _cellTypeAddr;
+	uint _leaderRank;
+	double* _cellPolarAngleAddr;
+	uint* _cellActLevelAddr;
+	// double _grthPrgrCriVal_M;
+	// comment prevents bad formatting issues of __host__ and __device__ in Nsight
+	__host__ __device__ updateCellPolarLeaderDevice(uint seed, double timeStep, double timeNow, 
+			uint activeCellCount, double* cellCenterXAddr, double* cellCenterYAddr, double* cellRadiusAddr, uint* cellActiveFilopCountsAddr,
+			uint maxMemNodePerCell, uint maxNodePerCell, double* locXAddr, double* locYAddr, bool* isActiveAddr, int* nodeAdhereIndexAddr, 
+			uint* nodeActLevelAddr, double* myosinLevelAddr, int* cellTypeAddr, int leaderRank, double* cellPolarAngleAddr, uint* cellActLevelAddr) :
+			_seed(seed), _timeStep(timeStep), _timeNow(timeNow), _activeCellCount(activeCellCount), 
+			_cellCenterXAddr(cellCenterXAddr), _cellCenterYAddr(cellCenterYAddr), _cellRadiusAddr(cellRadiusAddr), _cellActiveFilopCountsAddr(cellActiveFilopCountsAddr),
+			_maxMemNodePerCell(maxMemNodePerCell),_maxNodePerCell(maxNodePerCell), _locXAddr(locXAddr), _locYAddr(locYAddr), _isActiveAddr(isActiveAddr), 
+			_nodeAdhereIndexAddr(nodeAdhereIndexAddr), _nodeActLevelAddr(nodeActLevelAddr), _myosinLevelAddr(myosinLevelAddr), _cellTypeAddr(cellTypeAddr),
+			_leaderRank(leaderRank), _cellPolarAngleAddr(cellPolarAngleAddr), _cellActLevelAddr(cellActLevelAddr) {
+	}
+	// comment prevents bad formatting issues of __host__ and __device__ in Nsight
+	__device__ double operator()(const UUUIDDDD &cData) const {
+		uint cellRank = thrust::get<0>(cData);
+		uint curActLevel = thrust::get<1>(cData);
+		uint activeMembrCount = thrust::get<2>(cData);
+		int cell_Type = thrust::get<3>(cData);
+		double cell_CenterX = thrust::get<4>(cData);
+        double cell_CenterY = thrust::get<5>(cData);
+		double cell_Radius = thrust::get<6>(cData);
+		double cellAngle = thrust::get<7>(cData);
+
+		// uint intnlIndxMemBegin = cellRank * _maxNodePerCell;
+		int intnlIndxMemBegin = cellRank * _maxNodePerCell;
+		int intnlIndxMemEnd = cellRank * _maxNodePerCell + activeMembrCount; // last element not included ss
+		int nodeMembrIndex,initNodeRank;
+		int curRank,nextRank,curIndex,nextIndex,stNode,endNode,stNodeRecord,endNodeRecord;
+		int midNodeIndex,midNodeRank;
+		int curLen, maxLen;
+		int index_left,index_right;
+		uint nodeIndex;
+		double normX, normY;
+		// double PI = acos(-1.0);
+		thrust::default_random_engine rng(_seed);
+		rng.discard(cellRank);
+		thrust::uniform_real_distribution<double> u01(0, 1.0);
+		double twoPi = 2.0 * PI;
+
+		double myosinThrd = 2.499; // need to be changed if initial nodeMyosin changes
+		bool flag = false;
+		if (_timeNow < 55800.0) {
+			return cellAngle;
+			}
+		else{
+			if (cell_Type==1){ 
+				for (uint memNodeRank=0; memNodeRank<_maxMemNodePerCell;memNodeRank++){
+				nodeIndex = cellRank*_maxNodePerCell + memNodeRank;
+				if (_isActiveAddr[nodeIndex]&&_nodeAdhereIndexAddr[nodeIndex]>-1){
+						flag = true; // leader is attached to a follower
+					}
+				}
+				if (flag==false) {return cellAngle;}
+
+				for (uint memNodeRank=0; memNodeRank<activeMembrCount; memNodeRank++){
+					nodeMembrIndex = cellRank * _maxNodePerCell + memNodeRank;
+					if (_myosinLevelAddr[nodeMembrIndex]> myosinThrd){
+						initNodeRank = (int) memNodeRank;
+						break;
+					}
+				}
+
+				
+				for (uint rawRank=initNodeRank;rawRank<initNodeRank+(int) activeMembrCount;rawRank++){
+					if(rawRank>= (int) activeMembrCount){
+						curRank = rawRank - (int) activeMembrCount;
+					} else {
+						curRank = rawRank;
+					}
+					if(rawRank+1>= (int) activeMembrCount){
+						nextRank = rawRank +1 - (int) activeMembrCount;
+					} else {
+						nextRank = rawRank + 1;
+					} // [ 0 0 0 0 0 1 1 1 1 1 1 0 0 0 0 0 0 1 1 1]
+					curIndex = cellRank * _maxNodePerCell + curRank;
+					nextIndex = cellRank * _maxNodePerCell + nextRank;
+
+					if (_myosinLevelAddr[curIndex] >= myosinThrd && _myosinLevelAddr[nextIndex] >= myosinThrd){ // 0 0 
+						// do nothing
+							stNode = 0;
+							endNode = 0;
+						} else if (_myosinLevelAddr[curIndex] >= myosinThrd && _myosinLevelAddr[nextIndex] < myosinThrd){   // 0 1 
+							stNode = nextRank;
+							endNode = nextRank;
+							curLen = 1;
+						} else if (_myosinLevelAddr[curIndex] < myosinThrd && _myosinLevelAddr[nextIndex] >= myosinThrd){  // 1 0
+							endNode = curRank;
+							if (maxLen<curLen) {
+								stNodeRecord = stNode;
+								endNodeRecord = endNode;
+								maxLen = curLen;
+							}
+							curLen = 0;
+						} else if(_myosinLevelAddr[curIndex] < myosinThrd && _myosinLevelAddr[nextIndex] < myosinThrd){  //1 1
+							endNode = nextRank;
+							curLen = curLen + 1;
+						}
+				}
+			// stNodeRank = stNodeRecord - (int) intnlIndxMemBegin;
+			// endNodeRank = endNodeRecord - (int) intnlIndxMemBegin;
+			if (endNodeRecord<stNodeRecord) {
+				midNodeRank = (stNodeRecord+ endNodeRecord+ (int)activeMembrCount)/2; //(int)activeMembrCount-1; 
+				if (midNodeRank>= (int) activeMembrCount) {midNodeRank=midNodeRank-(int)activeMembrCount;} //
+			} else {
+				midNodeRank = (int) (stNodeRecord+endNodeRecord)/2;
+			}
+			_myosinLevelAddr[initNodeRank+cellRank * _maxNodePerCell] = 10; //
+			_myosinLevelAddr[stNodeRecord+cellRank * _maxNodePerCell] = 30;
+			_myosinLevelAddr[endNodeRecord+cellRank * _maxNodePerCell] = 50;
+			_myosinLevelAddr[midNodeRank+cellRank * _maxNodePerCell] = 100;
+			// midNodeRank = midNodeIndex - (int)intnlIndxMemBegin;
+			index_left = midNodeRank - 1;
+			if (index_left == -1) {
+				index_left = (int) activeMembrCount - 1;
+			}
+			index_left = index_left + cellRank * _maxNodePerCell;
+
+			index_right = midNodeRank + 1;
+			if (index_right == (int) activeMembrCount) {
+				index_right = 0;
+			}
+			index_right = index_right + cellRank * _maxNodePerCell;
+			// 
+			normX = -(_locYAddr[index_left] - _locYAddr[index_right] ); 
+			normY = _locXAddr[index_left] - _locXAddr[index_right]; 
+			cellAngle =  atan2(normY,normX) + (2*u01(rng)-1)*twoPi/8; 
+			}
+			return cellAngle;
+		}
+	}
+};
 
 
 
@@ -2386,12 +2544,12 @@ struct calSubAdhForceDevice: public thrust::unary_function<UIUDDUUDDD, CVec2> {
 				for (int allNbrIndex = 0; allNbrIndex < (maxSubSitePerNode-bindSiteCounts); allNbrIndex++){
 					randomN2= u01(rng);
 					randomN3 = u01(rng);
-					if (cellType == 1) {randAngle = u0TwoPi(rng);}
+					if (cellType == 1) {randAngle = curCellAngle + (2*u01(rng)-1)*twoPi/8.0;}
 					else {
 						randAngle = curCellAngle + (2*u01(rng)-1)*twoPi/8.0;
 					}
 					randLen = -logf(1-randomN2)/lambda;
-					if (nodeRank < _maxMemNodePerCell && nodeMyosin>0 && minDistIntl>0.1 && minDistIntl<0.6) { // the >0 condition is to avoid this force in follower cells //   && nodeMyosin < nodeMyosinThreshold
+					if (nodeRank < _maxMemNodePerCell && cellType==1 && minDistIntl>0.8 && minDistIntl<0.7) { // the >0 condition is to avoid this force in follower cells //   && nodeMyosin < nodeMyosinThreshold
 						// distNode1 = compDist2D(nodeX1, nodeY1, nodeX, nodeY);
 						// if (distNode1>5&distNode1<8){
 						// define the last active membrane node, double check here
@@ -2411,7 +2569,7 @@ struct calSubAdhForceDevice: public thrust::unary_function<UIUDDUUDDD, CVec2> {
 						// double check above 
 						normX = -(_locYAddr[index_left] - _locYAddr[index_right] );
 						normY = _locXAddr[index_left] - _locXAddr[index_right]; // did not know the direction of the normal vector 
-						randAngle =  atan2(normY,normX) + (2*u01(rng)-1)*twoPi/4; // double check here 
+						randAngle =  atan2(normY,normX) + (2*u01(rng)-1)*twoPi/8; // double check here 
 						// } 
 					}
 					ngbrSiteX = nodeX + randLen*cos(randAngle); // compute the X location of the neighboring site
@@ -2421,9 +2579,9 @@ struct calSubAdhForceDevice: public thrust::unary_function<UIUDDUUDDD, CVec2> {
 						// siteBindThreshold = 1-exp(-projLen/tempCellRad);
 					//} else{
 						if (cellType==1){
-							siteBindThreshold = 0.7; // means leader
+							siteBindThreshold = 0.8; // means leader
 						} else if (cellType==0){
-							siteBindThreshold = 0.3; // means follower
+							siteBindThreshold = 0.1; // means follower
 						}
 					// }
 					if (randomN3<siteBindThreshold) { 
@@ -4870,6 +5028,8 @@ class SceCells {
 	void calFluxWeightsMyosin(); 
 
 	void calSceCellMyosin();
+
+	void updateCellPolarLeader();
 
 	void applySceCellMyosin();
 

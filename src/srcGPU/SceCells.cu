@@ -1876,6 +1876,7 @@ void SceCells::runAllCellLogicsDisc_M(double dt, double Damp_Coef, double InitTi
 	updateCellPolar(); // comment out start for no cell motion
 	calFluxWeightsMyosin();
 	calSceCellMyosin();
+	updateCellPolarLeader();
 	// applySceCellMyosin();
 	// applySigForce(sigPtVecV2);
 	calSubAdhForce(); // comment out end 
@@ -4338,8 +4339,8 @@ AniRawData SceCells::obtainAniRawDataGivenCellColor(vector<double>& cellColors,
 				rawAniData.adhNodeIndex.push_back(tempAdhNodeIndex);
 				rawAniData.minToMDist.push_back(hostMinToMDist[index1]);
 				rawAniData.fluxWeights.push_back(0);
-				rawAniData.aniNodeRank.push_back(i);
-
+				rawAniData.aniCellRank.push_back(i);
+				rawAniData.aniNodeRank.push_back(index1);
 				}
 			
 			}
@@ -4380,7 +4381,8 @@ AniRawData SceCells::obtainAniRawDataGivenCellColor(vector<double>& cellColors,
 				rawAniData.adhNodeIndex.push_back(tempAdhNodeIndex);
 				rawAniData.adhSiteCount.push_back(tempAdhSiteCount);
 				rawAniData.minToMDist.push_back(hostMinToMDist[index1]);
-				rawAniData.aniNodeRank.push_back(i);
+				rawAniData.aniCellRank.push_back(i);
+				rawAniData.aniNodeRank.push_back(index1);
 				}
 			
 			}
@@ -4883,7 +4885,7 @@ void SceCells::adjustGrowthInfo_M() {
 			AdjustGrowth(halfMax), thrust::identity<bool>());
 }
 
-VtkAnimationData SceCells::outputVtkData(AniRawData& rawAniData, //apr 05
+VtkAnimationData SceCells::outputVtkData(AniRawData& rawAniData, 
 		AnimationCriteria& aniCri) {
 	VtkAnimationData vtkData;
 	for (uint i = 0; i < rawAniData.aniNodePosArr.size(); i++) {
@@ -4894,7 +4896,8 @@ VtkAnimationData SceCells::outputVtkData(AniRawData& rawAniData, //apr 05
 		ptAniData.F_MI_M = rawAniData.aniNodeF_MI_M[i];//AAMIRI
 		ptAniData.colorScale = rawAniData.aniNodeVal[i];
 		ptAniData.colorScale2 = rawAniData.aniNodeCurvature[i];//AAMIRI
-		ptAniData.rankScale = rawAniData.aniNodeRank[i];//AAMIRI
+		ptAniData.rankScale = rawAniData.aniCellRank[i];//AAMIRI
+		ptAniData.nodeRankScale = rawAniData.aniNodeRank[i];
 		ptAniData.extForce = rawAniData.aniNodeExtForceArr[i];//AAMIRI
 		ptAniData.myoLevel1= rawAniData.myoLevel[i];
 		ptAniData.actLevel1= rawAniData.actLevel[i];  
@@ -6690,6 +6693,84 @@ void SceCells::updateCellPolar() {
 
 
 
+
+
+void SceCells::updateCellPolarLeader() {
+	random_device rd;
+ 	uint seed = time(NULL);
+ 	seed = rd();
+
+	uint activeCellCount = allocPara_m.currentActiveCellCount;
+
+	// double* myosinLevelAddr = thrust::raw_pointer_cast(
+	//	&(nodes->getInfoVecs().myosinLevel[0])); // pointer to the vector storing myosin level
+	
+
+	double* cellCenterXAddr = thrust::raw_pointer_cast(
+            &(cellInfoVecs.centerCoordX[0]));
+	double* cellCenterYAddr = thrust::raw_pointer_cast(
+            &(cellInfoVecs.centerCoordY[0]));
+	double* cellRadiusAddr = thrust::raw_pointer_cast(
+            &(cellInfoVecs.cellRadius[0]));
+	double* cellPolarAngleAddr = thrust::raw_pointer_cast(
+			&(cellInfoVecs.cellPolarAngle[0]));
+ 	int* nodeAdhIdxAddr = thrust::raw_pointer_cast(
+            &(nodes->getInfoVecs().nodeAdhereIndex[0]));
+ 	uint* nodeActLevelAddr = thrust::raw_pointer_cast(
+            &(nodes->getInfoVecs().nodeActLevel[0]));
+	double timeNow = curTime;
+
+	double ddt = dt;
+	uint* cellActiveFilopCountsAddr = thrust::raw_pointer_cast(
+        &(cellInfoVecs.activeCellFilopCounts[0]));
+
+	uint maxMemNodePerCell = allocPara_m.maxMembrNodePerCell;
+	uint maxNodePerCell = allocPara_m.maxAllNodePerCell;
+    double* nodeLocXAddr = thrust::raw_pointer_cast(
+            &(nodes->getInfoVecs().nodeLocX[0]));
+    double* nodeLocYAddr = thrust::raw_pointer_cast(
+            &(nodes->getInfoVecs().nodeLocY[0]));
+    bool* nodeIsActiveAddr = thrust::raw_pointer_cast(
+            &(nodes->getInfoVecs().nodeIsActive[0])); // 
+	double* myosinLevelAddr = thrust::raw_pointer_cast(
+		&(nodes->getInfoVecs().myosinLevel[0]));
+	int* cellTypeAddr = thrust::raw_pointer_cast(
+            &(cellInfoVecs.cell_Type[0]));
+	uint leaderRank = allocPara_m.leaderRank; // 
+	// uint leaderRank = nodes->getLeaderRank();
+	uint* cellActLevelAddr = thrust::raw_pointer_cast(
+        &(cellInfoVecs.activationLevel[0]));
+
+	thrust::counting_iterator<uint> iBegin(0);
+	thrust::counting_iterator<uint> iEnd(activeCellCount); // make sure not iterate on inactive cells already 
+	thrust::transform(
+			thrust::make_zip_iterator(
+					thrust::make_tuple(iBegin,
+							cellInfoVecs.activationLevel.begin(),
+							cellInfoVecs.activeMembrNodeCounts.begin(),
+							cellInfoVecs.cell_Type.begin(),
+							cellInfoVecs.centerCoordX.begin(),
+							cellInfoVecs.centerCoordY.begin(),
+							cellInfoVecs.cellRadius.begin(),
+							cellInfoVecs.cellPolarAngle.begin()
+							)),
+			thrust::make_zip_iterator(
+					thrust::make_tuple(
+							iEnd,
+							cellInfoVecs.activationLevel.begin() + activeCellCount,
+							cellInfoVecs.activeMembrNodeCounts.begin() + activeCellCount,
+							cellInfoVecs.cell_Type.begin() + activeCellCount,
+							cellInfoVecs.centerCoordX.begin() + activeCellCount,
+							cellInfoVecs.centerCoordY.begin() + activeCellCount,
+							cellInfoVecs.cellRadius.begin() + activeCellCount,
+							cellInfoVecs.cellPolarAngle.begin() + activeCellCount
+							)),
+			cellInfoVecs.cellPolarAngle.begin(),
+			updateCellPolarLeaderDevice(seed, ddt, timeNow, 
+			activeCellCount,cellCenterXAddr,cellCenterYAddr,cellRadiusAddr,
+			cellActiveFilopCountsAddr,maxMemNodePerCell,maxNodePerCell,nodeLocXAddr,nodeLocYAddr,
+			nodeIsActiveAddr,nodeAdhIdxAddr,nodeActLevelAddr,myosinLevelAddr,cellTypeAddr,leaderRank,cellPolarAngleAddr,cellActLevelAddr));
+}
 
 
 
