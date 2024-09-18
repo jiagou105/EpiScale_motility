@@ -1839,7 +1839,7 @@ void handleAdhesionForce_M(int& adhereIndex, double& xPos, double& yPos,
 		return;
 	} else {
 		if (curLen > minAdhBondLen_M) {
-			if (attLeader) {newbondStiff_M = newbondStiff_M*1.2;}
+			if (attLeader) {newbondStiff_M = newbondStiff_M*1.3;}
 			// double forceValue = (curLen - minAdhBondLen_M) * (newbondStiff_M * alpha + bondStiff_Mitotic * (1.0-alpha) );
 			double forceValue = (curLen - minAdhBondLen_M) * (newbondStiff_M * alpha + newbondStiff_M * (1.0-alpha) );
 			if (!attLeader){forceValue = 1*forceValue;}

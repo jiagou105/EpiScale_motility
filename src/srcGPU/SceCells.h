@@ -1575,6 +1575,7 @@ struct updateCellMyosin: public thrust::unary_function<UUDDUUDDDi, double> {
 		double minDistIntl = 10;
 		double tempdistMI = 0;
 		double tempNodeMyosin = 0;
+		double myosinThrd = 0.19;
 		uint count = 0;
 		// if (_timeNow > 55800.0) {kDiff = 0.0;} 
 		// means membrane node
@@ -1604,7 +1605,7 @@ struct updateCellMyosin: public thrust::unary_function<UUDDUUDDDi, double> {
 					nodeMyosin = _myosinLevelAddr[tempNodeRank];
 					minDistIntl = tempdistMI;}
 				}
-			
+				if (nodeMyosin<myosinThrd){nodeMyosin=0;}
 			} else { // membrane of follower cells
 				nodeMyosin = 0;
 			}
@@ -1931,7 +1932,7 @@ struct updateCellPolarDevice: public thrust::unary_function<UUUIDDDD, double> {
 			double leaderCurCenterXVec = _cellCenterXAddr[_leaderRank] - cell_CenterX;
 			double leaderCurCenterYVec = _cellCenterYAddr[_leaderRank] - cell_CenterY;
 			double leaderCurAngle =  atan2(leaderCurCenterYVec,leaderCurCenterXVec); // attraction to the leader
-			cellAngle = cellAngle + _timeStep*(filopAllY*cos(cellAngle)-filopAllX*sin(cellAngle)+3*(sin(leaderCurAngle)*cos(cellAngle)-cos(leaderCurAngle)*sin(cellAngle)));
+			cellAngle = cellAngle + _timeStep*(filopAllY*cos(cellAngle)-filopAllX*sin(cellAngle)+5*(sin(leaderCurAngle)*cos(cellAngle)-cos(leaderCurAngle)*sin(cellAngle)));
 			}
 			else{
 				double allPolar = 0;
@@ -2017,7 +2018,7 @@ struct updateCellPolarLeaderDevice: public thrust::unary_function<UUUIDDDD, doub
 		thrust::uniform_real_distribution<double> u01(0, 1.0);
 		double twoPi = 2.0 * PI;
 
-		double myosinThrd = 0.49; // need to be changed if initial nodeMyosin changes
+		double myosinThrd = 0.19; // need to be changed if initial nodeMyosin changes
 		bool flag = false;
 		if (_timeNow < 55800.0) {
 			return cellAngle;
@@ -2716,7 +2717,7 @@ struct initMyosinLevelDevice: public thrust::unary_function<UUDDUUi, double> {
 				if (_isActiveAddr[index] == false) {
 					nodeMyosin = 0;
 				} else {
-					nodeMyosin = 0.5;
+					nodeMyosin = 0.2; // if this is changed, also change myosinThrd in 2 places 
 				}
 			}
 		}
