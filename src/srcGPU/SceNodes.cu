@@ -1839,8 +1839,9 @@ void handleAdhesionForce_M(int& adhereIndex, double& xPos, double& yPos,
 		return;
 	} else {
 		if (curLen > minAdhBondLen_M) {
-			if (attLeader) {newbondStiff_M = newbondStiff_M*1.5;}
-			double forceValue = (curLen - minAdhBondLen_M) * (newbondStiff_M * alpha + bondStiff_Mitotic * (1.0-alpha) );
+			if (attLeader) {newbondStiff_M = newbondStiff_M*1.2;}
+			// double forceValue = (curLen - minAdhBondLen_M) * (newbondStiff_M * alpha + bondStiff_Mitotic * (1.0-alpha) );
+			double forceValue = (curLen - minAdhBondLen_M) * (newbondStiff_M * alpha + newbondStiff_M * (1.0-alpha) );
 			if (!attLeader){forceValue = 1*forceValue;}
 			xRes = xRes + forceValue * (curAdherePosX - xPos) / curLen;
 			yRes = yRes + forceValue * (curAdherePosY - yPos) / curLen;
@@ -2619,6 +2620,7 @@ void SceNodes::allocSpaceForNodes(uint maxTotalNodeCount, uint maxIntnlNodeCount
 		infoVecs.subAdhIsBound.resize(maxTotalNodeCount * 10,0);
 
 		infoVecs.nodeActLevel.resize(maxTotalNodeCount,0);
+		infoVecs.myosinWeight.resize(maxTotalNodeCount,1);
 
 		auxVecs.bucketKeys.resize(maxTotalNodeCount);
 		auxVecs.bucketValues.resize(maxTotalNodeCount);

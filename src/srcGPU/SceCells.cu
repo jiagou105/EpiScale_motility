@@ -2722,6 +2722,7 @@ void SceCells::applyMemForce_M() {
 		//			* (growthAuxData.grthProgrEndCPU
 		//					- growthAuxData.grthPrgrCriVal_M_Ori);
 
+	// compute angular energy derived bending force
 	thrust::transform(
 			thrust::make_zip_iterator(
 					thrust::make_tuple(
@@ -6734,6 +6735,8 @@ void SceCells::updateCellPolarLeader() {
             &(nodes->getInfoVecs().nodeIsActive[0])); // 
 	double* myosinLevelAddr = thrust::raw_pointer_cast(
 		&(nodes->getInfoVecs().myosinLevel[0]));
+	double* myosinWeightAddr = thrust::raw_pointer_cast(
+		&(nodes->getInfoVecs().myosinWeight[0]));
 	int* cellTypeAddr = thrust::raw_pointer_cast(
             &(cellInfoVecs.cell_Type[0]));
 	uint leaderRank = allocPara_m.leaderRank; // 
@@ -6769,7 +6772,7 @@ void SceCells::updateCellPolarLeader() {
 			updateCellPolarLeaderDevice(seed, ddt, timeNow, 
 			activeCellCount,cellCenterXAddr,cellCenterYAddr,cellRadiusAddr,
 			cellActiveFilopCountsAddr,maxMemNodePerCell,maxNodePerCell,nodeLocXAddr,nodeLocYAddr,
-			nodeIsActiveAddr,nodeAdhIdxAddr,nodeActLevelAddr,myosinLevelAddr,cellTypeAddr,leaderRank,cellPolarAngleAddr,cellActLevelAddr));
+			nodeIsActiveAddr,nodeAdhIdxAddr,nodeActLevelAddr,myosinLevelAddr,cellTypeAddr,leaderRank,cellPolarAngleAddr,cellActLevelAddr,myosinWeightAddr));
 }
 
 

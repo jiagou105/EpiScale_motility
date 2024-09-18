@@ -993,6 +993,7 @@ public:
 
 	thrust::device_vector<double> myosinLevel;
 	thrust::device_vector<double> tempMyosinLevel;
+	thrust::device_vector<double> myosinWeight;
 
 	thrust::device_vector<double> subAdhLocX; 
 	thrust::device_vector<double> subAdhLocY;
