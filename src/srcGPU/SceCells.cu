@@ -15,6 +15,7 @@ __constant__ uint maxIntnlPerCell;
 __constant__ uint maxIntnlPerFollower;
 __constant__ double bendCoeff;
 __constant__ double bendCoeff_Mitotic;//AAMIRI
+__constant__ double bendCoeffLeader;
 
 __constant__ double sceIB_M[5];
 __constant__ double sceIBDiv_M[5];
@@ -447,7 +448,7 @@ bool isTangFilopDirection(uint& intnlIndxMemBegin, bool* _isActiveAddr, double* 
 		bisecVecY = lowVecY + highVecY;
 		dotP = cos(randomAngleRd)*bisecVecX + sin(randomAngleRd)*bisecVecY;
 		crossP = bisecVecX*sin(randomAngleRd) - cos(randomAngleRd)*bisecVecY;
-		if (dotP>0.1&&crossP>0){ // dotPHigh>0 || dotPLow>0 
+		if (dotP>0.1){ // dotPHigh>0 || dotPLow>0 // &&crossP>0
 			return true;
 		} 
 	}
@@ -536,9 +537,11 @@ void MembrPara::initFromConfig() {
 	membrBendCoeff =
 			globalConfigVars.getConfigValue("MembrBenCoeff").toDouble();
 
-//AAMIRI
 	membrBendCoeff_Mitotic =
 			globalConfigVars.getConfigValue("MembrBenCoeff_Mitotic").toDouble();
+
+	membrBendCoeffLeader =
+			globalConfigVars.getConfigValue("MembrBenCoeffLeader").toDouble();
 
 	adjustLimit =
 			globalConfigVars.getConfigValue("MembrAdjustLimit").toDouble();
@@ -2797,6 +2800,10 @@ void SceCells::applyMemForce_M() {
 							thrust::make_permutation_iterator(
 									cellInfoVecs.centerCoordY.begin(),
 									make_transform_iterator(iBegin,
+											DivideFunctor(maxAllNodePerCell))),
+							thrust::make_permutation_iterator(
+									cellInfoVecs.cell_Type.begin(),
+									make_transform_iterator(iBegin,
 											DivideFunctor(maxAllNodePerCell)))
 							)),
 			thrust::make_zip_iterator(
@@ -4969,6 +4976,8 @@ void SceCells::copyToGPUConstMem() {
 	cudaMemcpyToSymbol(bendCoeff, &membrPara.membrBendCoeff, sizeof(double));
 
 	cudaMemcpyToSymbol(bendCoeff_Mitotic, &membrPara.membrBendCoeff_Mitotic, sizeof(double));//AAMIRI
+	
+	cudaMemcpyToSymbol(bendCoeffLeader, &membrPara.membrBendCoeffLeader, sizeof(double));
 
 	cudaMemcpyToSymbol(F_Ext_Incline_M2, &membrPara.F_Ext_Incline, sizeof(double)); //Ali
 	double maxAdhBondLenCPU_M = globalConfigVars.getConfigValue("MaxAdhBondLen").toDouble();
@@ -5768,7 +5777,7 @@ CellsStatsData SceCells::outputPolyCountData() {
 	thrust::host_vector<double> cellDppHost(
  			allocPara_m.currentActiveCellCount);//Ali
 
-	thrust::host_vector<int> cellTypeHost(
+	thrust::host_vector<int> cell_TypeHost(
                         allocPara_m.currentActiveCellCount);//Alireza
 
 	thrust::copy(cellInfoVecs.cellAreaVec.begin(),
@@ -5785,7 +5794,7 @@ CellsStatsData SceCells::outputPolyCountData() {
 
 		thrust::copy(cellInfoVecs.cell_Type.begin(),
                         cellInfoVecs.cell_Type.begin()
-                                        + allocPara_m.currentActiveCellCount, cellTypeHost.begin());//Alireza
+                                        + allocPara_m.currentActiveCellCount, cell_TypeHost.begin());//Alireza
         sumX=0 ; 
         sumY=0 ; 
 	for (uint i = 0; i < allocPara_m.currentActiveCellCount; i++) {
@@ -5877,7 +5886,7 @@ CellsStatsData SceCells::outputPolyCountData() {
 		cellStatsData.cellArea = cellAreaHost[i];
         cellStatsData.cellPerim = cellPerimHost[i];//AAMIRI
         cellStatsData.cellDpp = cellDppHost[i];//Ali
-		cellStatsData.cell_Type = cellTypeHost[i];
+		cellStatsData.cell_Type = cell_TypeHost[i];
 		cellStatsData.myosinLevel = totalMyosinPerCell;
 		result.cellsStats.push_back(cellStatsData);
         sumX=sumX+cellStatsData.cellCenter.x ; 
@@ -5956,15 +5965,17 @@ __device__ double calBendMulti(double& angle, uint activeMembrCt) {
 */
 
 //AAMIRI
-__device__ double calBendMulti_Mitotic(double& angle, uint activeMembrCt, double& progress, double mitoticCri) {
+__device__ double calBendMulti_Mitotic(double& angle, uint activeMembrCt, double& progress, double mitoticCri, int cell_Type) {
 
 	// double equAngle = PI - PI / activeMembrCt; // PI - 2*PI/activeMembrCt?
 	double equAngle = PI;
-
+	double newbendCoeff;
+	if (cell_Type == 1) {newbendCoeff = bendCoeffLeader;}
+	else {newbendCoeff = bendCoeff;}
 	if (progress <= mitoticCri){
-		return bendCoeff * (angle - equAngle);}
+		return newbendCoeff * (angle - equAngle);}
 	else{
-		return (angle - equAngle)*(bendCoeff + (bendCoeff_Mitotic - bendCoeff) * (progress - mitoticCri)/(1.0 - mitoticCri));
+		return (angle - equAngle)*(newbendCoeff + (bendCoeff_Mitotic - newbendCoeff) * (progress - mitoticCri)/(1.0 - mitoticCri));
 	}
 }
 

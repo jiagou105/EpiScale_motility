@@ -63,7 +63,7 @@ double calBendMulti(double& angle, uint activeMembrCt);
 
 //AAMIRI
 __device__
-double calBendMulti_Mitotic(double& angle, uint activeMembrCt, double& progress, double mitoticCri);
+double calBendMulti_Mitotic(double& angle, uint activeMembrCt, double& progress, double mitoticCri, int cell_Type);
 
 __device__
 double obtainRandAngle(uint& cellRank, uint& seed);
@@ -482,7 +482,7 @@ struct AddMemAngDeviceNotUsed: public thrust::unary_function<TensionData, CVec10
 //Ali comment end
 
 //Ali
-struct AddMemAngDevice: public thrust::binary_function<TensionData, CVec4, CVec10> {
+struct AddMemAngDevice: public thrust::binary_function<TensionData, CVec4Int, CVec10> {
 	uint _bdryCount;
 	uint _maxNodePerCell;
 	double* _locXAddr;
@@ -497,7 +497,7 @@ struct AddMemAngDevice: public thrust::binary_function<TensionData, CVec4, CVec1
 					locXAddr), _locYAddr(locYAddr), _isActiveAddr(isActiveAddr), _mitoticCri(mitoticCri) {
 	}
 	// comment prevents bad formatting issues of __host__ and __device__ in Nsight
-	__device__ CVec10 operator()(const TensionData &tData, const CVec4 &tData1) const {
+	__device__ CVec10 operator()(const TensionData &tData, const CVec4Int &tData1) const {
 
 		double progress = thrust::get<0>(tData);
 		uint activeMembrCount = thrust::get<1>(tData);
@@ -512,8 +512,9 @@ struct AddMemAngDevice: public thrust::binary_function<TensionData, CVec4, CVec1
 
 		double actinX = thrust::get<0>(tData1);
 		double actinY = thrust::get<1>(tData1);
-		double myosinLevel = thrust::get<2>(tData1); // to be trimmed 
+		double myosinLevel = thrust::get<2>(tData1); 
 		double Cell_CenterY = thrust::get<3>(tData1);
+		int cell_Type = thrust::get<4>(tData1);
 
 		uint index = _bdryCount + cellRank * _maxNodePerCell + nodeRank;
 
@@ -631,7 +632,7 @@ struct AddMemAngDevice: public thrust::binary_function<TensionData, CVec4, CVec1
 								/ (lenLeft * lenRight * lenRight * lenRight);
 
 						double bendMultiplier = -calBendMulti_Mitotic(angle,
-								activeMembrCount, progress, _mitoticCri);//AAMIRI modified the arguments
+								activeMembrCount, progress, _mitoticCri, cell_Type);//AAMIRI modified the arguments
 						// because sign of angle formula would change if crossZ < 0
 						if (crossZ > 0) {
 							bendMultiplier = -bendMultiplier;
@@ -1464,7 +1465,7 @@ __host__ __device__ updateFluxWeightsVec(uint maxNodePerCell,
 							fluxIndex = (nodeRank-_maxMemNodePerCell)*_maxIntnlNodePerCell+(nodeOtherIntlRank-_maxMemNodePerCell); // nodeRank row, nodeOtherIntlRank column
 							// if current node is farther compared with other node, and the myosin level of other node has not reached max yet
 							if (distNodes<distThrd && (minToMDist>_minToMDistAddr[nodeOtherIntlIndex]) &&  _minToMDistAddr[nodeOtherIntlIndex]<distThrd2 && _myosinLevelAddr[nodeOtherIntlIndex]<myosinMaxLevel){ // && _myosinLevelAddr[nodeOtherIntlIndex]<myosinMaxLevel // minToMDist<distThrd2 &&
-								_fluxWeightsAddr[fluxIndex] = 2;// omega0 // flux from nodeIntlIndex1 to nodeOtherIntlRank
+								_fluxWeightsAddr[fluxIndex] = 3;// omega0 // flux from nodeIntlIndex1 to nodeOtherIntlRank
 								// sumFlux = sumFlux + _fluxWeightsAddr[fluxIndex]; // sum up flux weights in the nodeRank row
 							} else {
 								_fluxWeightsAddr[fluxIndex] = 0;
@@ -1575,7 +1576,7 @@ struct updateCellMyosin: public thrust::unary_function<UUDDUUDDDi, double> {
 		double minDistIntl = 10;
 		double tempdistMI = 0;
 		double tempNodeMyosin = 0;
-		double myosinThrd = 0.19;
+		double myosinThrd = 0.29;
 		uint count = 0;
 		// if (_timeNow > 55800.0) {kDiff = 0.0;} 
 		// means membrane node
@@ -2018,7 +2019,7 @@ struct updateCellPolarLeaderDevice: public thrust::unary_function<UUUIDDDD, doub
 		thrust::uniform_real_distribution<double> u01(0, 1.0);
 		double twoPi = 2.0 * PI;
 
-		double myosinThrd = 0.19; // need to be changed if initial nodeMyosin changes
+		double myosinThrd = 0.29; // need to be changed if initial nodeMyosin changes
 		bool flag = false;
 		if (_timeNow < 55800.0) {
 			return cellAngle;
@@ -2717,7 +2718,7 @@ struct initMyosinLevelDevice: public thrust::unary_function<UUDDUUi, double> {
 				if (_isActiveAddr[index] == false) {
 					nodeMyosin = 0;
 				} else {
-					nodeMyosin = 0.2; // if this is changed, also change myosinThrd in 2 places 
+					nodeMyosin = 0.3; // if this is changed, also change myosinThrd in 2 places 
 				}
 			}
 		}
@@ -4800,6 +4801,7 @@ struct MembrPara {
 	double membrGrowLimit;
 	double membrBendCoeff;
 	double membrBendCoeff_Mitotic;
+	double membrBendCoeffLeader;
 	double adjustLimit;
 	double adjustCoeff;
 
