@@ -148,7 +148,7 @@ bool isValidFilopDirection(uint& intnlIndxMemBegin, uint _maxMemNodePerCell, boo
 __device__
 bool isTangFilopDirection(uint& intnlIndxMemBegin, bool* _isActiveAddr, double* _locXAddr, double* _locYAddr,
 	double& cell_CenterX, double& cell_CenterY, double& randomAngleRd, int* _nodeAdhereIndexAddr, 
-	uint& activeMembrCount, uint _maxNodePerCell, int* _cellTypeAddr, uint leaderRank, double* _myosinLevelAddr);
+	uint& activeMembrCount, uint _maxNodePerCell, int* _cellTypeAddr, uint leaderRank, double* _myosinLevelAddr, int& filopDirection);
 
 __device__
 double computeCurvature(double& xpos1, double& ypos1, double& xpos2, double& ypos2, double& xpos3, double& ypos3);
@@ -1742,7 +1742,7 @@ struct updateActivationLevelDevice: public thrust::unary_function<UUUI, double> 
 
 
 
-struct updateCellPolarDevice: public thrust::unary_function<UUUIDDDD, double> {
+struct updateCellPolarDevice: public thrust::unary_function<UUUIIDDDD, double> {
 	uint _seed;
 	double _timeStep;
 	double _timeNow;
@@ -1784,15 +1784,16 @@ struct updateCellPolarDevice: public thrust::unary_function<UUUIDDDD, double> {
 			_leaderRank(leaderRank), _cellPolarAngleAddr(cellPolarAngleAddr), _cellActLevelAddr(cellActLevelAddr) {
 	}
 	// comment prevents bad formatting issues of __host__ and __device__ in Nsight
-	__device__ double operator()(const UUUIDDDD &cData) const {
+	__device__ double operator()(const UUUIIDDDD &cData) const {
 		uint cellRank = thrust::get<0>(cData);
 		uint curActLevel = thrust::get<1>(cData);
 		uint activeMembrCount = thrust::get<2>(cData);
 		int cell_Type = thrust::get<3>(cData);
-		double cell_CenterX = thrust::get<4>(cData);
-        double cell_CenterY = thrust::get<5>(cData);
-		double cell_Radius = thrust::get<6>(cData);
-		double cellAngle = thrust::get<7>(cData);
+		int filopDirection = thrust::get<4>(cData);
+		double cell_CenterX = thrust::get<5>(cData);
+        double cell_CenterY = thrust::get<6>(cData);
+		double cell_Radius = thrust::get<7>(cData);
+		double cellAngle = thrust::get<8>(cData);
 
 		
 		uint maxFilopPerCell = 5;
@@ -1870,7 +1871,7 @@ struct updateCellPolarDevice: public thrust::unary_function<UUUIDDDD, double> {
 						// isvalidDirection = isValidFilopDirection(intnlIndxMemBegin, _maxMemNodePerCell, _isActiveAddr, _locXAddr, _locYAddr,
 					 	//					cell_CenterX, cell_CenterY, _cellFilopAngleAddr[filopIndex], _nodeAdhereIndexAddr,activeMembrCount,_maxNodePerCell,_myosinLevelAddr);
 						isTangDirection = isTangFilopDirection(intnlIndxMemBegin, _isActiveAddr, _locXAddr, _locYAddr,cell_CenterX, cell_CenterY, 
-																randomAngleRd, _nodeAdhereIndexAddr, activeMembrCount, _maxNodePerCell, _cellTypeAddr, _leaderRank, _myosinLevelAddr);
+																randomAngleRd, _nodeAdhereIndexAddr, activeMembrCount, _maxNodePerCell, _cellTypeAddr, _leaderRank, _myosinLevelAddr, filopDirection);
 						if (isTangDirection){
 						// randomAngle = randomAngle*2.0*PI;
 							_cellFilopIsActiveAddr[filopIndex] = true; // find the largest one and use the fact that the membrane nodes are indexed? 
@@ -1905,7 +1906,7 @@ struct updateCellPolarDevice: public thrust::unary_function<UUUIDDDD, double> {
 						if (cellNghbrIndex!=cellRank){
 							distCells = compDist2D(_cellCenterXAddr[cellNghbrIndex], _cellCenterYAddr[cellNghbrIndex], filopTipX, filopTipY);
 							if (distCells<3*_cellRadiusAddr[cellNghbrIndex]) { 
-								cellAngle = cellAngle + _timeStep*10*(_cellFilopYAddr[filopIndex]*cos(cellAngle)-_cellFilopXAddr[filopIndex]*sin(cellAngle));
+								cellAngle = cellAngle + _timeStep*1*(_cellFilopYAddr[filopIndex]*cos(cellAngle)-_cellFilopXAddr[filopIndex]*sin(cellAngle));
 							}
 						}
 					// for (nodeIndex = 0; nodeIndex<maxActiveMembNode; nodeIndex++)
@@ -1926,7 +1927,7 @@ struct updateCellPolarDevice: public thrust::unary_function<UUUIDDDD, double> {
 						double adhCenterVecX = _cellCenterXAddr[adhCellRank] - cell_CenterX;
 						double adhCenterVecY = _cellCenterYAddr[adhCellRank] - cell_CenterY;
 						double neighCellAngle = atan2(adhCenterVecY,adhCenterVecX) + 3.14159/4.0;
-						cellAngle = cellAngle + _timeStep*0.5*(sin(neighCellAngle)*cos(cellAngle)-cos(neighCellAngle)*sin(cellAngle));
+						// cellAngle = cellAngle + _timeStep*0.01*(sin(neighCellAngle)*cos(cellAngle)-cos(neighCellAngle)*sin(cellAngle));
 					}
 				}
 			}
@@ -2526,8 +2527,8 @@ struct calSubAdhForceDevice: public thrust::unary_function<UIUDDUUDDD, CVec2> {
 		double nodeXTemp, nodeYTemp, tempdistMI;
 		double charMIntlDist=0.8;
 		uint maxSubSitePerNode;
-		if (cellType != 1 && _nodeActLevelAddr[index]>0){kAdh = 1.5;}
-		if (cellType == 1){kAdh=1.5;} // for leader
+		if (cellType != 1 && _nodeActLevelAddr[index]>0){kAdh = 1;}
+		if (cellType == 1){kAdh=1;} // for leader
 		if (_cellActLevelAddr[cellRank] == 1){// including leader cell and cells adhere to it
 			maxSubSitePerNode = 10;
 		} else {
@@ -4672,6 +4673,7 @@ struct CellInfoVecs {
 	thrust::device_vector<bool> cellFilopIsActive;
 	thrust::device_vector<double> cellFilopBirthTime;
 	thrust::device_vector<uint> activeCellFilopCounts;
+	thrust::device_vector<int> filopDirection;
 
 	thrust::device_vector<double> cellPolarX;
 	thrust::device_vector<double> cellPolarY;
@@ -4679,6 +4681,7 @@ struct CellInfoVecs {
 	thrust::device_vector<double> cellRadius;
 
 	thrust::device_vector<uint> activationLevel;
+	
 };
 
 struct CellNodeInfoVecs {

@@ -328,7 +328,7 @@ bool isValidFilopDirection(uint& intnlIndxMemBegin, uint _maxMemNodePerCell, boo
 __device__
 bool isTangFilopDirection(uint& intnlIndxMemBegin, bool* _isActiveAddr, double* _locXAddr, double* _locYAddr,
 	double& cell_CenterX, double& cell_CenterY, double& randomAngleRd, int* _nodeAdhereIndexAddr, 
-	uint& activeMembrCount, uint _maxNodePerCell, int* _cellTypeAddr, uint leaderRank, double* _myosinLevelAddr){
+	uint& activeMembrCount, uint _maxNodePerCell, int* _cellTypeAddr, uint leaderRank, double* _myosinLevelAddr, int& filopDirection){
 	//1. determine whether this cell is attached to the leader cell. If yes, find the two nodes at the boundary of the contact line; If no, return prefered direction.
 	//2. If yes, add a small angle to the direction connecting the follower center to the two boundary nodes; If this follower cell is adhered to another follower cell, 
 	// choose a preferred direction 
@@ -449,7 +449,15 @@ bool isTangFilopDirection(uint& intnlIndxMemBegin, bool* _isActiveAddr, double* 
 		dotP = cos(randomAngleRd)*bisecVecX + sin(randomAngleRd)*bisecVecY;
 		crossP = bisecVecX*sin(randomAngleRd) - cos(randomAngleRd)*bisecVecY;
 		if (dotP>0.1){ // dotPHigh>0 || dotPLow>0 // &&crossP>0
-			return true;
+			if (filopDirection==0){ // firstfilopodia 
+				if (crossP>0){filopDirection = 1;}
+				else {filopDirection = -1;}
+				return true;
+			} else if (filopDirection==1 && crossP>0) {
+				return true;
+			} else if (filopDirection==-1 && crossP<0){
+				return true;
+			}
 		} 
 	}
 	return false;
@@ -1077,6 +1085,7 @@ void SceCells::initCellInfoVecs_M() {
 	cellInfoVecs.cellFilopIsActive.resize(allocPara_m.maxCellCount*5, false); // boolean vector 
 	cellInfoVecs.cellFilopBirthTime.resize(allocPara_m.maxCellCount*5, 0.0);
 	cellInfoVecs.activeCellFilopCounts.resize(allocPara_m.maxCellCount); // uint type
+	cellInfoVecs.filopDirection.resize(allocPara_m.maxCellCount,0);
 
 	cellInfoVecs.cellPolarX.resize(allocPara_m.maxCellCount, 0.0);
 	cellInfoVecs.cellPolarY.resize(allocPara_m.maxCellCount, 0.0);
@@ -6671,6 +6680,7 @@ void SceCells::updateCellPolar() {
 							cellInfoVecs.activationLevel.begin(),
 							cellInfoVecs.activeMembrNodeCounts.begin(),
 							cellInfoVecs.cell_Type.begin(),
+							cellInfoVecs.filopDirection.begin(),
 							cellInfoVecs.centerCoordX.begin(),
 							cellInfoVecs.centerCoordY.begin(),
 							cellInfoVecs.cellRadius.begin(),
@@ -6682,6 +6692,7 @@ void SceCells::updateCellPolar() {
 							cellInfoVecs.activationLevel.begin() + activeCellCount,
 							cellInfoVecs.activeMembrNodeCounts.begin() + activeCellCount,
 							cellInfoVecs.cell_Type.begin() + activeCellCount,
+							cellInfoVecs.filopDirection.begin() + activeCellCount,
 							cellInfoVecs.centerCoordX.begin() + activeCellCount,
 							cellInfoVecs.centerCoordY.begin() + activeCellCount,
 							cellInfoVecs.cellRadius.begin() + activeCellCount,
