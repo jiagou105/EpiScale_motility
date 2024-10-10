@@ -1899,14 +1899,24 @@ struct updateCellPolarDevice: public thrust::unary_function<UUUIIDDDD, double> {
 			}
 
 			for (uint filopIndex=filopIndxBegin; filopIndex<filopIndxEnd; filopIndex++){
-				if (_cellFilopIsActiveAddr[filopIndex] == true){
+				if (_cellFilopIsActiveAddr[filopIndex] == true){// if there is already a filopodia
 					filopTipX = cell_CenterX+cell_Radius*cos(_cellFilopAngleAddr[filopIndex])+_cellFilopXAddr[filopIndex];
 					filopTipY = cell_CenterY+cell_Radius*sin(_cellFilopAngleAddr[filopIndex])+_cellFilopYAddr[filopIndex];
 					for (uint cellNghbrIndex = 0; cellNghbrIndex<_activeCellCount; cellNghbrIndex++) { // location of the filopodia tip, 
 						if (cellNghbrIndex!=cellRank){
 							distCells = compDist2D(_cellCenterXAddr[cellNghbrIndex], _cellCenterYAddr[cellNghbrIndex], filopTipX, filopTipY);
-							if (distCells<3*_cellRadiusAddr[cellNghbrIndex]) { 
-								cellAngle = cellAngle + _timeStep*1*(_cellFilopYAddr[filopIndex]*cos(cellAngle)-_cellFilopXAddr[filopIndex]*sin(cellAngle));
+							if (distCells<2*_cellRadiusAddr[cellNghbrIndex]) {
+								int isAttached = 0;
+								for (uint memNodeRank=0; memNodeRank<_maxMemNodePerCell;memNodeRank++){
+									nodeIndex = cellRank*_maxNodePerCell + memNodeRank;
+									if (_isActiveAddr[nodeIndex]&&_nodeAdhereIndexAddr[nodeIndex]>-1){
+										uint adhCellRank = _nodeAdhereIndexAddr[nodeIndex]/_maxNodePerCell;
+										if (adhCellRank == cellNghbrIndex) {isAttached=1;}
+									}
+								}
+								if (isAttached==0){
+									cellAngle = cellAngle + _timeStep*2*(_cellFilopYAddr[filopIndex]*cos(cellAngle)-_cellFilopXAddr[filopIndex]*sin(cellAngle));
+								}
 							}
 						}
 					// for (nodeIndex = 0; nodeIndex<maxActiveMembNode; nodeIndex++)
@@ -1921,20 +1931,23 @@ struct updateCellPolarDevice: public thrust::unary_function<UUUIIDDDD, double> {
 				nodeIndex = cellRank*_maxNodePerCell + memNodeRank;
 				if (_isActiveAddr[nodeIndex]&&_nodeAdhereIndexAddr[nodeIndex]>-1){
 					uint adhCellRank = _nodeAdhereIndexAddr[nodeIndex]/_maxNodePerCell;
-					if (_cellTypeAddr[adhCellRank]==0 && _cellActLevelAddr[adhCellRank]==1){  // neighbor is a follower and is active 
+					if (_cellTypeAddr[adhCellRank]==0 ){  // neighbor is a follower and is active //&& _cellActLevelAddr[adhCellRank]==1
 						// double neighCellAngle = _cellPolarAngleAddr[adhCellRank];
 						// cellAngle = cellAngle + _timeStep*(sin(neighCellAngle)*cos(cellAngle)-cos(neighCellAngle)*sin(cellAngle));
 						double adhCenterVecX = _cellCenterXAddr[adhCellRank] - cell_CenterX;
 						double adhCenterVecY = _cellCenterYAddr[adhCellRank] - cell_CenterY;
 						double neighCellAngle = atan2(adhCenterVecY,adhCenterVecX) + 3.14159/4.0;
-						// cellAngle = cellAngle + _timeStep*0.01*(sin(neighCellAngle)*cos(cellAngle)-cos(neighCellAngle)*sin(cellAngle));
+						cellAngle = cellAngle + _timeStep*0.1*(sin(neighCellAngle)*cos(cellAngle)-cos(neighCellAngle)*sin(cellAngle));
 					}
 				}
 			}
-			double leaderCurCenterXVec = _cellCenterXAddr[_leaderRank] - cell_CenterX;
-			double leaderCurCenterYVec = _cellCenterYAddr[_leaderRank] - cell_CenterY;
-			double leaderCurAngle =  atan2(leaderCurCenterYVec,leaderCurCenterXVec); // attraction to the leader
-			cellAngle = cellAngle + _timeStep*(filopAllY*cos(cellAngle)-filopAllX*sin(cellAngle)+5*(sin(leaderCurAngle)*cos(cellAngle)-cos(leaderCurAngle)*sin(cellAngle)));
+			if (_cellTypeAddr[_leaderRank]==1){ // means a leader exists
+				double leaderCurCenterXVec = _cellCenterXAddr[_leaderRank] - cell_CenterX;
+				double leaderCurCenterYVec = _cellCenterYAddr[_leaderRank] - cell_CenterY;
+				double leaderCurAngle =  atan2(leaderCurCenterYVec,leaderCurCenterXVec); // attraction to the leader
+				cellAngle = cellAngle + _timeStep*(filopAllY*cos(cellAngle)-filopAllX*sin(cellAngle)+5*(sin(leaderCurAngle)*cos(cellAngle)-cos(leaderCurAngle)*sin(cellAngle)));
+			}
+				cellAngle = cellAngle + _timeStep*0.5*(filopAllY*cos(cellAngle)-filopAllX*sin(cellAngle));
 			}
 			else{
 				double allPolar = 0;
@@ -2031,6 +2044,7 @@ struct updateCellPolarLeaderDevice: public thrust::unary_function<UUUIDDDD, doub
 				nodeIndex = cellRank*_maxNodePerCell + memNodeRank;
 				if (_isActiveAddr[nodeIndex]&&_nodeAdhereIndexAddr[nodeIndex]>-1){
 						flag = true; // leader is attached to a follower
+						break;
 					}
 				}
 				if (flag==false) {return cellAngle;}
@@ -2527,7 +2541,7 @@ struct calSubAdhForceDevice: public thrust::unary_function<UIUDDUUDDD, CVec2> {
 		double nodeXTemp, nodeYTemp, tempdistMI;
 		double charMIntlDist=0.8;
 		uint maxSubSitePerNode;
-		if (cellType != 1 && _nodeActLevelAddr[index]>0){kAdh = 1;}
+		if (cellType != 1 && _nodeActLevelAddr[index]>0){kAdh = 3;}
 		if (cellType == 1){kAdh=1;} // for leader
 		if (_cellActLevelAddr[cellRank] == 1){// including leader cell and cells adhere to it
 			maxSubSitePerNode = 10;
@@ -5082,6 +5096,8 @@ class SceCells {
 	void distributeCellGrowthProgress_M();
 
 	void distributeCellActivationLevel_M();
+
+	void distributeCell_Type_M();
 
 	void allComponentsMove_M();
 

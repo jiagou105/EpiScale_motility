@@ -57,7 +57,7 @@ typedef thrust::tuple<bool, int> BoolInt;
 typedef thrust::tuple<uint, bool> UiB;
 typedef thrust::tuple<bool, uint, double> BoolUID;
 typedef thrust::tuple<bool, int, int, double, double> BoolIUiDD;
-typedef thrust::tuple<bool, uint, uint, int, double, double> BUUIDD;
+typedef thrust::tuple<bool, uint, uint, int, int, double, double> BUUIIDD;
 typedef thrust::tuple<bool, uint, double, double, uint, double> BoolUIDDUID;
 typedef thrust::tuple<bool, uint, double, double, uint, uint, bool, double> BoolUIDDUIUIBoolD;//AAMIRI
 typedef thrust::tuple<uint, uint, bool, double> UiUiBD;//AAMIRI
@@ -795,35 +795,42 @@ struct AddSceForceBasic: public thrust::unary_function<Tuuuddd, CVec3> {
 };
 
 
-struct ApplyAdh: public thrust::unary_function<BUUIDD, CVec2> {
+struct ApplyAdh: public thrust::unary_function<BUUIIDD, CVec2> {
 	double* _nodeLocXArrAddr;
 	double* _nodeLocYArrAddr;
 	double* _nodeGrowProAddr;
+	int* _nodeCell_TypeAddr;
 	uint _leaderRank;
 	uint _maxNodePerCell;
 
+
 // comment prevents bad formatting issues of __host__ and __device__ in Nsight
 	__host__ __device__
-	ApplyAdh(double* nodeLocXArrAddr, double* nodeLocYArrAddr, double* nodeGrowProAddr, uint leaderRank, uint maxNodePerCell) :
+	ApplyAdh(double* nodeLocXArrAddr, double* nodeLocYArrAddr, double* nodeGrowProAddr, uint leaderRank, uint maxNodePerCell, int* nodeCell_TypeAddr) :
 			_nodeLocXArrAddr(nodeLocXArrAddr), _nodeLocYArrAddr(nodeLocYArrAddr), _nodeGrowProAddr(nodeGrowProAddr), 
-			_leaderRank(leaderRank), _maxNodePerCell(maxNodePerCell) {
+			_leaderRank(leaderRank), _maxNodePerCell(maxNodePerCell), _nodeCell_TypeAddr(nodeCell_TypeAddr) {
 	}
 	__device__
-	CVec2 operator()(const BUUIDD& adhInput) const {
+	CVec2 operator()(const BUUIIDD& adhInput) const {
 		bool isActive = thrust::get<0>(adhInput);
 		uint nodeIndx = thrust::get<1>(adhInput);
 		uint curActLevel = thrust::get<2>(adhInput); // the activation level of the current node 
 		int adhIndx = thrust::get<3>(adhInput);
-		double oriVelX = thrust::get<4>(adhInput);
-		double oriVelY = thrust::get<5>(adhInput);
+		int cell_Type = thrust::get<4>(adhInput);
+		double oriVelX = thrust::get<5>(adhInput);
+		double oriVelY = thrust::get<6>(adhInput);
 		double growProg = _nodeGrowProAddr[nodeIndx];
 		double growProgNeigh = _nodeGrowProAddr[adhIndx];
 		//bool adhSkipped = false;	
 		double alpha = getMitoticAdhCoef(growProg, growProgNeigh);//to adjust the mitotic values of stiffness
 		bool attLeader = 0;
 		int curCellIndex = nodeIndx/_maxNodePerCell;
-		int adhCellIndex = adhIndx/_maxNodePerCell;
-		if (curCellIndex == _leaderRank || adhCellIndex == _leaderRank){attLeader = 1;}
+		int adhCellIndex = adhIndx/(int) _maxNodePerCell;
+
+		// if (curCellIndex == _leaderRank || adhCellIndex == _leaderRank){attLeader = 1;} // avoid using leaderRank, bcs sometimes there is no leader, then leaderRank=0 is wrong
+		if (adhIndx>-1){
+			if (cell_Type == 1 || _nodeCell_TypeAddr[adhCellIndex] == 1) {attLeader = 1;}
+		}
 
 		if (adhIndx == -1 || !isActive) {
 			return thrust::make_tuple(oriVelX, oriVelY);
@@ -1002,6 +1009,7 @@ public:
 	thrust::device_vector<bool> subAdhIsBound;
 
 	thrust::device_vector<uint> nodeActLevel; // activation level, recorded in the node level 
+	thrust::device_vector<int> nodeCell_Type;
 };
 
 /**

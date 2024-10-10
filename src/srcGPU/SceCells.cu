@@ -1882,6 +1882,7 @@ void SceCells::runAllCellLogicsDisc_M(double dt, double Damp_Coef, double InitTi
 	// copyExtForcesCell_M(); // moved from node
 	updateActivationLevel();
 	distributeCellActivationLevel_M();
+	distributeCell_Type_M();
 
 	applySceCellDisc_M();
 	// updateCellAdhIndex();
@@ -3387,6 +3388,28 @@ void SceCells::distributeCellActivationLevel_M() {
     std::cout << "Done distributeCellActivationLevel_M "<< std:: endl; 
 }
 
+
+
+
+void SceCells::distributeCell_Type_M() {
+	totalNodeCountForActiveCells = allocPara_m.currentActiveCellCount
+			* allocPara_m.maxAllNodePerCell;
+	thrust::counting_iterator<uint> countingBegin(0);
+	thrust::counting_iterator<uint> countingEnd(totalNodeCountForActiveCells);
+	
+	thrust::copy(
+			thrust::make_permutation_iterator(
+					cellInfoVecs.cell_Type.begin(),
+					make_transform_iterator(countingBegin,
+							DivideFunctor(allocPara_m.maxAllNodePerCell))),
+			thrust::make_permutation_iterator(
+					cellInfoVecs.cell_Type.begin(),
+					make_transform_iterator(countingEnd,
+							DivideFunctor(allocPara_m.maxAllNodePerCell))),
+			nodes->getInfoVecs().nodeCell_Type.begin()
+					+ allocPara_m.bdryNodeCount);
+    std::cout << "Done distributeCell_Type_M "<< std:: endl; 
+}
 
 
 

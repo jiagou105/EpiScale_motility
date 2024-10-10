@@ -1842,7 +1842,7 @@ void handleAdhesionForce_M(int& adhereIndex, double& xPos, double& yPos,
 			if (attLeader) {newbondStiff_M = newbondStiff_M*1.3;}
 			// double forceValue = (curLen - minAdhBondLen_M) * (newbondStiff_M * alpha + bondStiff_Mitotic * (1.0-alpha) );
 			double forceValue = (curLen - minAdhBondLen_M) * (newbondStiff_M * alpha + newbondStiff_M * (1.0-alpha) );
-			if (!attLeader){forceValue = 1*forceValue;}
+			if (!attLeader){forceValue = 1.3*forceValue;}
 			xRes = xRes + forceValue * (curAdherePosX - xPos) / curLen;
 			yRes = yRes + forceValue * (curAdherePosY - yPos) / curLen;
 		}
@@ -2620,6 +2620,7 @@ void SceNodes::allocSpaceForNodes(uint maxTotalNodeCount, uint maxIntnlNodeCount
 		infoVecs.subAdhIsBound.resize(maxTotalNodeCount * 10,0);
 
 		infoVecs.nodeActLevel.resize(maxTotalNodeCount,0);
+		infoVecs.nodeCell_Type.resize(maxTotalNodeCount,0);
 		infoVecs.myosinWeight.resize(maxTotalNodeCount,1);
 
 		auxVecs.bucketKeys.resize(maxTotalNodeCount);
@@ -2775,7 +2776,9 @@ void SceNodes::applyMembrAdh_M() {
 	double* nodeLocYAddress = thrust::raw_pointer_cast(&infoVecs.nodeLocY[0]);
 	double* nodeGrowProAddr = thrust::raw_pointer_cast(
 			&infoVecs.nodeGrowPro[0]);
-	uint leaderRank = allocPara_M.leaderRank;
+	int* nodeCell_TypeAddr = thrust::raw_pointer_cast(
+			&infoVecs.nodeCell_Type[0]);
+	uint leaderRank = allocPara_M.leaderRank; // not correct if we have only followers
 	uint maxNodePerCell = allocPara_M.maxAllNodePerCell;
 	
 	thrust::transform(
@@ -2783,18 +2786,21 @@ void SceNodes::applyMembrAdh_M() {
 					thrust::make_tuple(infoVecs.nodeIsActive.begin(),iBegin,
 							infoVecs.nodeActLevel.begin(),
 							infoVecs.nodeAdhereIndex.begin(), 
+							infoVecs.nodeCell_Type.begin(),
 							infoVecs.nodeVelX.begin(),
-							infoVecs.nodeVelY.begin())),
+							infoVecs.nodeVelY.begin()
+							)),
 			thrust::make_zip_iterator(
 					thrust::make_tuple(infoVecs.nodeIsActive.begin(),iBegin,
 							infoVecs.nodeActLevel.begin(),
 							infoVecs.nodeAdhereIndex.begin(),
+							infoVecs.nodeCell_Type.begin(),
 							infoVecs.nodeVelX.begin(),
 							infoVecs.nodeVelY.begin())) + maxTotalNode,
 			thrust::make_zip_iterator(
 					thrust::make_tuple(infoVecs.nodeVelX.begin(),
 							infoVecs.nodeVelY.begin())),
-			ApplyAdh(nodeLocXAddress, nodeLocYAddress, nodeGrowProAddr,leaderRank,maxNodePerCell));
+			ApplyAdh(nodeLocXAddress, nodeLocYAddress, nodeGrowProAddr,leaderRank,maxNodePerCell,nodeCell_TypeAddr));
 }
 
 
