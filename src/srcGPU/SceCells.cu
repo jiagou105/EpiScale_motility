@@ -264,14 +264,14 @@ bool isValidFilopDirection(uint& intnlIndxMemBegin, uint _maxMemNodePerCell, boo
 	uint tempindex1 = 0;
 	uint tempindex2 = 0;
 	for (membrNodeIndex=intnlIndxMemBegin; membrNodeIndex<intnlIndxMemBegin + activeMembrCount; membrNodeIndex++){
-		if (_isActiveAddr[membrNodeIndex]){
+		if (_isActiveAddr[membrNodeIndex]){ // does this represent an arbitrary node ??? yes 
 			membrNodeX = _locXAddr[membrNodeIndex];
 			membrNodeY = _locYAddr[membrNodeIndex];
 			membrCenterVecX = membrNodeX - cell_CenterX;
 			membrCenterVecY = membrNodeY - cell_CenterY;
 			membrCenterVecLen = sqrt(membrCenterVecX*membrCenterVecX + membrCenterVecY*membrCenterVecY); // add a if to avoid small length
 			cosMCandRdA =  (membrCenterVecX*cos(randomAngleRd)+membrCenterVecY*sin(randomAngleRd))/membrCenterVecLen;
-			if (cosMCandRdA>largestCos1){
+			if (cosMCandRdA>largestCos1){ // find the closest membrane node?
 				// smallAngle2=smallAngle1;
 				largestCos1=cosMCandRdA;
 				// tempindex2 = tempindex1;
@@ -1886,16 +1886,16 @@ void SceCells::runAllCellLogicsDisc_M(double dt, double Damp_Coef, double InitTi
 
 	applySceCellDisc_M();
 	// updateCellAdhIndex();
-	updateCellPolar(); // comment out start for no cell motion
-	calFluxWeightsMyosin();
+	updateCellPolar(); // update filopodia extension from followers // comment out start for no cell motion 
+	// calFluxWeightsMyosin();
 	calSceCellMyosin();
-	updateCellPolarLeader();
+	// updateCellPolarLeader();
 	// applySceCellMyosin();
 	// applySigForce(sigPtVecV2);
 	calSubAdhForce(); // comment out end 
 	std::cout << "     *** 3 ***" << endl;
 	std::cout.flush();
-//Ali        
+       
 	computeCenterPos_M();
 	// computeCellRadius();
     exchSignal(); // use files in srcCPU for chemical concentrations
@@ -1903,10 +1903,7 @@ void SceCells::runAllCellLogicsDisc_M(double dt, double Damp_Coef, double InitTi
 //	test_SigPt(sigPtVec); // not used, aug 2023
 	std::cout << "     *** 3.5 ***" << endl;
 	std::cout.flush();
-        	
-//Ali 
-
-
+	
 	applyMemForce_M();
 	std::cout << "     *** 4 ***" << endl;
 	std::cout.flush();
@@ -6132,7 +6129,7 @@ void SceCells::applySceCellDisc_M() {
 							   nodes->getInfoVecs().nodeVelY.begin(),
 							   nodes->getInfoVecs().nodeF_MI_M_x.begin(),  //Ali added for cell pressure calculation 
 							   nodes->getInfoVecs().nodeF_MI_M_y.begin())),// ALi added for cell pressure calculation
-			AddSceCellForce(maxAllNodePerCell, maxMemNodePerCell, nodeLocXAddr,
+			applySceCellDisc_MDevice(maxAllNodePerCell, maxMemNodePerCell, nodeLocXAddr,
 					nodeLocYAddr, nodeIsActiveAddr, grthPrgrCriVal_M));
 }
 
@@ -6473,7 +6470,7 @@ void SceCells::calFluxWeightsMyosin() { // std::vector<double>& fluxWeightsVec
 							))
 					+ totalNodeCountForActiveCells,
 			nodes->getInfoVecs().minToMDist.begin(), 
-			updateFluxWeightsVec(maxAllNodePerCell, maxMemNodePerCell, maxIntnlNodePerCell, nodeLocXAddr,
+			calFluxWeightsMyosinDevice(maxAllNodePerCell, maxMemNodePerCell, maxIntnlNodePerCell, nodeLocXAddr,
 					nodeLocYAddr, nodeIsActiveAddr, myosinLevelAddr, nodeAdhIdxAddr, minToMDistAddr, fluxWeightsAddr));
 					
 		//	thrust::copy(d_fluxWeightsVec.begin(), d_fluxWeightsVec.end(), fluxWeightsVec.begin());
@@ -6588,7 +6585,7 @@ void SceCells::calSceCellMyosin() {
 							))
 					+ totalNodeCountForActiveCells,
 			nodes->getInfoVecs().tempMyosinLevel.begin(), 
-			updateCellMyosin(maxAllNodePerCell, maxMemNodePerCell, maxIntnlNodePerCell, nodeLocXAddr,
+			calSceCellMyosinDevice(maxAllNodePerCell, maxMemNodePerCell, maxIntnlNodePerCell, nodeLocXAddr,
 					nodeLocYAddr, nodeIsActiveAddr, myosinLevelAddr, myosinDiffusionThreshold, nodeAdhIdxAddr, fluxWeightsAddr, timeStep, timeNow));
 			thrust::copy(nodes->getInfoVecs().tempMyosinLevel.begin(),nodes->getInfoVecs().tempMyosinLevel.end(),nodes->getInfoVecs().myosinLevel.begin());
 			// nodes->getInfoVecs().myosinLevel = nodes->getInfoVecs().tempMyosinLevel;

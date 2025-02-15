@@ -19330,47 +19330,55 @@ return (err == (cudaSuccess)) ? cudaBindSurfaceToArray(surf, array, desc) : err;
 } 
 # 2534 "/opt/linux/rhel/8.x/x86_64/pkgs/cuda/11.4/bin/../targets/x86_64-linux/include/cuda_runtime.h"
 #pragma GCC diagnostic pop
-# 64 "CMakeCUDACompilerId.cu"
+# 476 "CMakeCUDACompilerId.cu"
 const char *info_compiler = ("INFO:compiler[NVIDIA]"); 
-# 66
+# 478
 const char *info_simulate = ("INFO:simulate[GNU]"); 
-# 369 "CMakeCUDACompilerId.cu"
+# 789 "CMakeCUDACompilerId.cu"
 const char info_version[] = {'I', 'N', 'F', 'O', ':', 'c', 'o', 'm', 'p', 'i', 'l', 'e', 'r', '_', 'v', 'e', 'r', 's', 'i', 'o', 'n', '[', (('0') + ((11 / 10000000) % 10)), (('0') + ((11 / 1000000) % 10)), (('0') + ((11 / 100000) % 10)), (('0') + ((11 / 10000) % 10)), (('0') + ((11 / 1000) % 10)), (('0') + ((11 / 100) % 10)), (('0') + ((11 / 10) % 10)), (('0') + (11 % 10)), '.', (('0') + ((4 / 10000000) % 10)), (('0') + ((4 / 1000000) % 10)), (('0') + ((4 / 100000) % 10)), (('0') + ((4 / 10000) % 10)), (('0') + ((4 / 1000) % 10)), (('0') + ((4 / 100) % 10)), (('0') + ((4 / 10) % 10)), (('0') + (4 % 10)), '.', (('0') + ((100 / 10000000) % 10)), (('0') + ((100 / 1000000) % 10)), (('0') + ((100 / 100000) % 10)), (('0') + ((100 / 10000) % 10)), (('0') + ((100 / 1000) % 10)), (('0') + ((100 / 100) % 10)), (('0') + ((100 / 10) % 10)), (('0') + (100 % 10)), ']', '\000'}; 
-# 398 "CMakeCUDACompilerId.cu"
+# 818 "CMakeCUDACompilerId.cu"
 const char info_simulate_version[] = {'I', 'N', 'F', 'O', ':', 's', 'i', 'm', 'u', 'l', 'a', 't', 'e', '_', 'v', 'e', 'r', 's', 'i', 'o', 'n', '[', (('0') + ((9 / 10000000) % 10)), (('0') + ((9 / 1000000) % 10)), (('0') + ((9 / 100000) % 10)), (('0') + ((9 / 10000) % 10)), (('0') + ((9 / 1000) % 10)), (('0') + ((9 / 100) % 10)), (('0') + ((9 / 10) % 10)), (('0') + (9 % 10)), '.', (('0') + ((2 / 10000000) % 10)), (('0') + ((2 / 1000000) % 10)), (('0') + ((2 / 100000) % 10)), (('0') + ((2 / 10000) % 10)), (('0') + ((2 / 1000) % 10)), (('0') + ((2 / 100) % 10)), (('0') + ((2 / 10) % 10)), (('0') + (2 % 10)), ']', '\000'}; 
-# 418
+# 838
 const char *info_platform = ("INFO:platform[Linux]"); 
-# 419
+# 839
 const char *info_arch = ("INFO:arch[]"); 
-# 423
+# 844
+const char *info_host_compiler = ("INFO:host_compiler[GNU]"); 
+# 849
+const char info_host_compiler_version[] = {'I', 'N', 'F', 'O', ':', 'h', 'o', 's', 't', '_', 'c', 'o', 'm', 'p', 'i', 'l', 'e', 'r', '_', 'v', 'e', 'r', 's', 'i', 'o', 'n', '[', (('0') + ((9 / 10000000) % 10)), (('0') + ((9 / 1000000) % 10)), (('0') + ((9 / 100000) % 10)), (('0') + ((9 / 10000) % 10)), (('0') + ((9 / 1000) % 10)), (('0') + ((9 / 100) % 10)), (('0') + ((9 / 10) % 10)), (('0') + (9 % 10)), '.', (('0') + ((2 / 10000000) % 10)), (('0') + ((2 / 1000000) % 10)), (('0') + ((2 / 100000) % 10)), (('0') + ((2 / 10000) % 10)), (('0') + ((2 / 1000) % 10)), (('0') + ((2 / 100) % 10)), (('0') + ((2 / 10) % 10)), (('0') + (2 % 10)), '.', (('0') + ((1 / 10000000) % 10)), (('0') + ((1 / 1000000) % 10)), (('0') + ((1 / 100000) % 10)), (('0') + ((1 / 10000) % 10)), (('0') + ((1 / 1000) % 10)), (('0') + ((1 / 100) % 10)), (('0') + ((1 / 10) % 10)), (('0') + (1 % 10)), ']', '\000'}; 
+# 881 "CMakeCUDACompilerId.cu"
 const char *info_language_standard_default = ("INFO:standard_default[14]"); 
-# 439
+# 899 "CMakeCUDACompilerId.cu"
 const char *info_language_extensions_default = ("INFO:extensions_default[ON]"); 
-# 450
+# 910
 int main(int argc, char *argv[]) 
-# 451
+# 911
 { 
-# 452
+# 912
 int require = 0; 
-# 453
+# 913
 require += (info_compiler[argc]); 
-# 454
+# 914
 require += (info_platform[argc]); 
-# 456
+# 916
 require += (info_version[argc]); 
-# 459
+# 919
 require += (info_simulate[argc]); 
-# 462
+# 922
 require += (info_simulate_version[argc]); 
-# 464
+# 925
+require += (info_host_compiler[argc]); 
+# 928
+require += (info_host_compiler_version[argc]); 
+# 930
 require += (info_language_standard_default[argc]); 
-# 465
+# 931
 require += (info_language_extensions_default[argc]); 
-# 466
+# 932
 (void)argv; 
-# 467
+# 933
 return require; 
-# 468
+# 934
 } 
 
 # 1 "CMakeCUDACompilerId.cudafe1.stub.c"
