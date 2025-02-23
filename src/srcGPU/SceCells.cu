@@ -1887,12 +1887,19 @@ void SceCells::runAllCellLogicsDisc_M(double dt, double Damp_Coef, double InitTi
 	applySceCellDisc_M();
 	// updateCellAdhIndex();
 	updateCellPolar(); // update filopodia extension from followers // comment out start for no cell motion 
-	// calFluxWeightsMyosin();
-	calSceCellMyosin();
-	// updateCellPolarLeader();
-	// applySceCellMyosin();
-	// applySigForce(sigPtVecV2);
-	calSubAdhForce(); // comment out end 
+	int ruleNum = 3;
+	if (ruleNum<3){ // means 1 or 2
+		// do not update myosin dynamics via flux
+		calSceCellMyosin();
+		calSubAdhForce(); // comment out end 
+	} else if (ruleNum==3){
+		calFluxWeightsMyosin();
+		calSceCellMyosin();
+		updateCellPolarLeader();
+		// applySceCellMyosin();
+		// applySigForce(sigPtVecV2);
+		calSubAdhForce(); // comment out end 
+	}
 	std::cout << "     *** 3 ***" << endl;
 	std::cout.flush();
        
@@ -6136,9 +6143,6 @@ void SceCells::applySceCellDisc_M() {
 
 
 
-
-
-// mar 31
 // apply the myosin force to membrane nodes? 
 void SceCells::applySceCellMyosin() {
 	totalNodeCountForActiveCells = allocPara_m.currentActiveCellCount
