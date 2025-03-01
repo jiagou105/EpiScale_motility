@@ -1446,7 +1446,7 @@ __host__ __device__ calFluxWeightsMyosinDevice(uint maxNodePerCell,
 		double nodeOtherX, nodeOtherY;
 		double distNodes;
 		double distThrd = 1;
-		double distThrd2 = 2;
+		double distThrd2 = 1;
 		double sumFlux = 0;
 		double myosinMaxLevel=5;
 		uint fluxIndex; // index for the fluxWeights matrix
@@ -1464,8 +1464,8 @@ __host__ __device__ calFluxWeightsMyosinDevice(uint maxNodePerCell,
 							distNodes = compDist2D(nodeX,nodeY,nodeOtherX,nodeOtherY); // flux from current node to the other node
 							fluxIndex = (nodeRank-_maxMemNodePerCell)*_maxIntnlNodePerCell+(nodeOtherIntlRank-_maxMemNodePerCell); // nodeRank row, nodeOtherIntlRank column
 							// if current node is farther compared with other node, and the myosin level of other node has not reached max yet
-							if (distNodes<distThrd && (minToMDist>_minToMDistAddr[nodeOtherIntlIndex]) &&  _minToMDistAddr[nodeOtherIntlIndex]<distThrd2 && _myosinLevelAddr[nodeOtherIntlIndex]<myosinMaxLevel){ // && _myosinLevelAddr[nodeOtherIntlIndex]<myosinMaxLevel // minToMDist<distThrd2 &&
-								_fluxWeightsAddr[fluxIndex] = 3;// omega0 // flux from nodeIntlIndex1 to nodeOtherIntlRank //value controls flux rate
+							if (distNodes<distThrd && (minToMDist>_minToMDistAddr[nodeOtherIntlIndex]) &&  _minToMDistAddr[nodeOtherIntlIndex]<distThrd2 && _myosinLevelAddr[nodeOtherIntlIndex]<myosinMaxLevel && _myosinLevelAddr[index]>0.001){ // && _myosinLevelAddr[nodeOtherIntlIndex]<myosinMaxLevel // minToMDist<distThrd2 &&
+								_fluxWeightsAddr[fluxIndex] = 1;// omega0 // flux from nodeIntlIndex1 to nodeOtherIntlRank //value controls flux rate
 								// sumFlux = sumFlux + _fluxWeightsAddr[fluxIndex]; // sum up flux weights in the nodeRank row
 							} else {
 								_fluxWeightsAddr[fluxIndex] = 0;
@@ -2139,7 +2139,7 @@ struct updateCellPolarDevice: public thrust::unary_function<UUUIIDDDD, double> {
 				double leaderCurCenterXVec = _cellCenterXAddr[_leaderRank] - cell_CenterX;
 				double leaderCurCenterYVec = _cellCenterYAddr[_leaderRank] - cell_CenterY;
 				double leaderCurAngle =  atan2(leaderCurCenterYVec,leaderCurCenterXVec); // attraction to the leader
-				cellAngle = cellAngle + _timeStep*(filopAllY*cos(cellAngle)-filopAllX*sin(cellAngle)+0.5*(sin(leaderCurAngle)*cos(cellAngle)-cos(leaderCurAngle)*sin(cellAngle)));
+				cellAngle = cellAngle + _timeStep*(filopAllY*cos(cellAngle)-filopAllX*sin(cellAngle)+3*(sin(leaderCurAngle)*cos(cellAngle)-cos(leaderCurAngle)*sin(cellAngle)));
 			}
 				cellAngle = cellAngle + _timeStep*0.5*(filopAllY*cos(cellAngle)-filopAllX*sin(cellAngle));
 			}
@@ -2748,7 +2748,7 @@ struct calSubAdhForceDevice: public thrust::unary_function<UIUDDUUDDD, CVec2> {
 		double adhForceY = 0.0;
 		double kAdh;
 		double siteBindThreshold;
-		double charMyosin = 10.0; // maybe this should be the same as the myosinTarget???
+		double charMyosin = 20.0; // maybe this should be the same as the myosinTarget???
 		
 		double randomN1;
 		double randomN2;
@@ -2761,7 +2761,7 @@ struct calSubAdhForceDevice: public thrust::unary_function<UIUDDUUDDD, CVec2> {
 		double charMIntlDist=0.8;
 		uint maxSubSitePerNode;
 		if (cellType != 1 && _nodeActLevelAddr[index]>0){kAdh = 1;}
-		if (cellType == 1){kAdh=1;} // for leader
+		if (cellType == 1){kAdh=0.6;} // for leader
 		if (_cellActLevelAddr[cellRank] == 1){// including leader cell and cells adhere to it
 			maxSubSitePerNode = 10;
 		} else {
