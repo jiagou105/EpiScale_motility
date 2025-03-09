@@ -1445,8 +1445,8 @@ __host__ __device__ calFluxWeightsMyosinDevice(uint maxNodePerCell,
 		double nodeY = _locYAddr[index];
 		double nodeOtherX, nodeOtherY;
 		double distNodes;
-		double distThrd = 1;
-		double distThrd2 = 1;
+		double distThrd = 0.5;
+		double distThrd2 = 0.5;
 		double sumFlux = 0;
 		double myosinMaxLevel=5;
 		uint fluxIndex; // index for the fluxWeights matrix
@@ -2759,8 +2759,9 @@ struct calSubAdhForceDevice: public thrust::unary_function<UIUDDUUDDD, CVec2> {
 		double minDistIntl=100;
 		double nodeXTemp, nodeYTemp, tempdistMI;
 		double charMIntlDist=0.8;
+		uint slotSubSitePerNode=10; // this is used in defining the size of the _subAdhIsBoundAddr variable
 		uint maxSubSitePerNode;
-		if (cellType != 1 && _nodeActLevelAddr[index]>0){kAdh = 1;}
+		if (cellType != 1 && _nodeActLevelAddr[index]>0){kAdh = 0.6;}
 		if (cellType == 1){kAdh=0.6;} // for leader
 		if (_cellActLevelAddr[cellRank] == 1){// including leader cell and cells adhere to it
 			maxSubSitePerNode = 10;
@@ -2782,14 +2783,14 @@ struct calSubAdhForceDevice: public thrust::unary_function<UIUDDUUDDD, CVec2> {
 			// starting of the index of the substrate site corresponding to this node is: index*10, 10 is the max subs sites
 			for (int bindSiteIndex = 0; bindSiteIndex < maxSubSitePerNode; 
 					bindSiteIndex++) {
-						bindSiteCounts += _subAdhIsBoundAddr[index*maxSubSitePerNode + bindSiteIndex];
+						bindSiteCounts += _subAdhIsBoundAddr[index*slotSubSitePerNode + bindSiteIndex];
 					}
 			// Perform the unbinding and binding events by adding the location of the site to the siteXY vector 
 			if (bindSiteCounts > 0){
 				// means there are possibilities for unbinding, compute the unbinding probability 
 				for (int bindSiteIndex = 0; bindSiteIndex < maxSubSitePerNode; bindSiteIndex++){
 					randomN1 = u01(rng);
-					siteIndex = index*maxSubSitePerNode + bindSiteIndex; 
+					siteIndex = index*slotSubSitePerNode + bindSiteIndex; 
 					if (_subAdhIsBoundAddr[siteIndex] == 1){
 						siteX = _subAdhLocXAddr[siteIndex];
 						siteY = _subAdhLocYAddr[siteIndex];
@@ -2853,7 +2854,7 @@ struct calSubAdhForceDevice: public thrust::unary_function<UIUDDUUDDD, CVec2> {
 					// }
 					if (randomN3<siteBindThreshold) { 
 						for (int bindSiteIndex = 0; bindSiteIndex < maxSubSitePerNode; bindSiteIndex++){
-							siteIndex = index*maxSubSitePerNode + bindSiteIndex; 
+							siteIndex = index*slotSubSitePerNode + bindSiteIndex; 
 							if (_subAdhIsBoundAddr[siteIndex] == 0){
 								_subAdhLocXAddr[siteIndex] = ngbrSiteX; 
 								_subAdhLocYAddr[siteIndex] = ngbrSiteY;
@@ -2866,7 +2867,7 @@ struct calSubAdhForceDevice: public thrust::unary_function<UIUDDUUDDD, CVec2> {
 			}
 			// Compute the updated force depending on updated distance for each binding site
 			for (int bindSiteIndex = 0; bindSiteIndex < maxSubSitePerNode; bindSiteIndex++){
-				siteIndex = index*maxSubSitePerNode + bindSiteIndex; 
+				siteIndex = index*slotSubSitePerNode + bindSiteIndex; 
 				if (_subAdhIsBoundAddr[siteIndex] == 1){
 						siteX = _subAdhLocXAddr[siteIndex];
 						siteY = _subAdhLocYAddr[siteIndex];
