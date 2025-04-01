@@ -50,9 +50,9 @@ double calExtForce(double& curTime) {
 
 __device__
 double obtainRandAngle(uint& cellRank, uint& seed) {
-	thrust::default_random_engine rng(seed);
+	thrust::default_random_engine rng(seed+cellRank);
 	// discard n numbers to avoid correlation
-	rng.discard(cellRank);
+	rng.discard(cellRank+seed);
 	thrust::uniform_real_distribution<double> u0TwoPi(0, 2.0 * pI);
 	double randomAngle = u0TwoPi(rng);
 	return randomAngle;
@@ -86,7 +86,7 @@ bool isAllIntnlFilled(uint& currentIntnlCount) {
 
 __device__
 int obtainRemovingMembrNodeID(uint &cellRank, uint& activeMembrNodes, uint& seed) {
-	thrust::default_random_engine rng(seed);
+	thrust::default_random_engine rng(seed+cellRank);
 	// discard n numbers to avoid correlation
 	rng.discard(activeMembrNodes);
 	thrust::uniform_int_distribution<double> dist(0, activeMembrNodes-1);
@@ -952,6 +952,7 @@ void SceCells::addPointIfScheduledToGrow() {
 					growthAuxData.nodeYPosAddress, time(NULL),
 					miscPara.growThreshold));
 }
+
 //Ali commented this constructor in 04/04/2017
 SceCells::SceCells(SceNodes* nodesInput,
 		std::vector<uint>& numOfInitActiveNodesOfCells,
@@ -1301,21 +1302,26 @@ void SceCells::initialize_M(SceNodes* nodesInput, std::vector<double> &initCellR
 	initGrowthAuxData_M(); 
 	//std::cout << "break point 8 " << std::endl;
 	//std::cout.flush();
+	allocPara_m.leaderExist = false;
+	allocPara_m.leaderRank = 0;
 	for (uint cellRank=0; cellRank<allocPara_m.currentActiveCellCount; cellRank++)
     {
         if (initCellRadii[cellRank]>2.0){ // 1 is leader // do not change the randii threshold from 2 to 3, it will not detect leader in this case
 			cellInfoVecs.cell_Type[cellRank] = 1;
 			// nodes->setLeaderRank(cellRank);
 			allocPara_m.leaderRank = cellRank;
+			allocPara_m.leaderExist = true;
 			nodes->setAllocParaM(allocPara_m);// allocPara_m is of type NodeAllocPara_M
 			break;
 			} else {
 				cellInfoVecs.cell_Type[cellRank] = 0;
+				allocPara_m.leaderExist = false;
 			}
     }
 	// assert(allocPara_m.leaderRank == ? );
-	cout<< "leader Rank is "<< allocPara_m.leaderRank << endl ; 
+	cout<< "leader Rank is "<< allocPara_m.leaderRank << endl ; // if the above condition is not satisfied, what is leaderRank?
 	cout<< "Node leader Rank is"<<nodes->getAllocParaM().leaderRank << endl; 
+	cout<< "Leader exists is "<<allocPara_m.leaderExist<<endl;
 	initMyosinLevel(); 
 	initCellArea();
 }
@@ -6693,6 +6699,7 @@ void SceCells::updateCellPolar() {
             &(cellInfoVecs.cell_Type[0]));
 	uint leaderRank = allocPara_m.leaderRank; // 
 	// uint leaderRank = nodes->getLeaderRank();
+	bool leaderExist = allocPara_m.leaderExist;
 	uint* cellActLevelAddr = thrust::raw_pointer_cast(
         &(cellInfoVecs.activationLevel[0]));
 
@@ -6727,7 +6734,7 @@ void SceCells::updateCellPolar() {
 			cellFilopXAddr,cellFilopYAddr,cellFilopAngleAddr,cellFilopIsActiveAddr,
 			cellFilopBirthTimeAddr,activeCellCount,cellCenterXAddr,cellCenterYAddr,cellRadiusAddr,
 			cellActiveFilopCountsAddr,maxMemNodePerCell,maxNodePerCell,nodeLocXAddr,nodeLocYAddr,
-			nodeIsActiveAddr,nodeAdhIdxAddr,nodeActLevelAddr,myosinLevelAddr,cellTypeAddr,leaderRank,cellPolarAngleAddr,cellActLevelAddr));
+			nodeIsActiveAddr,nodeAdhIdxAddr,nodeActLevelAddr,myosinLevelAddr,cellTypeAddr,leaderRank,leaderExist,cellPolarAngleAddr,cellActLevelAddr));
 	/*
 	for (uint i=0;i<activeCellCount*5;i++){
 		double tempAngle = cellInfoVecs.cellFilopAngle[i];

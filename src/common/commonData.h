@@ -333,6 +333,7 @@ struct NodeAllocPara_M {
 	// @currentActiveCellCount represents number of cells that are currently active.
 	uint currentActiveCellCount;
 	uint leaderRank; // rank of the leader cell
+	bool leaderExist;
 };
 
 struct SigptState {
