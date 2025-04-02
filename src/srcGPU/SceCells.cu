@@ -1911,8 +1911,8 @@ void SceCells::runAllCellLogicsDisc_M(double dt, double Damp_Coef, double InitTi
        
 	computeCenterPos_M();
 	// computeCellRadius();
-    exchSignal(); // use files in srcCPU for chemical concentrations
-    BC_Imp_M(); // do nothing for now, changing damping coef
+    // exchSignal(); // use files in srcCPU for chemical concentrations
+    // BC_Imp_M(); // do nothing for now, changing damping coef
 //	test_SigPt(sigPtVec); // not used, aug 2023
 	std::cout << "     *** 3.5 ***" << endl;
 	std::cout.flush();
