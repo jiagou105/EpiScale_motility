@@ -232,6 +232,13 @@ void VtkAnimationData::outputVtkAni(std::string scriptNameBase, int rank) { //ap
 	}
 	fs << std::endl;
 
+	fs << "SCALARS myosinWeight float" << endl;
+	fs << "LOOKUP_TABLE default" << endl;
+	for (uint i = 0; i < pointsAniData.size(); i++) {
+		fs << pointsAniData[i].myoWeight1 << endl;
+	}
+	fs << std::endl;
+
 	fs << "SCALARS actLevel float" << endl;
 	fs << "LOOKUP_TABLE default" << endl;
 	for (uint i = 0; i < pointsAniData.size(); i++) {

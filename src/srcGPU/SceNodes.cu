@@ -2216,6 +2216,7 @@ void SceNodes::applySceForcesDisc() {
 }
 
 void SceNodes::applySceForcesDisc_M(std::vector<SigptStateV2>& sigPtVecV2) {
+// void SceNodes::applySceForcesDisc_M() {
 	uint* valueAddress = thrust::raw_pointer_cast(
 			&auxVecs.bucketValuesIncludingNeighbor[0]);
 	double* nodeLocXAddress = thrust::raw_pointer_cast(&infoVecs.nodeLocX[0]);

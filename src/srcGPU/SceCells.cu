@@ -88,7 +88,7 @@ __device__
 int obtainRemovingMembrNodeID(uint &cellRank, uint& activeMembrNodes, uint& seed) {
 	thrust::default_random_engine rng(seed+cellRank);
 	// discard n numbers to avoid correlation
-	rng.discard(activeMembrNodes);
+	rng.discard(activeMembrNodes+cellRank);
 	thrust::uniform_int_distribution<double> dist(0, activeMembrNodes-1);
 	int randomNode = dist(rng);
 	return (cellRank * maxAllNodePerCell + randomNode);
@@ -378,7 +378,7 @@ bool isTangFilopDirection(uint& intnlIndxMemBegin, bool* _isActiveAddr, double* 
 		notAdhCounter = 0;
 		while (notAdhCounter<maxGapInt && iterCount<activeMembrCountInt){
 			iterCount +=1;
-			tempNodeIndex = tempNodeIndex - 1;
+			tempNodeIndex = tempNodeIndex - 1; // why decreasing index???
 			if (tempNodeIndex == intnlIndxMemBeginInt-1){tempNodeIndex = intnlIndxMemBeginInt + activeMembrCountInt-1;}
 			if (_nodeAdhereIndexAddr[tempNodeIndex] == -1) {
 				adhCellType = 0;
@@ -1316,6 +1316,7 @@ void SceCells::initialize_M(SceNodes* nodesInput, std::vector<double> &initCellR
 			} else {
 				cellInfoVecs.cell_Type[cellRank] = 0;
 				allocPara_m.leaderExist = false;
+				nodes->setAllocParaM(allocPara_m);
 			}
     }
 	// assert(allocPara_m.leaderRank == ? );
@@ -1938,7 +1939,7 @@ void SceCells::runAllCellLogicsDisc_M(double dt, double Damp_Coef, double InitTi
 	std::cout << "     *** 8 ***" << endl;
 	std::cout.flush();
 
-    findTangentAndNormal_M();//AAMIRI ADDED May29
+    findTangentAndNormal_M(); //AAMIRI ADDED May29
 	allComponentsMove_M();
 	std::cout << "     *** 9 ***" << endl;
 	std::cout.flush();
@@ -3333,7 +3334,7 @@ void SceCells::divide2D_M() {
 	findHertwigAxis();
 	}
         //A&A
-
+	std::cout<< "Is there a division present?"<< isDivisionPresent<<std::endl; 
 	if (!isDivisionPresent) {
 		return;
 	}
@@ -3395,7 +3396,7 @@ void SceCells::distributeCellActivationLevel_M() {
 							DivideFunctor(allocPara_m.maxAllNodePerCell))),
 			nodes->getInfoVecs().nodeActLevel.begin()
 					+ allocPara_m.bdryNodeCount);
-    std::cout << "Done distributeCellActivationLevel_M "<< std:: endl; 
+    std::cout << "Done distribute CellActivationLevel_M "<< std:: endl; 
 }
 
 
@@ -3418,7 +3419,7 @@ void SceCells::distributeCell_Type_M() {
 							DivideFunctor(allocPara_m.maxAllNodePerCell))),
 			nodes->getInfoVecs().nodeCell_Type.begin()
 					+ allocPara_m.bdryNodeCount);
-    std::cout << "Done distributeCell_Type_M "<< std:: endl; 
+    std::cout << "Done distribute Cell_Type_M "<< std:: endl; 
 }
 
 
@@ -3775,8 +3776,10 @@ void SceCells::addPointIfScheduledToGrow_M() {
 
 void SceCells::addPointDueToActin() {
 	random_device rd;
- 	uint seed = time(NULL);
- 	seed = rd();
+	// mt19937_64 host_rng(rd());
+ 	// uint seed = time(NULL);
+ 	// seed = host_rng();
+	uint seed = rd();
 
 	uint activeCellCount = allocPara_m.currentActiveCellCount;
 
@@ -4180,6 +4183,7 @@ AniRawData SceCells::obtainAniRawDataGivenCellColor(vector<double>& cellColors,
 	thrust::host_vector<double> hostTmpVectorExtForceTangent(maxActiveNode);//AAMIRI
 	thrust::host_vector<double> hostTmpVectorExtForceNormal(maxActiveNode);//AAMIRI
 	thrust::host_vector<double> hostMyosinLevel(maxActiveNode); 
+	thrust::host_vector<double> hostMyosinWeight(maxActiveNode);
 	thrust::host_vector<double> hostActLevel(maxActiveNode);
 	thrust::host_vector<double> hostSubAdhIsBound(maxActiveNode*10); 
 	thrust::host_vector<double> hostFilopX(maxFilopCount);//= cellInfoVecs.cellFilopX; // 5 filopodia, 1 center location for each cell to be added later
@@ -4236,6 +4240,7 @@ AniRawData SceCells::obtainAniRawDataGivenCellColor(vector<double>& cellColors,
 							nodes->getInfoVecs().nodeF_MI_M_T.begin(), //Ali
 							nodes->getInfoVecs().nodeF_MI_M_N.begin(), //Ali
 							nodes->getInfoVecs().myosinLevel.begin(),
+							nodes->getInfoVecs().myosinWeight.begin(),
 							nodes->getInfoVecs().nodeActLevel.begin(),
 							nodes->getInfoVecs().nodeAdhereIndex.begin(),
 							nodes->getInfoVecs().minToMDist.begin()
@@ -4245,6 +4250,7 @@ AniRawData SceCells::obtainAniRawDataGivenCellColor(vector<double>& cellColors,
 							nodes->getInfoVecs().nodeF_MI_M_T.begin(),//AliE
 							nodes->getInfoVecs().nodeF_MI_M_N.begin(), //AliE
 							nodes->getInfoVecs().myosinLevel.begin(),
+							nodes->getInfoVecs().myosinWeight.begin(),
 							nodes->getInfoVecs().nodeActLevel.begin(),
 							nodes->getInfoVecs().nodeAdhereIndex.begin(),
 							nodes->getInfoVecs().minToMDist.begin()
@@ -4252,7 +4258,7 @@ AniRawData SceCells::obtainAniRawDataGivenCellColor(vector<double>& cellColors,
 					+ maxActiveNode,
 			thrust::make_zip_iterator(
 					thrust::make_tuple(
-							hostTmpVectorF_MI_M_T.begin(), hostTmpVectorF_MI_M_N.begin(), hostMyosinLevel.begin(),
+							hostTmpVectorF_MI_M_T.begin(), hostTmpVectorF_MI_M_N.begin(), hostMyosinLevel.begin(), hostMyosinWeight.begin(),
 							hostActLevel.begin(),hostAdhNodeIndex.begin(),hostMinToMDist.begin()
 							)));
 
@@ -4338,6 +4344,7 @@ AniRawData SceCells::obtainAniRawDataGivenCellColor(vector<double>& cellColors,
 	double aniVal;
 	double aniVal2;
 	double tempMyosinLevel;
+	double tempMyosinWeight;
 	uint tempActLevel;
 	int tempAdhNodeIndex;
 
@@ -4373,6 +4380,9 @@ AniRawData SceCells::obtainAniRawDataGivenCellColor(vector<double>& cellColors,
 
 				tempMyosinLevel = hostMyosinLevel[index1];
 				rawAniData.myoLevel.push_back(tempMyosinLevel);
+
+				tempMyosinWeight = hostMyosinWeight[index1];
+				rawAniData.myoWeight.push_back(tempMyosinWeight);
 
 				tempActLevel = hostActLevel[index1];
 				rawAniData.actLevel.push_back(tempActLevel);
@@ -4416,6 +4426,9 @@ AniRawData SceCells::obtainAniRawDataGivenCellColor(vector<double>& cellColors,
 
 				tempMyosinLevel = hostMyosinLevel[index1];
 				rawAniData.myoLevel.push_back(tempMyosinLevel);
+
+				tempMyosinWeight = hostMyosinWeight[index1];
+				rawAniData.myoWeight.push_back(tempMyosinWeight);
 
 				tempActLevel = hostActLevel[index1];
 				rawAniData.actLevel.push_back(tempActLevel);
@@ -4950,6 +4963,7 @@ VtkAnimationData SceCells::outputVtkData(AniRawData& rawAniData,
 		ptAniData.nodeRankScale = rawAniData.aniNodeRank[i];
 		ptAniData.extForce = rawAniData.aniNodeExtForceArr[i];//AAMIRI
 		ptAniData.myoLevel1= rawAniData.myoLevel[i];
+		ptAniData.myoWeight1= rawAniData.myoWeight[i];
 		ptAniData.actLevel1= rawAniData.actLevel[i];  
 		ptAniData.adhSiteCount1= rawAniData.adhSiteCount[i];
 		ptAniData.adhNodeIndex1= rawAniData.adhNodeIndex[i];
@@ -6335,6 +6349,7 @@ void SceCells::applySigForce(std::vector<SigptStateV2>& sigPtVecV2) {
 
 // define a host vector, size maxIntNode by maxIntNode 
 void SceCells::calFluxWeightsMyosin() { // std::vector<double>& fluxWeightsVec
+	cout << "Start computing flux weights" << endl;
 	totalNodeCountForActiveCells = allocPara_m.currentActiveCellCount
 			* allocPara_m.maxAllNodePerCell;
 	uint totalActCellCount = allocPara_m.currentActiveCellCount;
@@ -6649,9 +6664,18 @@ void SceCells::updateActivationLevel() {
 
 void SceCells::updateCellPolar() {
 	random_device rd;
- 	uint seed = time(NULL);
- 	seed = rd();
-
+ 	// uint seed = time(NULL);
+ 	// uint temp_seed = rd();
+	// mt19937_64 host_rng(temp_seed);
+ 	// uint seed = time(NULL);
+ 	// uint64_t seed = host_rng();
+	// uint64_t t = static_cast<uint64_t>(time(nullptr));
+	// uint64_t r = static_cast<uint64_t>(rd());
+	// uint64_t mixed = (r << 32) ^ t;   // mix high‑entropy rd() into high bits, time() into low bits
+	uint seed = rd();
+	cout << "Rd is " << seed << endl;
+	// cout << "Rd is " << temp_seed << " and Host rng is " << seed << endl;
+	// unsigned int seed = static_cast<unsigned int>(mixed);
 	uint activeCellCount = allocPara_m.currentActiveCellCount;
 
 	// double* myosinLevelAddr = thrust::raw_pointer_cast(
@@ -6751,9 +6775,8 @@ void SceCells::updateCellPolar() {
 
 void SceCells::updateCellPolarLeader() {
 	random_device rd;
- 	uint seed = time(NULL);
- 	seed = rd();
-
+ 	uint seed = rd();
+	cout << "Start computing leader cell polar" << endl;
 	uint activeCellCount = allocPara_m.currentActiveCellCount;
 
 	// double* myosinLevelAddr = thrust::raw_pointer_cast(
@@ -6915,6 +6938,7 @@ void SceCells::test_SigPt(std::vector<SigptState>& sigPtVec) {
 
 
 void SceCells::calSubAdhForce() {
+	cout<< "I am starting to compute adhesion forces "<< endl;
 	totalNodeCountForActiveCells = allocPara_m.currentActiveCellCount
 			* allocPara_m.maxAllNodePerCell;
 	uint maxAllNodePerCell = allocPara_m.maxAllNodePerCell;
@@ -6952,6 +6976,10 @@ void SceCells::calSubAdhForce() {
 	random_device rd;
     uint seed = time(NULL);
     seed = rd();
+	// uint64_t t = static_cast<uint64_t>(time(nullptr));
+	// uint64_t r = static_cast<uint64_t>(rd());
+	// uint64_t mixed = (r << 32) ^ t;   // mix high‑entropy rd() into high bits, time() into low bits
+	// unsigned int seed = static_cast<unsigned int>(mixed);
 
 	thrust::transform(
 			thrust::make_zip_iterator(
