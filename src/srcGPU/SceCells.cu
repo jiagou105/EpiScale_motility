@@ -334,8 +334,8 @@ bool isTangFilopDirection(uint& intnlIndxMemBegin, bool* _isActiveAddr, double* 
 	// choose a preferred direction 
 	//3. return the direction
 	// int membrNodeIndex;
-	uint lowestAdhMemInd = 0;
-	uint highestAdhMemInd = 0;
+	// uint lowestAdhMemInd = 0;
+	// uint highestAdhMemInd = 0;
 	int count = 0;
 	int adhNodeIndex,adhCellIndex;
 	int adhCellType;
@@ -345,7 +345,7 @@ bool isTangFilopDirection(uint& intnlIndxMemBegin, bool* _isActiveAddr, double* 
 
 	double highNodeX, highNodeY, highVecX, highVecY, lenHighVec;
 	double lowNodeX, lowNodeY, lowVecX, lowVecY, lenLowVec;
-	double dotPHigh, dotPLow;
+	// double dotPHigh, dotPLow;
 	double bisecVecX, bisecVecY, dotP;
 	double crossP;
 	// check if there is any adhered nodes in both [0 ,5] and [end-5, end] ranges
