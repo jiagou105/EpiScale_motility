@@ -185,6 +185,7 @@ double computeCurvature(double& xpos1, double& ypos1, double& xpos2, double& ypo
 	dist23 = compDist2D(xpos2, ypos2, xpos3, ypos3);
 	areaA = (xpos2-xpos1)*(ypos3-ypos1) - (ypos2-ypos1)*(xpos3-xpos1);
 	curvature1 = 4*areaA/(dist12*dist13*dist23);
+	return curvature1;
 }
 
 /*
@@ -243,24 +244,26 @@ __device__
 bool isValidFilopDirection(uint& intnlIndxMemBegin, uint _maxMemNodePerCell, bool* _isActiveAddr, double* _locXAddr, double* _locYAddr,
 	double& cell_CenterX, double& cell_CenterY, double& randomAngleRd, int* _nodeAdhereIndexAddr, uint& activeMembrCount, uint _maxNodePerCell, double* _myosinLevelAddr){
 	uint membrNodeIndex;
-	double membrCenterAngle = 0;
+	// double membrCenterAngle = 0;
 	double membrNodeX;
 	double membrNodeY;
 	double membrCenterVecX=0;
 	double membrCenterVecY=0;
 	double membrCenterVecLen;
 	double cosMCandRdA;
-	double endMemActiveIndex;
-	double membrLeftNodeX;
-	double membrLeftNodeY;
+	// double endMemActiveIndex;
+	// double membrLeftNodeX;
+	// double membrLeftNodeY;
 	double largestCos1 = 0.02;
-	double largestCos2 = 0.01;
-	double dotP;
-	double dotPL;
-	uint tempLeftIndex;
-	uint tempRightIndex;
-	int cellIndex1, cellIndex11;
-	int cellIndex2, cellIndex21;
+	// double largestCos2 = 0.01;
+	// double dotP;
+	// double dotPL;
+	// uint tempLeftIndex;
+	// uint tempRightIndex;
+	// int cellIndex1;
+	int cellIndex11;
+	// int cellIndex2;
+	int cellIndex21;
 	uint tempindex1 = 0;
 	uint tempindex2 = 0;
 	for (membrNodeIndex=intnlIndxMemBegin; membrNodeIndex<intnlIndxMemBegin + activeMembrCount; membrNodeIndex++){
@@ -337,7 +340,8 @@ bool isTangFilopDirection(uint& intnlIndxMemBegin, bool* _isActiveAddr, double* 
 	// uint lowestAdhMemInd = 0;
 	// uint highestAdhMemInd = 0;
 	int count = 0;
-	int adhNodeIndex,adhCellIndex;
+	// int adhNodeIndex;
+	int adhCellIndex;
 	int adhCellType;
 	int intnlIndxMemBeginInt = (int) intnlIndxMemBegin;
 	int activeMembrCountInt = (int) activeMembrCount;
@@ -1034,7 +1038,7 @@ void SceCells::initCellInfoVecs_M() {
 	cellInfoVecs.cell_DppTkv.resize(allocPara_m.maxCellCount, 0.0);   //Alireza
 	cellInfoVecs.cell_pMad.resize(allocPara_m.maxCellCount, 0.0);   //Alireza
 	cellInfoVecs.cell_pMadOld.resize(allocPara_m.maxCellCount, 0.0);   //Alireza
-	cellInfoVecs.cell_Type.resize(allocPara_m.maxCellCount, 0);   //Alireza
+	cellInfoVecs.cell_Type.resize(allocPara_m.maxCellCount, 0); 
 	
         //cout<< "size of dpp in init is "<< cellInfoVecs.cell_Dpp.size() << endl ;          
 	cellInfoVecs.growthProgress.resize(allocPara_m.maxCellCount, 0.0); //A&A
@@ -1092,6 +1096,7 @@ void SceCells::initCellInfoVecs_M() {
 	cellInfoVecs.cellPolarY.resize(allocPara_m.maxCellCount, 0.0);
 	cellInfoVecs.cellPolarAngle.resize(allocPara_m.maxCellCount, 0.0);
 	cellInfoVecs.cellRadius.resize(allocPara_m.maxCellCount, 0.0); // avg distance between cell center to membrane nodes
+	cellInfoVecs.isCellAdh.resize(allocPara_m.maxCellCount, false);
 
 	// add the activation level of cells
 	cellInfoVecs.activationLevel.resize(allocPara_m.maxCellCount, 0);
@@ -1890,6 +1895,7 @@ void SceCells::runAllCellLogicsDisc_M(double dt, double Damp_Coef, double InitTi
 	updateActivationLevel();
 	distributeCellActivationLevel_M();
 	distributeCell_Type_M();
+	updateIsCellAdhCell();
 
 	applySceCellDisc_M();
 	// updateCellAdhIndex();
@@ -3967,6 +3973,7 @@ bool SceCells::decideIfGoingToRemove_M() {
 
 */
 
+// not used? 
 AniRawData SceCells::obtainAniRawData(AnimationCriteria& aniCri) {
 	uint activeCellCount = allocPara_m.currentActiveCellCount;
 	uint maxNodePerCell = allocPara_m.maxAllNodePerCell;
@@ -4146,13 +4153,15 @@ AniRawData SceCells::obtainAniRawData(AnimationCriteria& aniCri) {
 	return rawAniData;
 }
 
+
+
 AniRawData SceCells::obtainAniRawDataGivenCellColor(vector<double>& cellColors,
-		AnimationCriteria& aniCri, vector<double>& cellsPerimeter, vector <double> & cellsDppLevel) {   //AliE //apr 05
+		AnimationCriteria& aniCri, vector<double>& cellsPerimeter, vector <double> & cellsDppLevel) {   
         cout << "I am in obtainAniRawDataGivenCellColor start"<<endl; 
 	uint activeCellCount = allocPara_m.currentActiveCellCount;
 	uint maxNodePerCell = allocPara_m.maxAllNodePerCell;
 	uint maxMemNodePerCell = allocPara_m.maxMembrNodePerCell;
-	uint maxIntnlNodePerCell = maxNodePerCell-maxMemNodePerCell;
+	// uint maxIntnlNodePerCell = maxNodePerCell-maxMemNodePerCell;
 	uint beginIndx = allocPara_m.bdryNodeCount;
 	uint maxFilopPerCell = 5; // to be modified later
 	uint maxFilopCount = activeCellCount * maxFilopPerCell;
@@ -5759,7 +5768,7 @@ void SceCells::calCellArea() {
 
 
 
-
+// used to compute cell statistics data
 CellsStatsData SceCells::outputPolyCountData() {
        
         cout << " I am at begining of outpolycount"<< std::flush  ; 
@@ -6252,7 +6261,7 @@ void SceCells::applySceCellMyosin() {
 
 
 
-// 
+// not used
 void SceCells::applySigForce(std::vector<SigptStateV2>& sigPtVecV2) {
 	totalNodeCountForActiveCells = allocPara_m.currentActiveCellCount
 			* allocPara_m.maxAllNodePerCell;
@@ -6352,7 +6361,7 @@ void SceCells::calFluxWeightsMyosin() { // std::vector<double>& fluxWeightsVec
 	cout << "Start computing flux weights" << endl;
 	totalNodeCountForActiveCells = allocPara_m.currentActiveCellCount
 			* allocPara_m.maxAllNodePerCell;
-	uint totalActCellCount = allocPara_m.currentActiveCellCount;
+	// uint totalActCellCount = allocPara_m.currentActiveCellCount;
 	uint maxAllNodePerCell = allocPara_m.maxAllNodePerCell;
 	uint maxMemNodePerCell = allocPara_m.maxMembrNodePerCell;
 	uint maxIntnlNodePerCell = allocPara_m.maxIntnlNodePerCell;
@@ -6527,6 +6536,9 @@ void SceCells::calSceCellMyosin() {
 
 	double* fluxWeightsAddr = thrust::raw_pointer_cast(
 		&(nodes->getInfoVecs().fluxWeights[0]));
+	
+	bool* isCellAdhAddr =  thrust::raw_pointer_cast(
+            &(cellInfoVecs.isCellAdh[0]));
 	// double grthPrgrCriVal_M =growthAuxData.grthPrgrCriVal_M_Ori ; // for now constant  growthAuxData.grthProgrEndCPU
 	//		- growthAuxData.prolifDecay
 	//				* (growthAuxData.grthProgrEndCPU
@@ -6611,7 +6623,7 @@ void SceCells::calSceCellMyosin() {
 					+ totalNodeCountForActiveCells,
 			nodes->getInfoVecs().tempMyosinLevel.begin(), 
 			calSceCellMyosinDevice(maxAllNodePerCell, maxMemNodePerCell, maxIntnlNodePerCell, nodeLocXAddr,
-					nodeLocYAddr, nodeIsActiveAddr, myosinLevelAddr, myosinDiffusionThreshold, nodeAdhIdxAddr, fluxWeightsAddr, timeStep, timeNow));
+					nodeLocYAddr, nodeIsActiveAddr, myosinLevelAddr, myosinDiffusionThreshold, nodeAdhIdxAddr, isCellAdhAddr,fluxWeightsAddr, timeStep, timeNow));
 			thrust::copy(nodes->getInfoVecs().tempMyosinLevel.begin(),nodes->getInfoVecs().tempMyosinLevel.end(),nodes->getInfoVecs().myosinLevel.begin());
 			// nodes->getInfoVecs().myosinLevel = nodes->getInfoVecs().tempMyosinLevel;
 
@@ -6659,6 +6671,60 @@ void SceCells::updateActivationLevel() {
 			cellInfoVecs.activationLevel.begin(),
 			updateActivationLevelDevice(activeCellCount,maxMemNodePerCell,maxNodePerCell,nodeLocXAddr,nodeLocYAddr,nodeIsActiveAddr,nodeAdhIdxAddr,actLevelAddr,cellTypeAddr));
 }
+
+
+
+
+
+void SceCells::updateIsCellAdhCell() {
+	cout << "Update whether a cell has neighbors " << endl;
+	// cout << "Rd is " << temp_seed << " and Host rng is " << seed << endl;
+	// unsigned int seed = static_cast<unsigned int>(mixed);
+	uint activeCellCount = allocPara_m.currentActiveCellCount;
+
+ 	int* nodeAdhIdxAddr = thrust::raw_pointer_cast(
+            &(nodes->getInfoVecs().nodeAdhereIndex[0]));
+ 	uint* nodeActLevelAddr = thrust::raw_pointer_cast(
+            &(nodes->getInfoVecs().nodeActLevel[0]));
+	double timeNow = curTime;
+	double ddt = dt;
+
+	uint maxMemNodePerCell = allocPara_m.maxMembrNodePerCell;
+	uint maxNodePerCell = allocPara_m.maxAllNodePerCell;
+    bool* nodeIsActiveAddr = thrust::raw_pointer_cast(
+            &(nodes->getInfoVecs().nodeIsActive[0])); // 
+	int* cellTypeAddr = thrust::raw_pointer_cast(
+            &(cellInfoVecs.cell_Type[0]));
+	uint leaderRank = allocPara_m.leaderRank; // 
+	// uint leaderRank = nodes->getLeaderRank();
+	bool leaderExist = allocPara_m.leaderExist;
+	uint* cellActLevelAddr = thrust::raw_pointer_cast(
+        &(cellInfoVecs.activationLevel[0]));
+
+	thrust::counting_iterator<uint> iBegin(0);
+	thrust::counting_iterator<uint> iEnd(activeCellCount); // make sure not iterate on inactive cells already 
+	thrust::transform(
+			thrust::make_zip_iterator(
+					thrust::make_tuple(iBegin,
+							cellInfoVecs.activationLevel.begin(),
+							cellInfoVecs.activeMembrNodeCounts.begin(),
+							cellInfoVecs.cell_Type.begin(),
+							cellInfoVecs.isCellAdh.begin()
+							)),
+			thrust::make_zip_iterator(
+					thrust::make_tuple(
+							iEnd,
+							cellInfoVecs.activationLevel.begin() + activeCellCount,
+							cellInfoVecs.activeMembrNodeCounts.begin() + activeCellCount,
+							cellInfoVecs.cell_Type.begin() + activeCellCount,
+							cellInfoVecs.isCellAdh.begin() + activeCellCount
+							)),
+			cellInfoVecs.isCellAdh.begin(),
+			updateIsCellAdhCellDevice(ddt, timeNow, activeCellCount,
+			maxMemNodePerCell,maxNodePerCell, nodeIsActiveAddr,nodeAdhIdxAddr,
+			nodeActLevelAddr,cellTypeAddr,leaderRank,leaderExist,cellActLevelAddr));
+}
+
 
 
 
@@ -6819,7 +6885,8 @@ void SceCells::updateCellPolarLeader() {
 	// uint leaderRank = nodes->getLeaderRank();
 	uint* cellActLevelAddr = thrust::raw_pointer_cast(
         &(cellInfoVecs.activationLevel[0]));
-
+	bool* isCellAdhAddr = thrust::raw_pointer_cast(
+        &(cellInfoVecs.isCellAdh[0]));
 	thrust::counting_iterator<uint> iBegin(0);
 	thrust::counting_iterator<uint> iEnd(activeCellCount); // make sure not iterate on inactive cells already 
 	thrust::transform(
@@ -6848,7 +6915,7 @@ void SceCells::updateCellPolarLeader() {
 			updateCellPolarLeaderDevice(seed, ddt, timeNow, 
 			activeCellCount,cellCenterXAddr,cellCenterYAddr,cellRadiusAddr,
 			cellActiveFilopCountsAddr,maxMemNodePerCell,maxNodePerCell,nodeLocXAddr,nodeLocYAddr,
-			nodeIsActiveAddr,nodeAdhIdxAddr,nodeActLevelAddr,myosinLevelAddr,cellTypeAddr,leaderRank,cellPolarAngleAddr,cellActLevelAddr,myosinWeightAddr));
+			nodeIsActiveAddr,nodeAdhIdxAddr,nodeActLevelAddr,myosinLevelAddr,cellTypeAddr,leaderRank,cellPolarAngleAddr,cellActLevelAddr,isCellAdhAddr,myosinWeightAddr));
 }
 
 

@@ -717,6 +717,8 @@ void SceNodes::initValues_M(std::vector<bool>& initIsActive,
 
 }
 
+
+
 // not used
 VtkAnimationData SceNodes::obtainAnimationData(AnimationCriteria aniCri) {
 	VtkAnimationData vtkData;
@@ -943,6 +945,7 @@ VtkAnimationData SceNodes::obtainAnimationData(AnimationCriteria aniCri) {
 	return vtkData;
 }
 
+
 // TODO
 // not used 
 VtkAnimationData SceNodes::obtainAnimationData_M(AnimationCriteria aniCri) {
@@ -1047,6 +1050,8 @@ VtkAnimationData SceNodes::obtainAnimationData_M(AnimationCriteria aniCri) {
 
 	return vtkData;
 }
+
+
 
 // not used
 void SceNodes::findBucketBounds() {

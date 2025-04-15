@@ -234,6 +234,7 @@ void SimulationDomainGPU::outputVtkFilesWithCri(std::string scriptNameBase,
 	aniData.outputVtkAni(scriptNameBase, rank);
 }
 
+// not used? 
 void SimulationDomainGPU::outputVtkFilesWithCri_M(std::string scriptNameBase,
 	int rank, AnimationCriteria aniCri) {
 	nodes.prepareSceForceComputation();

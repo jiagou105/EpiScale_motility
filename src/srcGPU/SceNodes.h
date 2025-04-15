@@ -629,7 +629,7 @@ struct AddForceDisc_M: public thrust::unary_function<Tuuudd, CVec2> {
 		double dist;
         bool  Lennard_Jones =Is_Lennard_Jones() ; 
 		// compute the cell rank of the current node
-		uint cellRank = myValue/_maxNodePerOneCell;
+		// uint cellRank = myValue/_maxNodePerOneCell;
 		// if (cellRank == _leaderRank){
 		//		_curActLevelAddr[myValue] = 1;
 		//	}
@@ -726,7 +726,7 @@ struct updateNodeCCadhDevice: public thrust::unary_function<Int2, int> {
 		int otherNodeRank = thrust::get<1>(u3d2);
 
 
-		uint cellRank = curNodeRank/_maxNodePerOneCell;
+		// uint cellRank = curNodeRank/_maxNodePerOneCell;
 		// if (cellRank == _leaderRank){
 		//		_curActLevelAddr[curNodeRank] = 1;
 		//	}
@@ -824,7 +824,7 @@ struct ApplyAdh: public thrust::unary_function<BUUIIDD, CVec2> {
 		//bool adhSkipped = false;	
 		double alpha = getMitoticAdhCoef(growProg, growProgNeigh);//to adjust the mitotic values of stiffness
 		bool attLeader = 0;
-		int curCellIndex = nodeIndx/_maxNodePerCell;
+		// int curCellIndex = nodeIndx/_maxNodePerCell;
 		int adhCellIndex = adhIndx/(int) _maxNodePerCell;
 
 		// if (curCellIndex == _leaderRank || adhCellIndex == _leaderRank){attLeader = 1;} // avoid using leaderRank, bcs sometimes there is no leader, then leaderRank=0 is wrong
