@@ -1466,7 +1466,7 @@ __host__ __device__ calFluxWeightsMyosinDevice(uint maxNodePerCell,
 							fluxIndex = (nodeRank-_maxMemNodePerCell)*_maxIntnlNodePerCell+(nodeOtherIntlRank-_maxMemNodePerCell); // nodeRank row, nodeOtherIntlRank column
 							// if current node is farther compared with other node, and the myosin level of other node has not reached max yet
 							if (distNodes<distThrd && (minToMDist>_minToMDistAddr[nodeOtherIntlIndex]) &&  _minToMDistAddr[nodeOtherIntlIndex]<distThrd2 && _myosinLevelAddr[nodeOtherIntlIndex]<myosinMaxLevel && _myosinLevelAddr[index]>1e-6){ // && _myosinLevelAddr[nodeOtherIntlIndex]<myosinMaxLevel // minToMDist<distThrd2 &&
-								_fluxWeightsAddr[fluxIndex] = 0.5;// omega0 // flux from nodeIntlIndex1 to nodeOtherIntlRank //value controls flux rate
+								_fluxWeightsAddr[fluxIndex] = 1.5;// omega0 // flux from nodeIntlIndex1 to nodeOtherIntlRank //value controls flux rate
 								// sumFlux = sumFlux + _fluxWeightsAddr[fluxIndex]; // sum up flux weights in the nodeRank row
 							} else {
 								_fluxWeightsAddr[fluxIndex] = 0;
@@ -1765,7 +1765,7 @@ struct calSceCellMyosinDevice: public thrust::unary_function<UUDDUUDDDi, double>
 		// double countMemNeighbor = 0;
 		// double minDist = 100;
 		// double distNodeCenter=0;
-		double distThresholdM = 1;
+		double distThresholdM = 0.7;
 		// double minDistIntl = 10;
 		double tempdistMI = 0;
 		double tempNodeMyosin = 0;
@@ -1791,7 +1791,7 @@ struct calSceCellMyosinDevice: public thrust::unary_function<UUDDUUDDDi, double>
 			if(count>0) {
 				nodeMyosin = tempNodeMyosin/(count*1.0);
 			} else{
-				nodeMyosin = 0;
+				nodeMyosin = 0; // for membraning nodes no neighboring any interior nodes, set the nodemyosin to zero
 			}
 			
 				/*
@@ -2311,7 +2311,8 @@ struct updateCellPolarLeaderDevice: public thrust::unary_function<UUUIDDDD, doub
 		int curRank,nextRank,curIndex,nextIndex,stNode,endNode,stNodeRecord,endNodeRecord;
 		// int midNodeIndex;
 		int midNodeRank;
-		int curLen, maxLen;
+		int curLen;
+		int maxLen=0;
 		int index_left,index_right;
 		uint nodeIndex;
 		double normX, normY;
@@ -2332,10 +2333,10 @@ struct updateCellPolarLeaderDevice: public thrust::unary_function<UUUIDDDD, doub
 				if (_isCellAdhAddr[cellRank]==false){
 					return randomNoiseAngle;
 				}
-				for (int memNodeRank=0; memNodeRank<_maxMemNodePerCell;memNodeRank++){
+				for (int memNodeRank=0; memNodeRank<activeMembrCount;memNodeRank++){
 				nodeIndex = cellRank*_maxNodePerCell + memNodeRank;
 				if (_isActiveAddr[nodeIndex]&&_nodeAdhereIndexAddr[nodeIndex]>-1){
-						flag = true; // leader is attached to a follower, find the first node that is attached
+						flag = true; // check if the leader is attached to a follower, find the first node that is attached
 						break;
 					}
 				}
@@ -2394,7 +2395,7 @@ struct updateCellPolarLeaderDevice: public thrust::unary_function<UUUIDDDD, doub
 			// stNodeRank = stNodeRecord - (int) intnlIndxMemBegin;
 			// endNodeRank = endNodeRecord - (int) intnlIndxMemBegin;
 			if (endNodeRecord<stNodeRecord) {
-				midNodeRank = (stNodeRecord+ endNodeRecord+ (int)activeMembrCount)/2; //(int)activeMembrCount-1; 
+				midNodeRank = (int) (stNodeRecord+ endNodeRecord+ (int)activeMembrCount)/2; //(int)activeMembrCount-1; 
 				if (midNodeRank>= (int) activeMembrCount) {midNodeRank=midNodeRank-(int)activeMembrCount;} //
 			} else {
 				midNodeRank = (int) (stNodeRecord+endNodeRecord)/2;
@@ -2422,22 +2423,25 @@ struct updateCellPolarLeaderDevice: public thrust::unary_function<UUUIDDDD, doub
 
 			double isInsideIntv;
 			double kdecay = 0.1;
-			for (int memNodeRank=0; memNodeRank<_maxMemNodePerCell;memNodeRank++){
+			for (int memNodeRank=0; memNodeRank<activeMembrCount;memNodeRank++){
 				nodeIndex = cellRank*_maxNodePerCell + memNodeRank;
 				if (_isActiveAddr[nodeIndex]){
 					if (endNodeRecord<stNodeRecord){
 						if (stNodeRecord<=memNodeRank || memNodeRank<=endNodeRecord){
-							isInsideIntv = 1;}
+							if (_nodeAdhereIndexAddr[nodeIndex]==-1){
+							isInsideIntv = 1;} else {isInsideIntv = 0;}
+							}
 						else {isInsideIntv = 0;}
 							
 					} else {
 						if (memNodeRank>=stNodeRecord && memNodeRank<=endNodeRecord){
-							isInsideIntv = 1;
+							if (_nodeAdhereIndexAddr[nodeIndex]==-1){
+							isInsideIntv = 1;} else {isInsideIntv = 0;}
 						} else {
 							isInsideIntv = 0;
 						}
 					}
-					_myosinWeightAddr[nodeIndex] = _myosinWeightAddr[nodeIndex]+_timeStep*(-kdecay*_myosinWeightAddr[nodeIndex]+isInsideIntv);
+					_myosinWeightAddr[nodeIndex] = 0;//_myosinWeightAddr[nodeIndex]+_timeStep*(-kdecay*_myosinWeightAddr[nodeIndex]+isInsideIntv);
 					if (_myosinWeightAddr[nodeIndex]<1e-6)
 					{
 						_myosinWeightAddr[nodeIndex] = 0;

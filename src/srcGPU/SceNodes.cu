@@ -2627,7 +2627,7 @@ void SceNodes::allocSpaceForNodes(uint maxTotalNodeCount, uint maxIntnlNodeCount
 
 		infoVecs.nodeActLevel.resize(maxTotalNodeCount,0);
 		infoVecs.nodeCell_Type.resize(maxTotalNodeCount,0);
-		infoVecs.myosinWeight.resize(maxTotalNodeCount,1);
+		infoVecs.myosinWeight.resize(maxTotalNodeCount,0);
 
 		auxVecs.bucketKeys.resize(maxTotalNodeCount);
 		auxVecs.bucketValues.resize(maxTotalNodeCount);
