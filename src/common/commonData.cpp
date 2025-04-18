@@ -260,10 +260,10 @@ void VtkAnimationData::outputVtkAni(std::string scriptNameBase, int rank) { //ap
 		}
 	fs << std::endl;
 
-	fs << "SCALARS minToMDist float" << endl;
+	fs << "SCALARS minToAdhDist float" << endl;
 	fs << "LOOKUP_TABLE default" << endl;
 		for (uint i = 0; i < pointsAniData.size(); i++) {
-			fs << pointsAniData[i].minToMDist1 << endl;
+			fs << pointsAniData[i].minToAdhDist1 << endl;
 		}
 	fs << std::endl;
 

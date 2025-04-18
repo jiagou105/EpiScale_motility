@@ -2615,7 +2615,8 @@ void SceNodes::allocSpaceForNodes(uint maxTotalNodeCount, uint maxIntnlNodeCount
 		infoVecs.membrBendRightY.resize(maxTotalNodeCount, 0);
 		infoVecs.actinForceX.resize(maxTotalNodeCount,0);
 		infoVecs.actinForceY.resize(maxTotalNodeCount,0);
-		infoVecs.minToMDist.resize(maxTotalNodeCount,0);
+		infoVecs.minToAdhDist.resize(maxTotalNodeCount,0);
+		infoVecs.nodePolar.resize(maxTotalNodeCount,0);
 		infoVecs.cenToAdhMDist.resize(maxTotalNodeCount,0);
 		infoVecs.fluxWeights.resize(maxIntnlNodeCountPerCell*maxIntnlNodeCountPerCell,0);
 		infoVecs.myosinLevel.resize(maxTotalNodeCount,0);

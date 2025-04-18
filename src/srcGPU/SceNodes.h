@@ -996,7 +996,8 @@ public:
 	thrust::device_vector<double> actinForceX;
 	thrust::device_vector<double> actinForceY;
 
-	thrust::device_vector<double> minToMDist;
+	thrust::device_vector<double> minToAdhDist;
+	thrust::device_vector<double> nodePolar;
 	thrust::device_vector<double> cenToAdhMDist;
 	thrust::device_vector<double> fluxWeights;
 
