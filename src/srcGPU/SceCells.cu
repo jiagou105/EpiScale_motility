@@ -4204,6 +4204,7 @@ AniRawData SceCells::obtainAniRawDataGivenCellColor(vector<double>& cellColors,
 	thrust::host_vector<double> hostFilopAngle(maxFilopCount);
 	thrust::host_vector<int> hostAdhNodeIndex(maxActiveNode);
 	thrust::host_vector<double> hostMinToAdhDist(maxActiveNode);
+	thrust::host_vector<double> hostNodePolar(maxActiveNode);
 	thrust::host_vector<double> hostFluxWeights = nodes->getInfoVecs().fluxWeights;
 
 	thrust::host_vector<double> hostCellCenterX(activeCellCount);
@@ -4255,7 +4256,8 @@ AniRawData SceCells::obtainAniRawDataGivenCellColor(vector<double>& cellColors,
 							nodes->getInfoVecs().myosinWeight.begin(),
 							nodes->getInfoVecs().nodeActLevel.begin(),
 							nodes->getInfoVecs().nodeAdhereIndex.begin(),
-							nodes->getInfoVecs().minToAdhDist.begin()
+							nodes->getInfoVecs().minToAdhDist.begin(),
+							nodes->getInfoVecs().nodePolar.begin()
 							)),
 			thrust::make_zip_iterator(
 					thrust::make_tuple(
@@ -4265,13 +4267,14 @@ AniRawData SceCells::obtainAniRawDataGivenCellColor(vector<double>& cellColors,
 							nodes->getInfoVecs().myosinWeight.begin(),
 							nodes->getInfoVecs().nodeActLevel.begin(),
 							nodes->getInfoVecs().nodeAdhereIndex.begin(),
-							nodes->getInfoVecs().minToAdhDist.begin()
+							nodes->getInfoVecs().minToAdhDist.begin(),
+							nodes->getInfoVecs().nodePolar.begin()
 							))
 					+ maxActiveNode,
 			thrust::make_zip_iterator(
 					thrust::make_tuple(
 							hostTmpVectorF_MI_M_T.begin(), hostTmpVectorF_MI_M_N.begin(), hostMyosinLevel.begin(), hostMyosinWeight.begin(),
-							hostActLevel.begin(),hostAdhNodeIndex.begin(),hostMinToAdhDist.begin()
+							hostActLevel.begin(),hostAdhNodeIndex.begin(),hostMinToAdhDist.begin(),hostNodePolar.begin()
 							)));
 
 	thrust::copy(
@@ -4410,6 +4413,7 @@ AniRawData SceCells::obtainAniRawDataGivenCellColor(vector<double>& cellColors,
 				rawAniData.adhSiteCount.push_back(tempAdhSiteCount);
 				rawAniData.adhNodeIndex.push_back(tempAdhNodeIndex);
 				rawAniData.minToAdhDist.push_back(hostMinToAdhDist[index1]);
+				rawAniData.nodePolar.push_back(hostNodePolar[index1]);
 				rawAniData.fluxWeights.push_back(0);
 				rawAniData.aniCellRank.push_back(i);
 				rawAniData.aniNodeRank.push_back(index1);
@@ -4456,6 +4460,7 @@ AniRawData SceCells::obtainAniRawDataGivenCellColor(vector<double>& cellColors,
 				rawAniData.adhNodeIndex.push_back(tempAdhNodeIndex);
 				rawAniData.adhSiteCount.push_back(tempAdhSiteCount);
 				rawAniData.minToAdhDist.push_back(hostMinToAdhDist[index1]);
+				rawAniData.nodePolar.push_back(hostNodePolar[index1]);
 				rawAniData.aniCellRank.push_back(i);
 				rawAniData.aniNodeRank.push_back(index1);
 				}
@@ -4980,6 +4985,7 @@ VtkAnimationData SceCells::outputVtkData(AniRawData& rawAniData,
 		ptAniData.adhSiteCount1= rawAniData.adhSiteCount[i];
 		ptAniData.adhNodeIndex1= rawAniData.adhNodeIndex[i];
 		ptAniData.minToAdhDist1= rawAniData.minToAdhDist[i];
+		ptAniData.nodePolar1= rawAniData.nodePolar[i];
 		vtkData.pointsAniData.push_back(ptAniData);
 	}
 	// vtk file one 
@@ -6455,7 +6461,7 @@ void SceCells::calFluxWeightsMyosin() { // std::vector<double>& fluxWeightsVec
 				thrust::make_zip_iterator(
 					thrust::make_tuple(
 						nodes->getInfoVecs().minToAdhDist.begin(), 
-						nodes->getInfoVecs().cenToAdhMDist.begin())),
+						nodes->getInfoVecs().minToMemDist.begin())),
 		updateMinToAdhDistDevice_NEEDUPDATE(maxAllNodePerCell, maxMemNodePerCell, nodeLocXAddr,
 				nodeLocYAddr, nodeIsActiveAddr, nodeAdhIdxAddr));
 	
@@ -6483,7 +6489,7 @@ void SceCells::calFluxWeightsMyosin() { // std::vector<double>& fluxWeightsVec
 									make_transform_iterator(iBegin1,
 											DivideFunctor(maxAllNodePerCell))),
 							nodes->getInfoVecs().minToAdhDist.begin(),
-							nodes->getInfoVecs().cenToAdhMDist.begin()
+							nodes->getInfoVecs().minToMemDist.begin()
 							)),
 			thrust::make_zip_iterator(
 					thrust::make_tuple(
@@ -6504,7 +6510,7 @@ void SceCells::calFluxWeightsMyosin() { // std::vector<double>& fluxWeightsVec
 									make_transform_iterator(iBegin1,
 											DivideFunctor(maxAllNodePerCell))),
 							nodes->getInfoVecs().minToAdhDist.begin(),
-							nodes->getInfoVecs().cenToAdhMDist.begin()
+							nodes->getInfoVecs().minToMemDist.begin()
 							))
 					+ totalNodeCountForActiveCells,
 			nodes->getInfoVecs().minToAdhDist.begin(), 
@@ -6613,7 +6619,7 @@ void SceCells::updateMinToAdhDist() { // std::vector<double>& fluxWeightsVec
 				thrust::make_zip_iterator(
 					thrust::make_tuple(
 						nodes->getInfoVecs().minToAdhDist.begin(), 
-						nodes->getInfoVecs().cenToAdhMDist.begin(),
+						nodes->getInfoVecs().minToMemDist.begin(),
 						nodes->getInfoVecs().nodePolar.begin())),
 		updateMinToAdhDistDevice(maxAllNodePerCell, maxMemNodePerCell, nodeLocXAddr,
 				nodeLocYAddr, nodeIsActiveAddr, nodeAdhIdxAddr, myosinLevelAddr));
@@ -7381,6 +7387,8 @@ void SceCells::calSubAdhForce() {
 		&(nodes->getInfoVecs().subAdhIsBound[0])); 
 	uint* nodeActLevelAddr = thrust::raw_pointer_cast(
             &(nodes->getInfoVecs().nodeActLevel[0]));
+	double* minToAdhDistAddr = thrust::raw_pointer_cast(
+            &(nodes->getInfoVecs().minToAdhDist[0]));
 
 	uint* cellActLevelAddr = thrust::raw_pointer_cast(
         &(cellInfoVecs.activationLevel[0]));
@@ -7469,6 +7477,7 @@ void SceCells::calSubAdhForce() {
                             //                DivideFunctor(maxAllNodePerCell)))
 							))
 					+ totalNodeCountForActiveCells,
+					nodes->getInfoVecs().nodePolar.begin(),
 			thrust::make_zip_iterator(
 					thrust::make_tuple(nodes->getInfoVecs().nodeVelX.begin(),
 							   nodes->getInfoVecs().nodeVelY.begin()

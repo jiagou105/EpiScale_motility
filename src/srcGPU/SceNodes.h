@@ -998,7 +998,7 @@ public:
 
 	thrust::device_vector<double> minToAdhDist;
 	thrust::device_vector<double> nodePolar;
-	thrust::device_vector<double> cenToAdhMDist;
+	thrust::device_vector<double> minToMemDist;
 	thrust::device_vector<double> fluxWeights;
 
 	thrust::device_vector<double> myosinLevel;

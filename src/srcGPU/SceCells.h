@@ -1286,41 +1286,46 @@ __host__ __device__ updateMinToAdhDistDevice(uint maxNodePerCell,
 
 		uint index = cellRank * _maxNodePerCell + nodeRank;
 		uint nodeMembrIndex;
-		uint tempIndex;
-		double tempMinDist = 100.0;
+		uint tempMemIndex;
+		double tempMinToMemDist = 100.0;
+		double tempMinToAdhDist = 100.0;
 		double nodeX = _locXAddr[index];
 		double nodeY = _locYAddr[index];
 		double nodeMembrX, nodeMembrY;
-		double tempNodeX, tempNodeY;
+		double tempMemNodeX, tempMemNodeY;
 		// double nodeMemVecX, nodeMemVecY, lenNodeMem;
-		double memCenterX, memCenterY, lenMemCenter;
+		// double memCenterX, memCenterY, lenMemCenter;
 		// double projLen;
 		double distNodes=200.0;
 		minToAdhDist = 100.0;
-		double myosinThrd = 0.3; // change depending on value
+		double minToMemDist;
+		double myosinThrd = 0.31; // change depending on value
 
 		if (cell_Type==1){ // means leader
 			if (nodeRank>=_maxMemNodePerCell){ // means an internal node, note the greater than or equal to // did not check if the internal node is active or not
 				for (uint nodeMembrRank=0; nodeMembrRank<_maxMemNodePerCell; nodeMembrRank++){
 					nodeMembrIndex = cellRank * _maxNodePerCell + nodeMembrRank; // absolute index
-					if (_isActiveAddr[nodeMembrIndex]&& _isActiveAddr[index]){ //090324
-						if (_nodeAdhereIndexAddr[nodeMembrIndex]>-1){
-							nodeMembrX = _locXAddr[nodeMembrIndex];
-							nodeMembrY = _locYAddr[nodeMembrIndex];
-							distNodes = compDist2D(nodeX,nodeY,nodeMembrX,nodeMembrY);
-							if (distNodes<tempMinDist){
-							tempMinDist = distNodes;
-							tempNodeX = nodeMembrX;
-							tempNodeY = nodeMembrY; 
-							tempIndex = nodeMembrIndex;
+					if (_isActiveAddr[nodeMembrIndex]&& _isActiveAddr[index]){ 
+						nodeMembrX = _locXAddr[nodeMembrIndex];
+						nodeMembrY = _locYAddr[nodeMembrIndex];
+						distNodes = compDist2D(nodeX,nodeY,nodeMembrX,nodeMembrY);
+						if (distNodes<tempMinToMemDist){
+							tempMinToMemDist = distNodes;
+							tempMemNodeX = nodeMembrX;
+							tempMemNodeY = nodeMembrY; 
+							tempMemIndex = nodeMembrIndex;
+						}
+						if (_nodeAdhereIndexAddr[nodeMembrIndex]>-1){ // compute min to cell-cell adhesion or contact line distance
+							if (distNodes<tempMinToAdhDist){
+							tempMinToAdhDist = distNodes;
 							}
 						}
 					}
 				}
-				if (distNodes>0){
-					double nodePolarX = nodeMembrX - nodeX;
-					double nodePolarY = nodeMembrY - nodeY;
-					if (_myosinLevelAddr[nodeMembrIndex]<myosinThrd){
+				if (tempMinToMemDist>0){
+					double nodePolarX = tempMemNodeX - nodeX;
+					double nodePolarY = tempMemNodeY - nodeY;
+					if (_myosinLevelAddr[tempMemIndex]<=myosinThrd){
 						nodePolar = atan2(nodePolarY,nodePolarX);
 					} else {
 						nodePolar = atan2(-nodePolarY,-nodePolarX);
@@ -1329,12 +1334,13 @@ __host__ __device__ updateMinToAdhDistDevice(uint maxNodePerCell,
 
 				// nodeMemVecX = tempNodeX - nodeX;
 				// nodeMemVecY = tempNodeY - nodeY;
-				memCenterX = tempNodeX - cellCenterX; // depending on choice of cell center !!!
-				memCenterY = tempNodeY - cellCenterY;
+				// memCenterX = tempNodeX - cellCenterX; // depending on choice of cell center !!!
+				// memCenterY = tempNodeY - cellCenterY;
 				// lenNodeMem = sqrt(nodeMemVecX*nodeMemVecX + nodeMemVecY*nodeMemVecY);
-				lenMemCenter = sqrt(memCenterX * memCenterX + memCenterY * memCenterY);
+				// lenMemCenter = sqrt(memCenterX * memCenterX + memCenterY * memCenterY);
 				// projLen = (nodeMemVecX*memCenterX + nodeMemVecY*memCenterY)/lenMemCenter; // projection along center-membrane connection
-				minToAdhDist = tempMinDist; // if no contact with followers, minToDist is set to be 100.
+				minToAdhDist = tempMinToAdhDist; // if no contact with followers, minToDist is set to be 100.
+				minToMemDist = tempMinToMemDist;
 				// minToAdhDistRaw = tempMinDist;
 			} else { // means membrane nodes of the leader, set direction to be normal direction 
 				int index_left = nodeRank - 1;
@@ -1352,10 +1358,9 @@ __host__ __device__ updateMinToAdhDistDevice(uint maxNodePerCell,
 				double normX = -(_locYAddr[index_left] - _locYAddr[index_right] ); // get normal vector pointing to the direction with lowest myosin level
 				double normY = _locXAddr[index_left] - _locXAddr[index_right]; 
 				nodePolar =  atan2(normY,normX); 
-
 			}
 		}
-		return thrust::make_tuple(minToAdhDist, lenMemCenter,nodePolar); 
+		return thrust::make_tuple(minToAdhDist,minToMemDist,nodePolar); 
 	}
 };
 
@@ -1973,6 +1978,7 @@ struct calSceCellMyosin2Device: public thrust::unary_function<UUDDUUDDDi, double
 			return nodeMyosin; 
 		}
 		if (_isCellAdhAddr[cellRank]==false){
+			nodeMyosin = 0.3;
 			return nodeMyosin;
 		}
 		// uint intnlIndxMemBegin = cellRank * _maxNodePerCell;
@@ -2017,8 +2023,6 @@ struct calSceCellMyosin2Device: public thrust::unary_function<UUDDUUDDDi, double
 		if (nodeRank < _maxMemNodePerCell) {
 			// means membrane node 
 			if (cell_Type == 1 ){ // means leader 
-			
-			
 			for (uint tempNodeRank=intnlIndxBegin; tempNodeRank<intnlIndxEnd;tempNodeRank++){ // internal nodes
 				if (_isActiveAddr[tempNodeRank]==true) {
 					nodeXTemp = _locXAddr[tempNodeRank];
@@ -3076,7 +3080,7 @@ struct calSubAdhForceDevice: public thrust::unary_function<UUDDUUDDD, CVec2> {
 
 
 
-struct calSubAdhForceDevice: public thrust::unary_function<UIUDDUUDDD, CVec2> {
+struct calSubAdhForceDevice: public thrust::binary_function<UIUDDUUDDD, double, CVec2> {
 	uint _maxNodePerCell;
 	uint _maxMemNodePerCell;
 	double* _locXAddr;
@@ -3107,7 +3111,7 @@ struct calSubAdhForceDevice: public thrust::unary_function<UIUDDUUDDD, CVec2> {
 					_cellActLevelAddr(cellActLevelAddr), _seed(seed), _nodeActLevelAddr(nodeActLevelAddr), _cellPolarAngleAddr(cellPolarAngleAddr)  {
 	}
 	// comment prevents bad formatting issues of __host__ and __device__ in Nsight
-	__device__ CVec2 operator()(const UIUDDUUDDD &cData) const {
+	__device__ CVec2 operator()(const UIUDDUUDDD &cData, const double &nodePolar) const {
 		uint activeMembrCount = thrust::get<0>(cData); // change here 
 		int cellType = thrust::get<1>(cData);	
 		uint activeIntnlCount = thrust::get<2>(cData);
@@ -3179,7 +3183,7 @@ struct calSubAdhForceDevice: public thrust::unary_function<UIUDDUUDDD, CVec2> {
 		if (cellType != 1 && _nodeActLevelAddr[index]>0){kAdh = 1;}
 		if (cellType == 1){kAdh=1;} // for leader
 		if (cellType == 1){// including leader cell and cells adhere to it //_cellActLevelAddr[cellRank] == 1
-			maxSubSitePerNode = 5;
+			maxSubSitePerNode = 10;
 		} else {
 			maxSubSitePerNode = 10;
 		}
@@ -3226,7 +3230,7 @@ struct calSubAdhForceDevice: public thrust::unary_function<UIUDDUUDDD, CVec2> {
 					randomN3 = u01(rng);
 					if (cellType == 1) {
 						// randAngle = u01(rng)*twoPi;
-						randAngle = curCellAngle;// + (2.0*u01(rng)-1.0)*twoPi/4.0;
+						randAngle = nodePolar;// + (2.0*u01(rng)-1.0)*twoPi/4.0;
 						}
 					else {
 						randAngle = curCellAngle;// + (2.0*u01(rng)-1.0)*twoPi/4.0; // towards the direction of cell polarity 
