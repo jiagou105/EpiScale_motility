@@ -1015,7 +1015,7 @@ struct applySceCellDisc_MDevice: public thrust::unary_function<CellData, CVec4> 
 		double nodeXOther, nodeYOther;
 		// means membrane node // membrane node first
 		//Because we want to compute the force on the membrane nodes we modify this function 
-		if (nodeRank < _maxMemNodePerCell) {
+		if (nodeRank < _maxMemNodePerCell) {// force on membrane node? 
 			for (index_other = intnlIndxBegin; index_other < intnlIndxEnd;
 					index_other++) {
 				nodeXOther = _locXAddr[index_other];
@@ -1285,6 +1285,8 @@ __host__ __device__ updateMinToAdhDistDevice(uint maxNodePerCell,
 		double nodePolar = thrust::get<8>(cData);
 
 		uint index = cellRank * _maxNodePerCell + nodeRank;
+		uint intnlIndxBegin = cellRank * _maxNodePerCell + _maxMemNodePerCell;
+		uint intnlIndxEnd = intnlIndxBegin + activeIntnlCount;
 		uint nodeMembrIndex;
 		uint tempMemIndex;
 		double tempMinToMemDist = 100.0;
@@ -1293,6 +1295,8 @@ __host__ __device__ updateMinToAdhDistDevice(uint maxNodePerCell,
 		double nodeY = _locYAddr[index];
 		double nodeMembrX, nodeMembrY;
 		double tempMemNodeX, tempMemNodeY;
+		double nodeTempX, nodeTempY;
+		double tempdistMI;
 		// double nodeMemVecX, nodeMemVecY, lenNodeMem;
 		// double memCenterX, memCenterY, lenMemCenter;
 		// double projLen;
@@ -1300,6 +1304,8 @@ __host__ __device__ updateMinToAdhDistDevice(uint maxNodePerCell,
 		minToAdhDist = 100.0;
 		double minToMemDist;
 		double myosinThrd = 0.31; // change depending on value
+		double distThrd = 0.7;
+		int retractFlag = 0;
 
 		if (cell_Type==1){ // means leader
 			if (nodeRank>=_maxMemNodePerCell){ // means an internal node, note the greater than or equal to // did not check if the internal node is active or not
@@ -1325,7 +1331,7 @@ __host__ __device__ updateMinToAdhDistDevice(uint maxNodePerCell,
 				if (tempMinToMemDist>0){
 					double nodePolarX = tempMemNodeX - nodeX;
 					double nodePolarY = tempMemNodeY - nodeY;
-					if (_myosinLevelAddr[tempMemIndex]<=myosinThrd){
+					if (_nodeAdhereIndexAddr[tempMemIndex]==-1){ // or equals -1, if the closest membrane node is not adhered, outward, 
 						nodePolar = atan2(nodePolarY,nodePolarX);
 					} else {
 						nodePolar = atan2(-nodePolarY,-nodePolarX);
@@ -1355,9 +1361,26 @@ __host__ __device__ updateMinToAdhDistDevice(uint maxNodePerCell,
 				}
 				index_right = index_right + cellRank * _maxNodePerCell;
 				// 
-				double normX = -(_locYAddr[index_left] - _locYAddr[index_right] ); // get normal vector pointing to the direction with lowest myosin level
-				double normY = _locXAddr[index_left] - _locXAddr[index_right]; 
-				nodePolar =  atan2(normY,normX); 
+				double normX = (_locYAddr[index_left] - _locYAddr[index_right] ); 
+				double normY = -(_locXAddr[index_left] - _locXAddr[index_right]); 
+				// nodePolar =  atan2(normY,normX); 
+
+			if (_nodeAdhereIndexAddr[index]==-1) {retractFlag = 1;}
+			else {
+				for (uint tempNodeRank=intnlIndxBegin; tempNodeRank<intnlIndxEnd;tempNodeRank++){ // internal nodes
+					if (_isActiveAddr[tempNodeRank]){ 
+						nodeTempX = _locXAddr[tempNodeRank];
+						nodeTempY = _locYAddr[tempNodeRank];
+						tempdistMI = compDist2D(nodeX,nodeY,nodeTempX,nodeTempY);
+						if (tempdistMI<distThrd && _myosinLevelAddr[tempNodeRank]>myosinThrd) {retractFlag = 1;break;}
+					}
+				}
+			}
+			if (retractFlag==0){
+				nodePolar = atan2(normY,normX);
+				} else {
+				nodePolar = atan2(-normY,-normX);
+			}
 			}
 		}
 		return thrust::make_tuple(minToAdhDist,minToMemDist,nodePolar); 
@@ -1545,6 +1568,7 @@ __host__ __device__ calFluxWeightsMyosinDevice(uint maxNodePerCell,
 /*
 // update the myosin level based on diffusion of myosin 
 // old name: updateCellMyosin
+// not used 
 struct calSceCellMyosinDevice: public thrust::unary_function<UUDDUUDDDi, double> {
 	uint _maxNodePerCell;
 	uint _maxMemNodePerCell;
@@ -2032,9 +2056,10 @@ struct calSceCellMyosin2Device: public thrust::unary_function<UUDDUUDDDi, double
 				}
 			}
 			if(count>0) {
-				nodeMyosin = tempNodeMyosin/(count*1.0);
+				// nodeMyosin = tempNodeMyosin/(count*1.0);
+				nodeMyosin = 0.2;
 			} else{
-				nodeMyosin = 0; // for membraning nodes no neighboring any interior nodes, set the nodemyosin to zero
+				nodeMyosin = 0.2; // for membraning nodes no neighboring any interior nodes, set the nodemyosin to zero
 			}
 			
 				/*
@@ -2905,7 +2930,8 @@ struct calCellRadius: public thrust::unary_function<UiDDU, double> {
 
 
 // four binding grids, not randomly permuted 
-/*
+// not used 
+/* 
 struct calSubAdhForceDevice: public thrust::unary_function<UUDDUUDDD, CVec2> {
 	uint _maxNodePerCell;
 	uint _maxMemNodePerCell;
