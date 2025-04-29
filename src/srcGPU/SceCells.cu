@@ -1308,7 +1308,7 @@ void SceCells::initialize_M(SceNodes* nodesInput, std::vector<double> &initCellR
 	//std::cout << "break point 8 " << std::endl;
 	//std::cout.flush();
 	allocPara_m.leaderExist = false;
-	allocPara_m.leaderRank = 0;
+	allocPara_m.leaderRank = 13;
 	for (uint cellRank=0; cellRank<allocPara_m.currentActiveCellCount; cellRank++)
     {
         if (initCellRadii[cellRank]>2.0){ // 1 is leader // do not change the randii threshold from 2 to 3, it will not detect leader in this case
@@ -1906,15 +1906,19 @@ void SceCells::runAllCellLogicsDisc_M(double dt, double Damp_Coef, double InitTi
 		calSceCellMyosin();
 		calSubAdhForce(); // comment out end 
 	} else if (ruleNum==3){
-		// calFluxWeightsMyosin();
-		// calSceCellMyosin();
-		updateMinToAdhDist();
-		calSceCellMyosin2(); // high myosin near contact line 
+		calFluxWeightsMyosin();
+		calSceCellMyosin();
+		// updateMinToAdhDist();
+		// calSceCellMyosin2(); // high myosin near contact line 
 		// updateCellPolarLeader();
 		// updateCellPolarLeader2();// update the preferred direction for each node 
 		// applySceCellMyosin();
 		// applySigForce(sigPtVecV2);
 		calSubAdhForce(); // comment out end 
+	} else if (ruleNum == 4){
+		updateMinToAdhDist();
+		calSceCellMyosin2(); // high myosin near contact line 
+		calSubAdhForce(); // 
 	}
 	std::cout << "     *** 3 ***" << endl;
 	std::cout.flush();
@@ -4205,6 +4209,8 @@ AniRawData SceCells::obtainAniRawDataGivenCellColor(vector<double>& cellColors,
 	thrust::host_vector<int> hostAdhNodeIndex(maxActiveNode);
 	thrust::host_vector<double> hostMinToAdhDist(maxActiveNode);
 	thrust::host_vector<double> hostNodePolar(maxActiveNode);
+	thrust::host_vector<double> hostTmpVectorFcellsubX(maxActiveNode);
+	thrust::host_vector<double> hostTmpVectorFcellsubY(maxActiveNode);
 	thrust::host_vector<double> hostFluxWeights = nodes->getInfoVecs().fluxWeights;
 
 	thrust::host_vector<double> hostCellCenterX(activeCellCount);
@@ -4257,7 +4263,9 @@ AniRawData SceCells::obtainAniRawDataGivenCellColor(vector<double>& cellColors,
 							nodes->getInfoVecs().nodeActLevel.begin(),
 							nodes->getInfoVecs().nodeAdhereIndex.begin(),
 							nodes->getInfoVecs().minToAdhDist.begin(),
-							nodes->getInfoVecs().nodePolar.begin()
+							nodes->getInfoVecs().nodePolar.begin(),
+							nodes->getInfoVecs().FcellsubX.begin(),
+							nodes->getInfoVecs().FcellsubY.begin()
 							)),
 			thrust::make_zip_iterator(
 					thrust::make_tuple(
@@ -4268,13 +4276,16 @@ AniRawData SceCells::obtainAniRawDataGivenCellColor(vector<double>& cellColors,
 							nodes->getInfoVecs().nodeActLevel.begin(),
 							nodes->getInfoVecs().nodeAdhereIndex.begin(),
 							nodes->getInfoVecs().minToAdhDist.begin(),
-							nodes->getInfoVecs().nodePolar.begin()
+							nodes->getInfoVecs().nodePolar.begin(),
+							nodes->getInfoVecs().FcellsubX.begin(),
+							nodes->getInfoVecs().FcellsubY.begin()
 							))
 					+ maxActiveNode,
 			thrust::make_zip_iterator(
 					thrust::make_tuple(
 							hostTmpVectorF_MI_M_T.begin(), hostTmpVectorF_MI_M_N.begin(), hostMyosinLevel.begin(), hostMyosinWeight.begin(),
-							hostActLevel.begin(),hostAdhNodeIndex.begin(),hostMinToAdhDist.begin(),hostNodePolar.begin()
+							hostActLevel.begin(),hostAdhNodeIndex.begin(),hostMinToAdhDist.begin(),hostNodePolar.begin(),hostTmpVectorFcellsubX.begin(),
+							hostTmpVectorFcellsubY.begin()
 							)));
 
 	thrust::copy(
@@ -4347,6 +4358,7 @@ AniRawData SceCells::obtainAniRawDataGivenCellColor(vector<double>& cellColors,
 	CVector tmpPos;
 	CVector tmpF_MI_M ;//AAmiri
 	CVector tmpExtForce;//AAMIRI
+	CVector tempFcellsub;
 	double tmpCurv;
 	uint index1;
 	int index2;
@@ -4387,6 +4399,9 @@ AniRawData SceCells::obtainAniRawDataGivenCellColor(vector<double>& cellColors,
 				rawAniData.aniNodeF_MI_M.push_back(tmpF_MI_M); //AliE
                                // tmpF_MI_M_MagN_Int[i]=tmpF_MI_M_MagN_Int[i]+sqrt(pow(hostTmpVectorF_MI_M_x[index1],2)+pow(hostTmpVectorF_MI_M_y[index1],2)) ; //AliE
                 tmpF_MI_M_MagN_Int[i]=tmpF_MI_M_MagN_Int[i]+abs(hostTmpVectorF_MI_M_N[index1]) ; //AliE
+
+				tempFcellsub = CVector(hostTmpVectorFcellsubX[index1],hostTmpVectorFcellsubY[index1],0.0);
+				rawAniData.Fcellsub.push_back(tempFcellsub);
 
 				nodeExtForceT = hostTmpVectorExtForceTangent[index1];//AAMIRI
 				nodeExtForceN = hostTmpVectorExtForceNormal[index1];//AAMIRI
@@ -4434,6 +4449,9 @@ AniRawData SceCells::obtainAniRawDataGivenCellColor(vector<double>& cellColors,
 				tmpF_MI_M= CVector(node1F_MI_M_x, node1F_MI_M_y, 0.0); //AliE
 				rawAniData.aniNodeF_MI_M.push_back(tmpF_MI_M);
 
+				tempFcellsub = CVector(hostTmpVectorFcellsubX[index1],hostTmpVectorFcellsubY[index1],0.0);
+				rawAniData.Fcellsub.push_back(tempFcellsub);
+				
 				nodeExtForceT = hostTmpVectorExtForceTangent[index1];//AAMIRI
 				nodeExtForceN = hostTmpVectorExtForceNormal[index1];//AAMIRI
 				tmpExtForce = CVector(nodeExtForceT, nodeExtForceN, 0.0);//AAMIRI
@@ -4986,6 +5004,7 @@ VtkAnimationData SceCells::outputVtkData(AniRawData& rawAniData,
 		ptAniData.adhNodeIndex1= rawAniData.adhNodeIndex[i];
 		ptAniData.minToAdhDist1= rawAniData.minToAdhDist[i];
 		ptAniData.nodePolar1= rawAniData.nodePolar[i];
+		ptAniData.Fcellsub1= rawAniData.Fcellsub[i];
 		vtkData.pointsAniData.push_back(ptAniData);
 	}
 	// vtk file one 
@@ -7477,7 +7496,12 @@ void SceCells::calSubAdhForce() {
                             //                DivideFunctor(maxAllNodePerCell)))
 							))
 					+ totalNodeCountForActiveCells,
+					thrust::make_zip_iterator(
+						thrust::make_tuple(
 					nodes->getInfoVecs().nodePolar.begin(),
+					nodes->getInfoVecs().FcellsubX.begin(),
+					nodes->getInfoVecs().FcellsubY.begin()
+					)),
 			thrust::make_zip_iterator(
 					thrust::make_tuple(nodes->getInfoVecs().nodeVelX.begin(),
 							   nodes->getInfoVecs().nodeVelY.begin()

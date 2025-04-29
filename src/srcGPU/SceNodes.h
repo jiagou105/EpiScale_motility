@@ -998,6 +998,8 @@ public:
 
 	thrust::device_vector<double> minToAdhDist;
 	thrust::device_vector<double> nodePolar;
+	thrust::device_vector<double> FcellsubX;
+	thrust::device_vector<double> FcellsubY;
 	thrust::device_vector<double> minToMemDist;
 	thrust::device_vector<double> fluxWeights;
 

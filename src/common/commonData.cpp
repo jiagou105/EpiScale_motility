@@ -282,6 +282,12 @@ void VtkAnimationData::outputVtkAni(std::string scriptNameBase, int rank) { //ap
 					<< pointsAniData[i].F_MI_M.z << endl;
 		}
 	//AAMIRI finished writing the node tension vector
+	fs << "VECTORS Force_cellsub float" << endl;
+		for (uint i = 0; i < pointsAniData.size(); i++) {
+
+			fs << pointsAniData[i].Fcellsub1.x << " " << pointsAniData[i].Fcellsub1.y << " "
+					<< pointsAniData[i].Fcellsub1.z << endl;
+		}
 
 	//AAMIRI starts writing external force vector
  	fs << "VECTORS ExternalForce float" << endl;

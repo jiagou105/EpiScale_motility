@@ -12,6 +12,7 @@ typedef thrust::tuple<double, double, SceNodeType> CVec2Type;
 typedef thrust::tuple<bool, double, double> BoolDD;
 typedef thrust::tuple<uint, double, double> UiDD;
 typedef thrust::tuple<uint, double, double, uint> UiDDU;
+typedef thrust::tuple<double, double, double> DDD;
 typedef thrust::tuple<double, double, double,double> DDDD; //Ali 
 typedef thrust::tuple<double, double, double,double,int> DDDDi; //Ali 
 typedef thrust::tuple<uint, double, double, bool> UiDDBool;//AAMIRI
@@ -1377,9 +1378,9 @@ __host__ __device__ updateMinToAdhDistDevice(uint maxNodePerCell,
 				}
 			}
 			if (retractFlag==0){
-				nodePolar = atan2(normY,normX);
-				} else {
 				nodePolar = atan2(-normY,-normX);
+				} else {
+				nodePolar = atan2(-normY,-normX); // inward norm 
 			}
 			}
 		}
@@ -3137,7 +3138,7 @@ struct calSubAdhForceDevice: public thrust::binary_function<UIUDDUUDDD, double, 
 					_cellActLevelAddr(cellActLevelAddr), _seed(seed), _nodeActLevelAddr(nodeActLevelAddr), _cellPolarAngleAddr(cellPolarAngleAddr)  {
 	}
 	// comment prevents bad formatting issues of __host__ and __device__ in Nsight
-	__device__ CVec2 operator()(const UIUDDUUDDD &cData, const double &nodePolar) const {
+	__device__ CVec2 operator()(const UIUDDUUDDD &cData, const DDD &cData1) const {
 		uint activeMembrCount = thrust::get<0>(cData); // change here 
 		int cellType = thrust::get<1>(cData);	
 		uint activeIntnlCount = thrust::get<2>(cData);
@@ -3148,7 +3149,10 @@ struct calSubAdhForceDevice: public thrust::binary_function<UIUDDUUDDD, double, 
 		double nodeMyosin = thrust::get<7>(cData);
 		double velX = thrust::get<8>(cData);
 		double velY = thrust::get<9>(cData);
-		// double cellAngle = thrust::get<9>(cData);
+		
+		double nodePolar = thrust::get<0>(cData1);
+		double fcellsubX = thrust::get<1>(cData1);
+		double fcellsubY = thrust::get<2>(cData1);
 		uint index = cellRank * _maxNodePerCell + nodeRank;// 
 		// uint intnlIndxMemBegin = cellRank * _maxNodePerCell;
 		double curCellAngle = _cellPolarAngleAddr[cellRank];
@@ -3209,13 +3213,14 @@ struct calSubAdhForceDevice: public thrust::binary_function<UIUDDUUDDD, double, 
 		if (cellType != 1 && _nodeActLevelAddr[index]>0){kAdh = 1;}
 		if (cellType == 1){kAdh=1;} // for leader
 		if (cellType == 1){// including leader cell and cells adhere to it //_cellActLevelAddr[cellRank] == 1
-			maxSubSitePerNode = 10;
+			maxSubSitePerNode = 5;
 		} else {
 			maxSubSitePerNode = 10;
 		}
 		
 		// if (_timeNow > 55800.0 && _isActiveAddr[index] == true && (nodeRank < _maxMemNodePerCell)) {
-		if (_timeNow > 55800.0 && _isActiveAddr[index] == true) {
+	    if (_timeNow > 55800.0 && _isActiveAddr[index] == true && (nodeRank >= _maxMemNodePerCell)) { // adhesion force only on internal nodes
+		// if (_timeNow > 55800.0 && _isActiveAddr[index] == true) {
 			if (nodeRank < _maxMemNodePerCell && cellType == 1){ // nodeMyosin >0 exclude follower cells
 				for (uint tempNodeRank=intnlIndxBegin; tempNodeRank<intnlIndxEnd;tempNodeRank++){ // internal nodes 
 					nodeXTemp = _locXAddr[tempNodeRank];
@@ -3322,6 +3327,8 @@ struct calSubAdhForceDevice: public thrust::binary_function<UIUDDUUDDD, double, 
 						if (distNodeSite > 0.0){
 							adhForceX = (siteX - nodeX)/distNodeSite;
 							adhForceY = (siteY - nodeY)/distNodeSite;
+							fcellsubX = kAdh * distNodeSite * adhForceX;
+							fcellsubY = kAdh * distNodeSite * adhForceY;
 							velX += kAdh * distNodeSite * adhForceX;
 							velY += kAdh * distNodeSite * adhForceY;
 						}
