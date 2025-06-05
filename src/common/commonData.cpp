@@ -350,7 +350,8 @@ void VtkAnimationData::outputCellVtkAni(std::string scriptNameBase, int rank) { 
 
 
 
-// save cell polarity
+// save cell data
+/* 
 void VtkAnimationData::outputCellPolarVtkAni(std::string scriptNameBase, int rank) { // Jun 02
 	std::stringstream ss;
 	ss << std::setw(5) << std::setfill('0') << rank;
@@ -365,6 +366,8 @@ void VtkAnimationData::outputCellPolarVtkAni(std::string scriptNameBase, int ran
 	fs << "ASCII" << std::endl;
 	fs << std::endl;
 	fs << "DATASET UNSTRUCTURED_GRID" << std::endl;
+
+	
 	fs << "POINTS " << pointsAniCellPolarData.size() << " float" << std::endl; // (active_num_filop+1)*num_cell points 
 	for (uint i = 0; i < pointsAniCellPolarData.size(); i++) {
 		fs << pointsAniCellPolarData[i].cellPolarAngle.x << " " << pointsAniCellPolarData[i].cellPolarAngle.y << " "
@@ -372,6 +375,7 @@ void VtkAnimationData::outputCellPolarVtkAni(std::string scriptNameBase, int ran
 	}
 
 	fs << std::endl;
+
 	fs << "CELLS " << linksAniCellPolarData.size() << " " << 3 * linksAniCellPolarData.size()
 			<< std::endl;
 	for (uint i = 0; i < linksAniCellPolarData.size(); i++) {
@@ -382,8 +386,51 @@ void VtkAnimationData::outputCellPolarVtkAni(std::string scriptNameBase, int ran
 	for (uint i = 0; i < linksAniCellPolarData.size(); i++) {
 		fs << "3" << endl;
 	}
+
+
 	fs.close();
 }
+*/
+
+
+void VtkAnimationData::outputCellPolarVtkAni(std::string scriptNameBase, int rank) { // Jun 02
+	std::stringstream ss;
+	ss << std::setw(5) << std::setfill('0') << rank;
+	std::string scriptNameRank = ss.str();
+	std::string vtkFileName = scriptNameBase + "_cellpolar" + scriptNameRank + ".vtk";
+	std::cout << "start to create vtk file" << vtkFileName << std::endl;
+	std::ofstream fs;
+	fs.open(vtkFileName.c_str());
+	fs << "# vtk DataFile Version 3.0" << std::endl;
+	fs << "Lines and points representing subcelluar element cells "
+			<< std::endl;
+	fs << "ASCII" << std::endl;
+	fs << std::endl;
+	fs << "DATASET UNSTRUCTURED_GRID" << std::endl;
+
+	
+	fs << "POINTS " << pointsAniCellDataNew.size() << " float" << std::endl; // (active_num_filop+1)*num_cell points 
+	for (uint i = 0; i < pointsAniCellDataNew.size(); i++) {
+		fs << pointsAniCellDataNew[i].cellCenter.x << " " << pointsAniCellDataNew[i].cellCenter.y << " "
+				<< pointsAniCellDataNew[i].cellCenter.z << std::endl;
+	}
+
+	fs << std::endl;
+
+	fs << "SCALARS cellPolar float" << endl;
+	fs << "LOOKUP_TABLE default" << endl;
+		for (uint i = 0; i < pointsAniCellDataNew.size(); i++) {
+			fs << pointsAniCellDataNew[i].cellPolarTheta << endl;
+		}
+	fs << std::endl;
+
+	fs.close();
+}
+
+
+
+
+
 
 
 

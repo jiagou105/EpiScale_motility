@@ -263,7 +263,7 @@ void SimulationDomainGPU::outputVtkGivenCellColor(std::string scriptNameBase,
     // std::ostream_iterator<std::string> output_iterator(output_file, "\n");
     // std::copy(rawAniData.fluxWeights.begin(), rawAniData.fluxWeights.end(), output_iterator); 
 
-	// aniData.outputCellPolarVtkAni(scriptNameBase, rank);
+	aniData.outputCellPolarVtkAni(scriptNameBase, rank);
 	// aniData.outputCCAdhesionVtkAni(scriptNameBase, rank);
 	// aniData.outputSigNodeVtkAni(scriptNameBase,rank);
 }

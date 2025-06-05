@@ -612,6 +612,12 @@ struct PointAniCellData {
 	CVector filopPos;
 };
 
+struct PointAniCellDataNew {
+	// cell polarity 
+	CVector cellCenter;
+	double cellPolarTheta;
+};
+
 struct PointAniCellPolarData {
 	// cell polarity 
 	CVector cellPolarAngle;
@@ -654,6 +660,7 @@ struct VtkAnimationData {
 	std::vector<PointAniCCData> pointsAniCCData;
 	std::vector<LinkAniCellData> linksAniCCData;
 	std::vector<SigNodeData> sigNodeData; 
+	std::vector<PointAniCellDataNew> pointsAniCellDataNew;
 	void outputVtkAni(std::string scriptNameBase, int rank);
 	void outputCellVtkAni(std::string scriptNameBase, int rank);
 	void outputCellPolarVtkAni(std::string scriptNameBase, int rank);
@@ -725,6 +732,9 @@ struct AniRawData {
 
 	std::vector<CVector> aniCC;
 	std::vector<LinkAniCellData> aniCCLinks;
+
+	std::vector<CVector> cellCenterPosArr;	
+	std::vector<double> cellPolarTheta;
 };
 
 struct VecVal {

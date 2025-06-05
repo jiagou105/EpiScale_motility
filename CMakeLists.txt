@@ -52,6 +52,8 @@ set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS}; -DTHRUST_DEBUG)
 set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS}; -std=c++11)
 set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS}; -gencode arch=compute_30,code=compute_30)
 set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS}; -gencode arch=compute_50,code=compute_50)
+set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS}; -G)
+set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS}; -g)
 
 # HPCC ADMIN ADDED
 #set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS}; -gencode arch=compute_37,code=sm_37)
