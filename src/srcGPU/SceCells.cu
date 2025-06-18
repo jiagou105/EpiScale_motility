@@ -610,7 +610,7 @@ void findContactLineEnds(uint& intnlIndxMemBegin, bool* _isActiveAddr, double* _
 	// for case 0, starting from 0, find the node with largest index n1 such that [0 n1] are all adhereed
 	// then find the next first node that is adhered to leader
 	// for case 1, just use the following code
-	int maxGapInt = 3;
+	int maxGapInt = 20;
 	int adhIndex0, tempNodeIndex, notAdhCounter;
 	int tempNodeIndex1, tempNodeIndex2;
 	int clockwiseMostNodeIndex, counterClockwiseMostNodeIndex;
@@ -669,7 +669,7 @@ void findContactLineEnds(uint& intnlIndxMemBegin, bool* _isActiveAddr, double* _
 			} else {
 				adhCellIndex = _nodeAdhereIndexAddr[tempNodeIndex];
 			}
-			if (adhCellIndex == 1){
+			if (adhCellIndex == -1){
 				notAdhCounter += 1;
 			} else {
 				notAdhCounter = 0;
@@ -2173,7 +2173,7 @@ void SceCells::runAllCellLogicsDisc_M(double dt, double Damp_Coef, double InitTi
 		// calSceCellMyosin();
 		updateMinToAdhDist();
 		calSceCellMyosin2(); // high myosin near contact line 
-		updateCellPolarLeader();
+		updateCellPolarLeader2();
 		calSubAdhForce(); // 
 	}
 	std::cout << "     *** 3 ***" << endl;
@@ -7446,6 +7446,90 @@ void SceCells::updateCellPolarLeader() {
 			cellActiveFilopCountsAddr,maxMemNodePerCell,maxNodePerCell,nodeLocXAddr,nodeLocYAddr,
 			nodeIsActiveAddr,nodeAdhIdxAddr,nodeActLevelAddr,myosinLevelAddr,cellTypeAddr,leaderRank,cellPolarAngleAddr,cellActLevelAddr,isCellAdhAddr,myosinWeightAddr));
 }
+
+
+
+
+
+void SceCells::updateCellPolarLeader2() {
+	random_device rd;
+ 	uint seed = rd();
+	cout << "Start computing leader cell polar" << endl;
+	uint activeCellCount = allocPara_m.currentActiveCellCount;
+
+	// double* myosinLevelAddr = thrust::raw_pointer_cast(
+	//	&(nodes->getInfoVecs().myosinLevel[0])); // pointer to the vector storing myosin level
+	
+
+	double* cellCenterXAddr = thrust::raw_pointer_cast(
+            &(cellInfoVecs.centerCoordX[0]));
+	double* cellCenterYAddr = thrust::raw_pointer_cast(
+            &(cellInfoVecs.centerCoordY[0]));
+	double* cellRadiusAddr = thrust::raw_pointer_cast(
+            &(cellInfoVecs.cellRadius[0]));
+	double* cellPolarAngleAddr = thrust::raw_pointer_cast(
+			&(cellInfoVecs.cellPolarAngle[0]));
+ 	int* nodeAdhIdxAddr = thrust::raw_pointer_cast(
+            &(nodes->getInfoVecs().nodeAdhereIndex[0]));
+ 	uint* nodeActLevelAddr = thrust::raw_pointer_cast(
+            &(nodes->getInfoVecs().nodeActLevel[0]));
+	double timeNow = curTime;
+
+	double ddt = dt;
+	uint* cellActiveFilopCountsAddr = thrust::raw_pointer_cast(
+        &(cellInfoVecs.activeCellFilopCounts[0]));
+
+	uint maxMemNodePerCell = allocPara_m.maxMembrNodePerCell;
+	uint maxNodePerCell = allocPara_m.maxAllNodePerCell;
+    double* nodeLocXAddr = thrust::raw_pointer_cast(
+            &(nodes->getInfoVecs().nodeLocX[0]));
+    double* nodeLocYAddr = thrust::raw_pointer_cast(
+            &(nodes->getInfoVecs().nodeLocY[0]));
+    bool* nodeIsActiveAddr = thrust::raw_pointer_cast(
+            &(nodes->getInfoVecs().nodeIsActive[0])); // 
+	double* myosinLevelAddr = thrust::raw_pointer_cast(
+		&(nodes->getInfoVecs().myosinLevel[0]));
+	double* myosinWeightAddr = thrust::raw_pointer_cast(
+		&(nodes->getInfoVecs().myosinWeight[0]));
+	int* cellTypeAddr = thrust::raw_pointer_cast(
+            &(cellInfoVecs.cell_Type[0]));
+	uint leaderRank = allocPara_m.leaderRank; // 
+	// uint leaderRank = nodes->getLeaderRank();
+	uint* cellActLevelAddr = thrust::raw_pointer_cast(
+        &(cellInfoVecs.activationLevel[0]));
+	bool* isCellAdhAddr = thrust::raw_pointer_cast(
+        &(cellInfoVecs.isCellAdh[0]));
+	thrust::counting_iterator<uint> iBegin(0);
+	thrust::counting_iterator<uint> iEnd(activeCellCount); // make sure not iterate on inactive cells already 
+	thrust::transform(
+			thrust::make_zip_iterator(
+					thrust::make_tuple(iBegin,
+							cellInfoVecs.activationLevel.begin(),
+							cellInfoVecs.activeMembrNodeCounts.begin(),
+							cellInfoVecs.cell_Type.begin(),
+							cellInfoVecs.centerCoordX.begin(),
+							cellInfoVecs.centerCoordY.begin(),
+							cellInfoVecs.cellRadius.begin(),
+							cellInfoVecs.cellPolarAngle.begin()
+							)),
+			thrust::make_zip_iterator(
+					thrust::make_tuple(
+							iEnd,
+							cellInfoVecs.activationLevel.begin() + activeCellCount,
+							cellInfoVecs.activeMembrNodeCounts.begin() + activeCellCount,
+							cellInfoVecs.cell_Type.begin() + activeCellCount,
+							cellInfoVecs.centerCoordX.begin() + activeCellCount,
+							cellInfoVecs.centerCoordY.begin() + activeCellCount,
+							cellInfoVecs.cellRadius.begin() + activeCellCount,
+							cellInfoVecs.cellPolarAngle.begin() + activeCellCount
+							)),
+			cellInfoVecs.cellPolarAngle.begin(),
+			updateCellPolarLeader2Device(seed, ddt, timeNow, 
+			activeCellCount,cellCenterXAddr,cellCenterYAddr,cellRadiusAddr,
+			cellActiveFilopCountsAddr,maxMemNodePerCell,maxNodePerCell,nodeLocXAddr,nodeLocYAddr,
+			nodeIsActiveAddr,nodeAdhIdxAddr,nodeActLevelAddr,myosinLevelAddr,cellTypeAddr,leaderRank,cellPolarAngleAddr,cellActLevelAddr,isCellAdhAddr,myosinWeightAddr));
+}
+
 
 
 
