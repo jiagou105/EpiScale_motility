@@ -471,7 +471,8 @@ bool isTangFilopDirection(uint& intnlIndxMemBegin, bool* _isActiveAddr, double* 
 // three similar functions: istanglefilop, contactlineendpts, 
 __device__
 bool contactLineEndPts(uint& intnlIndxMemBegin, bool* _isActiveAddr, double* _locXAddr, double* _locYAddr, int* _nodeAdhereIndexAddr, 
-	uint& activeMembrCount, uint _maxNodePerCell, double& nodeX, double& nodeY, double& nodeOtherX, double& nodeOtherY){
+	uint& activeMembrCount, uint _maxNodePerCell, double& nodeX, double& nodeY, double& nodeOtherX, double& nodeOtherY,
+	double& curToLowerDist, double& otherToLowerDist){
 	//1. input two interior nodes of the leader cell, find the two nodes at the boundary of the contact line
 	//2. If the first interior node is closer to the clockwise most node, reture yes, otherwise return no
 	// int membrNodeIndex;
@@ -574,7 +575,9 @@ bool contactLineEndPts(uint& intnlIndxMemBegin, bool* _isActiveAddr, double* _lo
 		lowNodeY = _locYAddr[clockwiseMostNodeIndex];
 		double dist1 = compDist2D(nodeX,nodeY,lowNodeX,lowNodeY);
 		double dist2 = compDist2D(nodeOtherX,nodeOtherY,lowNodeX,lowNodeY);
-		if (dist1>dist2) {return true;}
+		curToLowerDist = dist1;
+		otherToLowerDist = dist2;
+		if (dist1>dist2) {return true;} // the other node is closer to the current node to the lower point of the contact line
 	}
 	return false;
 }
@@ -2153,7 +2156,7 @@ void SceCells::runAllCellLogicsDisc_M(double dt, double Damp_Coef, double InitTi
 	applySceCellDisc_M();
 	// updateCellAdhIndex();
 	updateCellPolar(); // update filopodia extension from followers // comment out start for no cell motion 
-	int ruleNum = 3;
+	int ruleNum = 4;
 	if (ruleNum<3){ // means 1 or 2
 		// do not update myosin dynamics via flux
 		calSceCellMyosin();
