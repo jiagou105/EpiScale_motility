@@ -1550,7 +1550,7 @@ __host__ __device__ calFluxWeightsMyosinDevice(uint maxNodePerCell,
 								_fluxWeightsAddr[fluxIndex] = 0.1;// omega0 // flux from nodeIntlIndex1 to nodeOtherIntlRank //value controls flux rate
 								// sumFlux = sumFlux + _fluxWeightsAddr[fluxIndex]; // sum up flux weights in the nodeRank row
 							// } else if (_minToAdhDistAddr[nodeOtherIntlIndex]<distThrd2 && minToAdhDist<distThrd2 && isOnLower && _myosinLevelAddr[nodeOtherIntlIndex]<8){
-							} else if (distNodes<distThrd && curToLowerDist>otherToLowerDist && otherToLowerDist<1 && isOnLower && _myosinLevelAddr[nodeOtherIntlIndex]<10){
+							} else if (distNodes<distThrd && curToLowerDist>otherToLowerDist && otherToLowerDist<1 && isOnLower && _myosinLevelAddr[nodeOtherIntlIndex]<6){
 								_fluxWeightsAddr[fluxIndex] = 5;
 							} else {
 								_fluxWeightsAddr[fluxIndex] = 0;
@@ -1898,7 +1898,7 @@ struct calSceCellMyosinDevice: public thrust::unary_function<UUDDUUDDDi, double>
 		} else {
 			// means internal node
 			if (cell_Type == 1 ){ // means leader 
-				int ruleNum = 4;
+				int ruleNum = 3;
 				if (ruleNum<3){
 					nodeMyosin = nodeMyosin + _dt * kmyo* (myosinTarget - nodeMyosin); // make sure it is positive
 				} else if (ruleNum>=3){
@@ -2101,7 +2101,7 @@ struct calSceCellMyosin2Device: public thrust::unary_function<UUDDUUDDDi, double
 		} else {
 			// means internal node
 			if (cell_Type == 1 ){ // means leader 
-				int ruleNum = 4;
+				int ruleNum = 3;
 				if (ruleNum<3){
 					nodeMyosin = nodeMyosin + _dt * kmyo* (myosinTarget - nodeMyosin); // make sure it is positive
 				} else if (ruleNum>=3){
@@ -2505,7 +2505,7 @@ struct updateCellPolarDevice: public thrust::unary_function<UUUIIDDDD, double> {
 				cellAngle = cellAngle + _dt*0.5*(filopAllY*cos(cellAngle)-filopAllX*sin(cellAngle));
 			}
 			else{ // means a leader
-				int ruleNum = 4;
+				int ruleNum = 3;
 				uint tempCellInd = 20000; // initial index is a fake cell
 				uint firstCellRank;
 				double rateRep = 0.2;
@@ -3047,14 +3047,15 @@ struct updateCellPolarLeader2Device: public thrust::unary_function<UUUIDDDD, dou
 		double nodeOtherX1, nodeOtherY1;
 		double nodeOtherX2, nodeOtherY2;
 		double midContactX, midContactY;
-		double rightVectorX, rightVectorY;
+		// double rightVectorX, rightVectorY;
+		double leftVectorX, leftVectorY;
 		double centerVectorX, centerVectorY;
-		double contactAngleRight, contactAngleCenter;
+		double contactAngleRight, contactAngleLeft,contactAngleCenter;
 		double contactLength = 0;
 		int n = 1;
 		double charContactLength = 8.0;
 		double c1 = 0.5;
-		double c2 = 4.0;
+		double c2 = 3.0;
 		// double PI = acos(-1.0);
 		thrust::default_random_engine rng(_seed);
 		thrust::uniform_real_distribution<double> u01(0, 1.0);
@@ -3092,19 +3093,21 @@ struct updateCellPolarLeader2Device: public thrust::unary_function<UUUIDDDD, dou
 					midContactX = _locXAddr[midIndex];
 					midContactY = _locYAddr[midIndex];
 
-					rightVectorX = nodeOtherX1 - cell_CenterX;
-					rightVectorY = nodeOtherY1 - cell_CenterY;
+					// rightVectorX = nodeOtherX1 - cell_CenterX;
+					// rightVectorY = nodeOtherY1 - cell_CenterY;
+					leftVectorX = nodeOtherX2 - cell_CenterX;
+					leftVectorY = nodeOtherY2 - cell_CenterY;
 
 					centerVectorX = midContactX - cell_CenterX;
 					centerVectorY = midContactY - cell_CenterY;
 
-					contactAngleRight = atan2(rightVectorY,rightVectorX);
+					contactAngleLeft = atan2(leftVectorY,leftVectorX);
 					contactAngleCenter = atan2(centerVectorY,centerVectorX);
 					if (cellAngle == 0) {
-						cellAngle = c1*sin(contactAngleRight-cellAngle)
+						cellAngle = c1*sin(contactAngleLeft-cellAngle)
 									+c2*pow(contactLength,n)/(pow(charContactLength,n)+pow(contactLength,n))*sin(PI+contactAngleCenter-cellAngle);
 					} else {
-						cellAngle = cellAngle + _dt *(c1*sin(contactAngleRight-cellAngle)
+						cellAngle = cellAngle + _dt *(c1*sin(contactAngleLeft-cellAngle)
 									+c2*pow(contactLength,n)/(pow(charContactLength,n)+pow(contactLength,n))*sin(PI+contactAngleCenter-cellAngle));
 					}
 				} else {
@@ -3504,7 +3507,7 @@ struct calSubAdhForceDevice: public thrust::binary_function<UIUDDUUDDD, double, 
 		// double charMIntlDist=0.8;
 		uint slotSubSitePerNode=10; // this is used in defining the size of the _subAdhIsBoundAddr variable
 		uint maxSubSitePerNode;
-		int ruleNum = 4;
+		int ruleNum = 3;
 		if (cellType != 1 && _nodeActLevelAddr[index]>0){kAdh = 0.6;}
 		if (cellType == 1){kAdh=0.6;} // for leader
 		if (cellType == 1){// including leader cell and cells adhere to it //_cellActLevelAddr[cellRank] == 1
