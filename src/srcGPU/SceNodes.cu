@@ -185,6 +185,8 @@ SceNodes::SceNodes(uint totalBdryNodeCount, uint maxProfileNodeCount,
 	uint maxTotalNodeCount;
 	uint maxIntnlNodeCountPerCell = globalConfigVars.getConfigValue(
 			"MaxIntnlNodeCountPerCell").toInt();
+	uint maxCellCount = globalConfigVars.getConfigValue(
+			"MaxCellInDomain").toInt();
 	if (controlPara.simuType != Disc_M) {
 		initNodeAllocPara(totalBdryNodeCount, maxProfileNodeCount,
 				maxCartNodeCount, maxTotalECMCount, maxNodeInECM,
@@ -202,7 +204,7 @@ SceNodes::SceNodes(uint totalBdryNodeCount, uint maxProfileNodeCount,
 				maxEpiNodeCount, maxInternalNodeCount);
 		maxTotalNodeCount = allocPara_M.maxTotalNodeCount;
 	}
-	allocSpaceForNodes(maxTotalNodeCount,maxIntnlNodeCountPerCell);
+	allocSpaceForNodes(maxTotalNodeCount,maxIntnlNodeCountPerCell,maxCellCount);
 	thrust::host_vector<SceNodeType> hostTmpVector(maxTotalNodeCount);
 	thrust::host_vector<bool> hostTmpVector2(maxTotalNodeCount);
 	thrust::host_vector<int> hostTmpVector3(maxTotalNodeCount);
@@ -272,6 +274,8 @@ SceNodes::SceNodes(uint maxTotalCellCount, uint maxAllNodePerCell) {
 			"MaxMembrNodeCountPerCell").toInt();
 	uint maxIntnlNodeCountPerCell = globalConfigVars.getConfigValue(
 			"MaxIntnlNodeCountPerCell").toInt();
+	uint maxCellCount = globalConfigVars.getConfigValue(
+			"MaxCellInDomain").toInt();
 
 	initNodeAllocPara_M(0, maxTotalCellCount, maxMembrNodeCountPerCell,
 			maxIntnlNodeCountPerCell); // first parameter is the totalBdryNodeCount
@@ -289,7 +293,7 @@ SceNodes::SceNodes(uint maxTotalCellCount, uint maxAllNodePerCell) {
 	std::cout << "    Max total number of nodes in domain = "
 			<< allocPara_M.maxTotalNodeCount << std::endl;
 
-	allocSpaceForNodes(maxTotalNodeCount,maxIntnlNodeCountPerCell);
+	allocSpaceForNodes(maxTotalNodeCount,maxIntnlNodeCountPerCell,maxCellCount);
 	thrust::host_vector<SceNodeType> hostTmpVector(maxTotalNodeCount);
 	thrust::host_vector<bool> hostTmpVector2(maxTotalNodeCount);
 
@@ -2567,7 +2571,7 @@ void SceNodes::setInfoVecs(const NodeInfoVecs& infoVecs) {
 	this->infoVecs = infoVecs;
 }
 
-void SceNodes::allocSpaceForNodes(uint maxTotalNodeCount, uint maxIntnlNodeCountPerCell) {
+void SceNodes::allocSpaceForNodes(uint maxTotalNodeCount, uint maxIntnlNodeCountPerCell, uint maxCellCount) {
 	infoVecs.nodeLocX.resize(maxTotalNodeCount);
 	infoVecs.nodeLocY.resize(maxTotalNodeCount);
 	infoVecs.nodeLocZ.resize(maxTotalNodeCount);
@@ -2621,6 +2625,7 @@ void SceNodes::allocSpaceForNodes(uint maxTotalNodeCount, uint maxIntnlNodeCount
 		infoVecs.FcellsubY.resize(maxTotalNodeCount,0);
 		infoVecs.minToMemDist.resize(maxTotalNodeCount,0);
 		infoVecs.fluxWeights.resize(maxIntnlNodeCountPerCell*maxIntnlNodeCountPerCell,0);
+		infoVecs.fluxWeightsFollower.resize(maxIntnlNodeCountPerCell*maxIntnlNodeCountPerCell*maxCellCount,0.15699);
 		infoVecs.myosinLevel.resize(maxTotalNodeCount,0);
 		infoVecs.tempMyosinLevel.resize(maxTotalNodeCount,0);
 
