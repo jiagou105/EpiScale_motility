@@ -4383,7 +4383,7 @@ struct calSubAdhForceFollowerDevice: public thrust::binary_function<UIUDDUUDDD, 
 		double distNodeSite;
 		double adhForceX = 0.0;
 		double adhForceY = 0.0;
-		double kAdh = 0.05;
+		double kAdh = 0.02;
 		double siteBindThreshold;
 		double charMyosin = 10.0; // compared with myosinTarget?
 		
@@ -4400,8 +4400,8 @@ struct calSubAdhForceFollowerDevice: public thrust::binary_function<UIUDDUUDDD, 
 		uint slotSubSitePerNode=10; // this is used in defining the size of the _subAdhIsBoundAddr variable
 		uint maxSubSitePerNode = 10;
 		int ruleNum = 5;
-		if (cellType != cellTypeFlag && _nodeActLevelAddr[index]>0){kAdh = 0.05;}
-		if (cellType == cellTypeFlag){kAdh=0.05;} // 
+		if (cellType != cellTypeFlag && _nodeActLevelAddr[index]>0){kAdh = 0.02;}
+		if (cellType == cellTypeFlag){kAdh=0.02;} // 
 		if (cellType == cellTypeFlag){// including leader cell and cells adhere to it //_cellActLevelAddr[cellRank] == 1
 			maxSubSitePerNode = 5;
 		} else {
