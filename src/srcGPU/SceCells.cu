@@ -267,14 +267,14 @@ bool isValidFilopDirection(uint& intnlIndxMemBegin, uint _maxMemNodePerCell, boo
 	uint tempindex1 = 0;
 	uint tempindex2 = 0;
 	for (membrNodeIndex=intnlIndxMemBegin; membrNodeIndex<intnlIndxMemBegin + activeMembrCount; membrNodeIndex++){
-		if (_isActiveAddr[membrNodeIndex]){ // does this represent an arbitrary node ??? yes 
+		if (_isActiveAddr[membrNodeIndex]){ // for an membrane node
 			membrNodeX = _locXAddr[membrNodeIndex];
 			membrNodeY = _locYAddr[membrNodeIndex];
 			membrCenterVecX = membrNodeX - cell_CenterX;
 			membrCenterVecY = membrNodeY - cell_CenterY;
 			membrCenterVecLen = sqrt(membrCenterVecX*membrCenterVecX + membrCenterVecY*membrCenterVecY); // add a if to avoid small length
 			cosMCandRdA =  (membrCenterVecX*cos(randomAngleRd)+membrCenterVecY*sin(randomAngleRd))/membrCenterVecLen;
-			if (cosMCandRdA>largestCos1){ // find the closest membrane node?
+			if (cosMCandRdA>largestCos1){ // find the closest membrane node to the randomly chosen angle
 				// smallAngle2=smallAngle1;
 				largestCos1=cosMCandRdA;
 				// tempindex2 = tempindex1;
@@ -369,7 +369,7 @@ bool isTangFilopDirection(uint& intnlIndxMemBegin, bool* _isActiveAddr, double* 
 		adhCellIndex = _nodeAdhereIndexAddr[adhIndex0]/_maxNodePerCellInt;
 		adhCellType = _cellTypeAddr[adhCellIndex];
 	}
-	// 1st and 2nd conditions are duplicated
+	// 1st and 2nd conditions are duplicated, find one node that is adhered to the leader 
 	while (_isActiveAddr[adhIndex0] && adhIndex0<intnlIndxMemBeginInt + activeMembrCountInt && adhCellType != 1){
 		adhIndex0 += 1;
 		adhCellIndex = _nodeAdhereIndexAddr[adhIndex0]/_maxNodePerCellInt;
@@ -382,7 +382,7 @@ bool isTangFilopDirection(uint& intnlIndxMemBegin, bool* _isActiveAddr, double* 
 		notAdhCounter = 0;
 		while (notAdhCounter<maxGapInt && iterCount<activeMembrCountInt){
 			iterCount +=1;
-			tempNodeIndex = tempNodeIndex - 1; // why decreasing index???
+			tempNodeIndex = tempNodeIndex - 1; // decreasing index 
 			if (tempNodeIndex == intnlIndxMemBeginInt-1){tempNodeIndex = intnlIndxMemBeginInt + activeMembrCountInt-1;}
 			if (_nodeAdhereIndexAddr[tempNodeIndex] == -1) {
 				adhCellType = 0;
@@ -405,7 +405,7 @@ bool isTangFilopDirection(uint& intnlIndxMemBegin, bool* _isActiveAddr, double* 
 		notAdhCounter = 0;
 		while (notAdhCounter<maxGapInt && iterCount<activeMembrCountInt){
 			iterCount += 1;
-			tempNodeIndex += 1;
+			tempNodeIndex += 1; // increasing index
 			if (tempNodeIndex == intnlIndxMemBeginInt + activeMembrCountInt){tempNodeIndex=intnlIndxMemBeginInt;}
 			if (_nodeAdhereIndexAddr[tempNodeIndex] == -1) {
 				adhCellType = 0;
@@ -450,7 +450,7 @@ bool isTangFilopDirection(uint& intnlIndxMemBegin, bool* _isActiveAddr, double* 
 		highVecY = highVecY/lenHighVec;
 		bisecVecX = lowVecX + highVecX;
 		bisecVecY = lowVecY + highVecY;
-		dotP = cos(randomAngleRd)*bisecVecX + sin(randomAngleRd)*bisecVecY;
+		dotP = cos(randomAngleRd)*bisecVecX + sin(randomAngleRd)*bisecVecY; // this is the direction pointing to the leader cell and is in the center
 		crossP = bisecVecX*sin(randomAngleRd) - cos(randomAngleRd)*bisecVecY;
 		if (dotP>0.1){ // dotPHigh>0 || dotPLow>0 // &&crossP>0
 			if (filopDirection==0){ // firstfilopodia 
@@ -2162,7 +2162,7 @@ void SceCells::runAllCellLogicsDisc_M(double dt, double Damp_Coef, double InitTi
 		// do not update myosin dynamics via flux
 		calSceCellMyosin();
 		calSubAdhForce(); // comment out end 
-	} else if (ruleNum==3){
+	} else if (ruleNum==3){ // leader and follower 
 		calFluxWeightsMyosin();
 		calSceCellMyosin();
 		// updateMinToAdhDist();
@@ -2172,18 +2172,22 @@ void SceCells::runAllCellLogicsDisc_M(double dt, double Damp_Coef, double InitTi
 		// applySceCellMyosin();
 		// applySigForce(sigPtVecV2);
 		calSubAdhForce(); // comment out end 
-	} else if (ruleNum == 4){
+	} else if (ruleNum == 4){ // polarity specified at nodes
 		// calFluxWeightsMyosin();
 		// calSceCellMyosin();
 		updateMinToAdhDist();
 		calSceCellMyosin2(); // high myosin near contact line 
 		updateCellPolarLeader2();
 		calSubAdhForce(); // 
-	} else if (ruleNum == 5){
+	} else if (ruleNum == 5){ // two regular cells
 		calFluxWeightsMyosinFollower();
 		calSceCellMyosinFollower();
 		updateCellPolarFollower();
 		calSubAdhForceFollower();
+	} else if (ruleNum == 6){ // single regular cell
+		calSubAdhForce();
+	} else if (ruleNum == 7){ // two regular cells with polarity specified directly
+		calSubAdhForce();
 	}
 	std::cout << "     *** 3 ***" << endl;
 	std::cout.flush();

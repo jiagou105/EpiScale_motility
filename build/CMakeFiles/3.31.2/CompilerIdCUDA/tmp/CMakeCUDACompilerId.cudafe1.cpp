@@ -8425,7 +8425,7 @@ unsigned __high;
 # 190
 }; 
 # 191
-unsigned __g_refs[2]; 
+unsigned __glibc_unused___g_refs[2]; 
 # 192
 unsigned __g_size[2]; 
 # 193
