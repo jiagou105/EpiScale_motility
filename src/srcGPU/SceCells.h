@@ -1687,11 +1687,11 @@ __host__ __device__ calFluxWeightsMyosinDevice(uint maxNodePerCell,
 							// if current node is farther compared with other node, and the myosin level of other node has not reached max yet
 							// if (distNodes<distThrd && (minToAdhDist>_minToAdhDistAddr[nodeOtherIntlIndex]) &&  _minToAdhDistAddr[nodeOtherIntlIndex]<distThrd2 && _myosinLevelAddr[nodeOtherIntlIndex]<myosinMaxLevel && _myosinLevelAddr[index]>1e-6){ // && _myosinLevelAddr[nodeOtherIntlIndex]<myosinMaxLevel // minToAdhDist<distThrd2 &&
 							if (distNodes<distThrd && (minToAdhDist>_minToAdhDistAddr[nodeOtherIntlIndex]) &&  _minToAdhDistAddr[nodeOtherIntlIndex]<distThrd2 && _myosinLevelAddr[nodeOtherIntlIndex]<targetMyoLevel && _myosinLevelAddr[index]>1e-6){ 
-								_fluxWeightsAddr[fluxIndex] = 0.1;// omega0 // flux from nodeIntlIndex1 to nodeOtherIntlRank //value controls flux rate
+								_fluxWeightsAddr[fluxIndex] = 0;// omega0 // flux from nodeIntlIndex1 to nodeOtherIntlRank //value controls flux rate
 								// sumFlux = sumFlux + _fluxWeightsAddr[fluxIndex]; // sum up flux weights in the nodeRank row
 							// } else if (_minToAdhDistAddr[nodeOtherIntlIndex]<distThrd2 && minToAdhDist<distThrd2 && isOnLower && _myosinLevelAddr[nodeOtherIntlIndex]<8){
 							} else if (distNodes<distThrd && curToLowerDist>otherToLowerDist && otherToLowerDist<1 && isOnLower && _myosinLevelAddr[nodeOtherIntlIndex]<6){
-								_fluxWeightsAddr[fluxIndex] = 1;
+								_fluxWeightsAddr[fluxIndex] = 0.5;
 							} else {
 								_fluxWeightsAddr[fluxIndex] = 0;
 							}
@@ -1793,11 +1793,11 @@ __host__ __device__ calFluxWeightsMyosinFollowerDevice(uint maxNodePerCell,
 							// if current node is farther compared with other node, and the myosin level of other node has not reached max yet
 							// if (distNodes<distThrd && (minToAdhDist>_minToAdhDistAddr[nodeOtherIntlIndex]) &&  _minToAdhDistAddr[nodeOtherIntlIndex]<distThrd2 && _myosinLevelAddr[nodeOtherIntlIndex]<myosinMaxLevel && _myosinLevelAddr[index]>1e-6){ // && _myosinLevelAddr[nodeOtherIntlIndex]<myosinMaxLevel // minToAdhDist<distThrd2 &&
 							if (distNodes<distThrd && (minToAdhDist>_minToAdhDistAddr[nodeOtherIntlIndex]) &&  _minToAdhDistAddr[nodeOtherIntlIndex]<distThrd2 && _myosinLevelAddr[nodeOtherIntlIndex]<targetMyoLevel && _myosinLevelAddr[index]>1e-6){ 
-								_fluxWeightsFollowerAddr[fluxIndex] = 0.05;// omega0 // flux from nodeIntlIndex1 to nodeOtherIntlRank //value controls flux rate
+								_fluxWeightsFollowerAddr[fluxIndex] = 0;// omega0 // flux from nodeIntlIndex1 to nodeOtherIntlRank //value controls flux rate
 								// sumFlux = sumFlux + _fluxWeightsFollowerAddr[fluxIndex]; // sum up flux weights in the nodeRank row
 							// } else if (_minToAdhDistAddr[nodeOtherIntlIndex]<distThrd2 && minToAdhDist<distThrd2 && isOnLower && _myosinLevelAddr[nodeOtherIntlIndex]<8){
 							} else if (distNodes<distThrd && curToLowerDist>otherToLowerDist && otherToLowerDist<0.8 && isOnLower && _myosinLevelAddr[nodeOtherIntlIndex]<10){
-								_fluxWeightsFollowerAddr[fluxIndex] = 0.05;
+								_fluxWeightsFollowerAddr[fluxIndex] = 0.5;
 							} else {
 								_fluxWeightsFollowerAddr[fluxIndex] = 0;
 							}
@@ -2142,7 +2142,7 @@ struct calSceCellMyosinDevice: public thrust::unary_function<UUDDUUDDDi, double>
 		} else {
 			// means internal node
 			if (cell_Type == 1 ){ // means leader 
-				int ruleNum = 5;
+				int ruleNum = 3;
 				if (ruleNum<3){
 					nodeMyosin = nodeMyosin + _dt * kmyo* (myosinTarget - nodeMyosin); // make sure it is positive
 				} else if (ruleNum>=3){
@@ -2321,7 +2321,7 @@ struct calSceCellMyosinFollowerDevice: public thrust::unary_function<UUDDUUDDDi,
 		} else {
 			// means internal node
 			if (cell_Type == 0 ){ // means follower
-				int ruleNum = 5;
+				int ruleNum = 3;
 				if (ruleNum<5){
 				// 	nodeMyosin = nodeMyosin + _dt * kmyo* (myosinTarget - nodeMyosin); // make sure it is positive
 				} else if (ruleNum==5){
@@ -2494,7 +2494,7 @@ struct calSceCellMyosin2Device: public thrust::unary_function<UUDDUUDDDi, double
 		} else {
 			// means internal node
 			if (cell_Type == 1 ){ // means leader 
-				int ruleNum = 5;
+				int ruleNum = 3;
 				if (ruleNum<3){
 					nodeMyosin = nodeMyosin + _dt * kmyo* (myosinTarget - nodeMyosin); // make sure it is positive
 				} else if (ruleNum>=3){
@@ -2748,7 +2748,7 @@ struct updateCellPolarDevice: public thrust::unary_function<UUUIIDDDD, double> {
 		double random01;
 		double filopLength;
 		double filopMaxLen = 0.5; // leader does not extend filopodium, to be implemented later
-		double filopMaxLifeTime = 30.0;
+		double filopMaxLifeTime = 2.0;
 		double filopAllX = 0.0;
 		double filopAllY = 0.0;
 		double growthTime;
@@ -2771,6 +2771,7 @@ struct updateCellPolarDevice: public thrust::unary_function<UUUIIDDDD, double> {
 		double randomAngleRd;
 		bool isvalidDirection=false;
 		bool isTangDirection = false;
+		int ruleNum = 3;
 		if (curActLevel>0){probNewFilop = 0.01*_dt;filopMaxLifeTime=30;} // higher likely to form filopodia
 
 		if (_timeNow < 55800.0) {
@@ -2778,6 +2779,12 @@ struct updateCellPolarDevice: public thrust::unary_function<UUUIIDDDD, double> {
 			}
 		else{// if is a follower
 			if (cell_Type==0){ 
+				/*
+				if (ruleNum == 6){
+					cellAngle = 0;
+					return cellAngle;
+				}
+				*/
 			// if (_cellRadiusAddr[cellRank]<3.0){
 			for (uint filopIndex=filopIndxBegin; filopIndex<filopIndxEnd; filopIndex++){
 				// tempindex1 = 0;
@@ -2896,7 +2903,7 @@ struct updateCellPolarDevice: public thrust::unary_function<UUUIIDDDD, double> {
 				cellAngle = cellAngle + _dt*0.5*(filopAllY*cos(cellAngle)-filopAllX*sin(cellAngle)); // if a leader DNE, orient cell toward the direction of sum of filopodia, filopodium are weighted by their length
 			}
 			else{ // means a leader
-				int ruleNum = 5;
+				int ruleNum = 3;
 				uint tempCellInd = 20000; // initial index is a fake cell
 				uint firstCellRank;
 				double rateRep = 0.2;
@@ -3208,7 +3215,7 @@ struct updateCellPolarLeaderDevice: public thrust::unary_function<UUUIDDDD, doub
 		double twoPi = 2.0 * PI;
 		double randomNoiseAngle = (2*u01(rng)-1)*50*twoPi;
 
-		double myosinThrd = 3; // need to be changed if initial nodeMyosin changes
+		double myosinThrd = 2; // need to be changed if initial nodeMyosin changes
 		bool flag = false;
 		if (_timeNow < 55800.0) {
 			return cellAngle;
@@ -4134,7 +4141,7 @@ struct calSubAdhForceDevice: public thrust::binary_function<UIUDDUUDDD, double, 
 		double distNodeSite;
 		double adhForceX = 0.0;
 		double adhForceY = 0.0;
-		double kAdh = 0.05; // may vary
+		double kAdh = 0.3; // may vary
 		double siteBindThreshold;
 		double charMyosin = 1.0; // compared with myosin level defined, may vary
 		
@@ -4152,7 +4159,7 @@ struct calSubAdhForceDevice: public thrust::binary_function<UIUDDUUDDD, double, 
 		// double charMIntlDist=0.8;
 		uint slotSubSitePerNode=10; // this is used in defining the size of the _subAdhIsBoundAddr variable
 		uint maxSubSitePerNode = 10;
-		int ruleNum = 5;
+		int ruleNum = 3;
 		if (ruleNum == 6) {nodeMyosin = 0;}
 		// if (cellType != cellTypeFlag && _nodeActLevelAddr[index]>0){kAdh = 0.2;}
 		// if (cellType == cellTypeFlag){kAdh=0.2;} // for leader
@@ -4397,7 +4404,7 @@ struct calSubAdhForceFollowerDevice: public thrust::binary_function<UIUDDUUDDD, 
 		double distNodeSite;
 		double adhForceX = 0.0;
 		double adhForceY = 0.0;
-		double kAdh = 0.05;
+		double kAdh = 0.06;
 		double siteBindThreshold;
 		double charMyosin = 10.0; // compared with myosinTarget?
 		
@@ -4413,7 +4420,7 @@ struct calSubAdhForceFollowerDevice: public thrust::binary_function<UIUDDUUDDD, 
 		// double charMIntlDist=0.8;
 		uint slotSubSitePerNode=10; // this is used in defining the size of the _subAdhIsBoundAddr variable
 		uint maxSubSitePerNode = 10;
-		int ruleNum = 5;
+		int ruleNum = 3;
 		// if (cellType != cellTypeFlag && _nodeActLevelAddr[index]>0){kAdh = 0.05;}
 		// if (cellType == cellTypeFlag){kAdh=0.05;} // 
 		if (cellType == cellTypeFlag){// including leader cell and cells adhere to it //_cellActLevelAddr[cellRank] == 1
@@ -4610,7 +4617,7 @@ struct initMyosinLevelDevice: public thrust::unary_function<UUDDUUi, double> {
 		// double kDiff = 1.0;
 
 		if (cellType == 0){
-			int ruleNum = 5;
+			int ruleNum = 3;
 			if (nodeRank < _maxMemNodePerCell) {
 				nodeMyosin = 0;
 			} else {
@@ -4627,7 +4634,7 @@ struct initMyosinLevelDevice: public thrust::unary_function<UUDDUUi, double> {
 				if (_isActiveAddr[index] == false) {
 					nodeMyosin = 0;
 				} else {
-					nodeMyosin = 0.3; // if this is changed, also change myosinThrd in 2 places 
+					nodeMyosin = 0.5; // if this is changed, also change myosinThrd in 2 places 
 				}
 			}
 		}
