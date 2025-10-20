@@ -573,10 +573,19 @@ bool contactLineEndPts(uint& intnlIndxMemBegin, bool* _isActiveAddr, double* _lo
 		highNodeY = _locYAddr[counterClockwiseMostNodeIndex];
 		lowNodeX = _locXAddr[clockwiseMostNodeIndex];
 		lowNodeY = _locYAddr[clockwiseMostNodeIndex];
+		int tempLowerNeighIndex;
+		double tempLowerNeighX,tempLowerNeighY;
+		tempLowerNeighIndex = clockwiseMostNodeIndex + 1; // find a near by point in the adhesion region 
+		if (tempLowerNeighIndex>intnlIndxMemBeginInt + activeMembrCountInt-1) {tempLowerNeighIndex = tempLowerNeighIndex - activeMembrCountInt;}
+		tempLowerNeighX = _locXAddr[tempLowerNeighIndex];
+		tempLowerNeighY = _locYAddr[tempLowerNeighIndex];
+		double distN = compDist2D(nodeOtherX,nodeOtherY,tempLowerNeighX,tempLowerNeighY);
+
 		double dist1 = compDist2D(nodeX,nodeY,lowNodeX,lowNodeY);
 		double dist2 = compDist2D(nodeOtherX,nodeOtherY,lowNodeX,lowNodeY);
 		curToLowerDist = dist1;
 		otherToLowerDist = dist2;
+		if (distN<dist2) {return false;}
 		if (dist1>dist2) {return true;} // the other node is closer to the current node to the lower point of the contact line
 	}
 	return false;
@@ -2156,13 +2165,15 @@ void SceCells::runAllCellLogicsDisc_M(double dt, double Damp_Coef, double InitTi
 
 	applySceCellDisc_M();
 	// updateCellAdhIndex();
-	updateCellPolar(); // update filopodia extension from followers // comment out start for no cell motion 
-	int ruleNum = 3;
+	// comment out start for no cell motion 
+	int ruleNum = 6;
 	if (ruleNum<3){ // means 1 or 2
 		// do not update myosin dynamics via flux
+		updateCellPolar(); // update filopodia extension from followers 
 		calSceCellMyosin();
 		calSubAdhForce(); // comment out end 
-	} else if (ruleNum==3){ // leader and follower 
+	} else if (ruleNum==3){ // leader and follower
+		updateCellPolar(); // update filopodia extension from followers  
 		calFluxWeightsMyosin();
 		calSceCellMyosin();
 		// updateMinToAdhDist();
@@ -2173,6 +2184,7 @@ void SceCells::runAllCellLogicsDisc_M(double dt, double Damp_Coef, double InitTi
 		// applySigForce(sigPtVecV2);
 		calSubAdhForce(); // comment out end 
 	} else if (ruleNum == 4){ // polarity specified at nodes
+		updateCellPolar(); // update filopodia extension from followers 
 		// calFluxWeightsMyosin();
 		// calSceCellMyosin();
 		updateMinToAdhDist();
@@ -2183,8 +2195,10 @@ void SceCells::runAllCellLogicsDisc_M(double dt, double Damp_Coef, double InitTi
 		calFluxWeightsMyosinFollower();
 		calSceCellMyosinFollower();
 		updateCellPolarFollower();
+		// updateCellPolarFollowerLower();
 		calSubAdhForceFollower();
 	} else if (ruleNum == 6){ // single regular cell
+		updateCellPolar(); // towards right
 		calSubAdhForce();
 	} else if (ruleNum == 7){ // two regular cells with polarity specified directly
 		calSubAdhForce();
@@ -7840,7 +7854,88 @@ void SceCells::updateCellPolarFollower() {
 }
 
 
+void SceCells::updateCellPolarFollowerLower() {
+	random_device rd;
+ 	uint seed = rd();
+	cout << "Start computing leader cell polar" << endl;
+	uint activeCellCount = allocPara_m.currentActiveCellCount;
 
+	// double* myosinLevelAddr = thrust::raw_pointer_cast(
+	//	&(nodes->getInfoVecs().myosinLevel[0])); // pointer to the vector storing myosin level
+	
+
+	double* cellCenterXAddr = thrust::raw_pointer_cast(
+            &(cellInfoVecs.centerCoordX[0]));
+	double* cellCenterYAddr = thrust::raw_pointer_cast(
+            &(cellInfoVecs.centerCoordY[0]));
+	double* cellRadiusAddr = thrust::raw_pointer_cast(
+            &(cellInfoVecs.cellRadius[0]));
+	double* cellPolarAngleAddr = thrust::raw_pointer_cast(
+			&(cellInfoVecs.cellPolarAngle[0]));
+ 	int* nodeAdhIdxAddr = thrust::raw_pointer_cast(
+            &(nodes->getInfoVecs().nodeAdhereIndex[0]));
+ 	uint* nodeActLevelAddr = thrust::raw_pointer_cast(
+            &(nodes->getInfoVecs().nodeActLevel[0]));
+	double timeNow = curTime;
+
+	double ddt = dt;
+	uint* cellActiveFilopCountsAddr = thrust::raw_pointer_cast(
+        &(cellInfoVecs.activeCellFilopCounts[0]));
+
+	uint maxMemNodePerCell = allocPara_m.maxMembrNodePerCell;
+	uint maxNodePerCell = allocPara_m.maxAllNodePerCell;
+    double* nodeLocXAddr = thrust::raw_pointer_cast(
+            &(nodes->getInfoVecs().nodeLocX[0]));
+    double* nodeLocYAddr = thrust::raw_pointer_cast(
+            &(nodes->getInfoVecs().nodeLocY[0]));
+    bool* nodeIsActiveAddr = thrust::raw_pointer_cast(
+            &(nodes->getInfoVecs().nodeIsActive[0])); // 
+	double* myosinLevelAddr = thrust::raw_pointer_cast(
+		&(nodes->getInfoVecs().myosinLevel[0]));
+	double* myosinWeightAddr = thrust::raw_pointer_cast(
+		&(nodes->getInfoVecs().myosinWeight[0]));
+	int* cellTypeAddr = thrust::raw_pointer_cast(
+            &(cellInfoVecs.cell_Type[0]));
+	uint leaderRank = allocPara_m.leaderRank; // 
+	// uint leaderRank = nodes->getLeaderRank();
+	uint* cellActLevelAddr = thrust::raw_pointer_cast(
+        &(cellInfoVecs.activationLevel[0]));
+	bool* isCellAdhAddr = thrust::raw_pointer_cast(
+        &(cellInfoVecs.isCellAdh[0]));
+	thrust::counting_iterator<uint> iBegin(0);
+	thrust::counting_iterator<uint> iEnd(activeCellCount); // make sure not iterate on inactive cells already 
+	thrust::transform( // loop over cells
+			thrust::make_zip_iterator(
+					thrust::make_tuple(iBegin,
+							cellInfoVecs.activationLevel.begin(),
+							cellInfoVecs.activeMembrNodeCounts.begin(),
+							cellInfoVecs.cell_Type.begin(),
+							cellInfoVecs.centerCoordX.begin(),
+							cellInfoVecs.centerCoordY.begin(),
+							cellInfoVecs.cellRadius.begin(),
+							cellInfoVecs.cellPolarAngle.begin()
+							)),
+			thrust::make_zip_iterator(
+					thrust::make_tuple(
+							iEnd,
+							cellInfoVecs.activationLevel.begin() + activeCellCount,
+							cellInfoVecs.activeMembrNodeCounts.begin() + activeCellCount,
+							cellInfoVecs.cell_Type.begin() + activeCellCount,
+							cellInfoVecs.centerCoordX.begin() + activeCellCount,
+							cellInfoVecs.centerCoordY.begin() + activeCellCount,
+							cellInfoVecs.cellRadius.begin() + activeCellCount,
+							cellInfoVecs.cellPolarAngle.begin() + activeCellCount
+							)),
+			cellInfoVecs.cellPolarAngle.begin(),
+			updateCellPolarFollowerLowerDevice(seed, ddt, timeNow, 
+			activeCellCount,cellCenterXAddr,cellCenterYAddr,cellRadiusAddr,
+			cellActiveFilopCountsAddr,maxMemNodePerCell,maxNodePerCell,nodeLocXAddr,nodeLocYAddr,
+			nodeIsActiveAddr,nodeAdhIdxAddr,nodeActLevelAddr,myosinLevelAddr,cellTypeAddr,leaderRank,cellPolarAngleAddr,cellActLevelAddr,isCellAdhAddr,myosinWeightAddr));
+			//for (uint i=0;i<2;i++){
+			//	double tempValue = cellInfoVecs.cellPolarAngle[i];
+			//	cout << "Cell polarity direction " << i << " has value " << tempValue << endl;
+			//}
+}
 
 
 
