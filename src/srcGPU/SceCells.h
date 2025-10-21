@@ -2772,7 +2772,7 @@ struct updateCellPolarDevice: public thrust::unary_function<UUUIIDDDD, double> {
 		bool isvalidDirection=false;
 		bool isTangDirection = false;
 		int ruleNum = 6;
-		if (curActLevel>0){probNewFilop = 0.01;filopMaxLifeTime=150;} // higher likely to form filopodia
+		if (curActLevel>0){probNewFilop = 0.00001;filopMaxLifeTime=30;} // higher likely to form filopodia
 
 		if (_timeNow < 55800.0) {
 			return cellAngle;
@@ -2826,7 +2826,7 @@ struct updateCellPolarDevice: public thrust::unary_function<UUUIIDDDD, double> {
 						isTangDirection = isTangFilopDirection(intnlIndxMemBegin, _isActiveAddr, _locXAddr, _locYAddr,cell_CenterX, cell_CenterY, 
 																randomAngleRd, _nodeAdhereIndexAddr, activeMembrCount, _maxNodePerCell, _cellTypeAddr, _leaderRank, _myosinLevelAddr, filopDirection);
 						// isTangDirection = true;
-						if (isTangDirection){
+						if (isvalidDirection){
 						// randomAngle = randomAngle*2.0*PI;
 							_cellFilopIsActiveAddr[filopIndex] = true; // find the largest one and use the fact that the membrane nodes are indexed? 
 							_cellFilopAngleAddr[filopIndex] = (2.0*random01-1.0)*50*PI;//2.0*random01*PI;//(2.0*random01-1.0)*50*PI;
@@ -4350,7 +4350,7 @@ struct calSubAdhForceDevice: public thrust::binary_function<UIUDDUUDDD, double, 
 		double stddAdhLen = 0.0342; // ensure 99% in the range
 		double minAdhLen = 0.0888; // 0.1 for 1.5 um, 1.48 to 0.0888
 		double maxAdhLen = 0.1572; // 0.16 for 2.5 um, 2.62 to 0.1572
-		double lambda = 10; // parameter for the exponential distribution
+		// double lambda = 10; // parameter for the exponential distribution
 		thrust::default_random_engine rng(_seed+index);
     	thrust::uniform_real_distribution<double> u01(0.0, 1.0);
 		thrust::uniform_real_distribution<double> u0TwoPi(0.0, twoPi);
@@ -4367,9 +4367,9 @@ struct calSubAdhForceDevice: public thrust::binary_function<UIUDDUUDDD, double, 
 		double distNodeSite;
 		double adhForceX = 0.0;
 		double adhForceY = 0.0;
-		double kAdh = 1; // may vary
+		double kAdh = 0.1; // may vary
 		double siteBindThreshold;
-		double charMyosin = 1; // compared with myosin level defined, may vary
+		double charMyosin = 0.5; // compared with myosin level defined, may vary
 		
 		double randomN1;
 		double randomN2;
@@ -4386,11 +4386,11 @@ struct calSubAdhForceDevice: public thrust::binary_function<UIUDDUUDDD, double, 
 		uint slotSubSitePerNode=10; // this is used in defining the size of the _subAdhIsBoundAddr variable
 		uint maxSubSitePerNode = 10;
 		int ruleNum = 6;
-		// if (ruleNum == 6) {nodeMyosin = 0;}
+		if (ruleNum == 6) {nodeMyosin = 0;}
 		// if (cellType != cellTypeFlag && _nodeActLevelAddr[index]>0){kAdh = 0.2;}
 		// if (cellType == cellTypeFlag){kAdh=0.2;} // for leader
 		if (cellType == cellTypeFlag){// including leader cell and cells adhere to it //_cellActLevelAddr[cellRank] == 1
-			maxSubSitePerNode = 5;
+			maxSubSitePerNode = 10;
 		} else {
 			maxSubSitePerNode = 10;
 		}
@@ -4447,15 +4447,11 @@ struct calSubAdhForceDevice: public thrust::binary_function<UIUDDUUDDD, double, 
 					else {
 						randAngle = curCellAngle;// + (2.0*u01(rng)-1.0)*twoPi/4.0; // towards the direction of cell polarity 
 					}
-					randLen = -logf(1-randomN2)/lambda;
+					// randLen = -logf(1-randomN2)/lambda;
 					// if (randLen>0.5) {randLen = 0.5;}
-					
-					/*
 					do {
             			randLen = norm_dist(rng);
         			} while (randLen <= minAdhLen || randLen > maxAdhLen);
-					*/
-					
 					/*
 					if (nodeRank < _maxMemNodePerCell && cellType==1 && minDistIntl>0.8 && minDistIntl<0.7) { // the >0 condition is to avoid this force in follower cells //   && nodeMyosin < nodeMyosinThreshold
 						// distNode1 = compDist2D(nodeX1, nodeY1, nodeX, nodeY);
@@ -4495,7 +4491,7 @@ struct calSubAdhForceDevice: public thrust::binary_function<UIUDDUUDDD, double, 
 						}
 						*/
 					// }
-					siteBindThreshold = 0.5;//kon*exp(-randLen*randLen/ks)*_dt;
+					siteBindThreshold = kon*exp(-randLen*randLen/ks)*_dt;
 					if (randomN3<siteBindThreshold) { 
 						for (int bindSiteIndex = 0; bindSiteIndex < maxSubSitePerNode; bindSiteIndex++){
 							siteIndex = index*slotSubSitePerNode + bindSiteIndex; 
@@ -4516,7 +4512,7 @@ struct calSubAdhForceDevice: public thrust::binary_function<UIUDDUUDDD, double, 
 						siteX = _subAdhLocXAddr[siteIndex];
 						siteY = _subAdhLocYAddr[siteIndex];
 						distNodeSite = compDist2D(nodeX, nodeY, siteX, siteY);  
-						if (distNodeSite > 0.00001){
+						if (distNodeSite > 0.0000001){
 							// adhForceX = (siteX - nodeX)/distNodeSite;
 							// adhForceY = (siteY - nodeY)/distNodeSite;
 							fcellsubX = kAdh * (siteX - nodeX);
