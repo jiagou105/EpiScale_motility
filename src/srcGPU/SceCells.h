@@ -4447,14 +4447,14 @@ struct calSubAdhForceDevice: public thrust::binary_function<UIUDDUUDDD, double, 
 					else {
 						randAngle = curCellAngle;// + (2.0*u01(rng)-1.0)*twoPi/4.0; // towards the direction of cell polarity 
 					}
-					randLen = -logf(1-randomN2)/lambda;
+					// randLen = -logf(1-randomN2)/lambda;
 					// if (randLen>0.5) {randLen = 0.5;}
 					
-					/*
+					
 					do {
             			randLen = norm_dist(rng);
         			} while (randLen <= minAdhLen || randLen > maxAdhLen);
-					*/
+					
 					
 					/*
 					if (nodeRank < _maxMemNodePerCell && cellType==1 && minDistIntl>0.8 && minDistIntl<0.7) { // the >0 condition is to avoid this force in follower cells //   && nodeMyosin < nodeMyosinThreshold
@@ -4495,7 +4495,7 @@ struct calSubAdhForceDevice: public thrust::binary_function<UIUDDUUDDD, double, 
 						}
 						*/
 					// }
-					siteBindThreshold = 0.5;//kon*exp(-randLen*randLen/ks)*_dt;
+					siteBindThreshold = kon*exp(-randLen*randLen/ks)*_dt;
 					if (randomN3<siteBindThreshold) { 
 						for (int bindSiteIndex = 0; bindSiteIndex < maxSubSitePerNode; bindSiteIndex++){
 							siteIndex = index*slotSubSitePerNode + bindSiteIndex; 
